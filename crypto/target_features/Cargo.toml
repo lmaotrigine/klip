@@ -1,0 +1,11 @@
+[package]
+name = "target_features"
+version = "0.0.0"
+edition = "2021"
+publish.workspace = true
+
+[target.'cfg(all(target_arch = "aarch64", any(target_vendor = "apple", target_os = "linux")))'.dependencies]
+libc.workspace = true
+
+[target.aarch64-linux-android.dependencies]
+libc.workspace = true

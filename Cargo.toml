@@ -1,0 +1,53 @@
+[workspace]
+resolver = "2"
+members = [ "cli",
+  "crypto/blake2b",
+  "crypto/common",
+  "crypto/curve25519",
+  "crypto/curve25519/macros",
+  "crypto/ed25519",
+  "crypto/scrypt",
+  "crypto/sha256",
+  "crypto/sha512",
+  "crypto/target_features",
+  "crypto/xchacha20",
+  "debhelper",
+  "klip",
+]
+default-members = ["klip"]
+package.publish = ["_5ht2"]
+
+[workspace.lints.rust]
+dead_code = "deny"
+deprecated = "deny"
+future_incompatible = "deny"
+missing_copy_implementations = "deny"
+missing_debug_implementations = "deny"
+nonstandard_style = "deny"
+rust_2018_idioms = "deny"
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+unused = "deny"
+
+[workspace.lints.clippy]
+all = "deny"
+pedantic = "deny"
+nursery = "deny"
+cargo = "deny"
+
+[workspace.dependencies]
+libc = "0.2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "io-util", "time"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+[profile.release]
+opt-level = 3
+debug = 1
+split-debuginfo = "packed"
+strip = true
+debug-assertions = false
+overflow-checks = false
+lto = "fat"
+panic = "abort"
+incremental = false
+codegen-units = 1

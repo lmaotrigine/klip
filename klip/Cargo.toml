@@ -1,0 +1,48 @@
+[package]
+name = "klip"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+publish.workspace = true
+#publish-lockfile = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+blake2b = { version = "0.0.0", path = "../crypto/blake2b", default-features = false }
+clap = { version = "4", features = ["wrap_help", "derive"] }
+crypto-common = { version = "0.0.0", path = "../crypto/common" }
+ed25519 = { version = "0.0.0", path = "../crypto/ed25519" }
+parking_lot = "0.12"
+rand_core = { version = "0.6", features = ["getrandom"] }
+scrypt = { version = "0.0.0", path = "../crypto/scrypt" }
+tokio.workspace = true
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+xchacha20 = { version = "0.0.0", path = "../crypto/xchacha20" }
+
+[target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
+jemallocator = "0.5"
+
+[target.'cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))'.dependencies.tokio]
+workspace = true
+features = ["signal"]
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[target.'cfg(windows)'.dependencies.windows-sys]
+version = "0.52"
+features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Console",
+  "Win32_System_LibraryLoader",
+  "Win32_UI_Shell",
+]
+
+[features]
+nightly = ["blake2b/simd_asm"]
+
+[lints]
+workspace = true
