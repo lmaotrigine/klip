@@ -245,7 +245,7 @@ ek: 256-bit symmetric encryption key
 ekid: encryption key ID encoded as an unsigned 64-bit little-endian integer
 m: plaintext
 ct: XChaCha20 ek,n (m)
-Hk,s: Blake2b(domain="KL", key=k, salt=s, size=32)
+Hk,s: Blake2b(domain="KLIP", key=k, salt=s, size=32)
 Len(x): x encoded as an unsigned 64-bit little-endian integer
 n: random 192-bit nonce
 r: random 256-bit client nonce
