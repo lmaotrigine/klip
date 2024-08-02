@@ -1,7 +1,8 @@
 #![no_std]
+#![allow(unexpected_cfgs)]
 #![cfg_attr(
     all(curve25519_backend = "simd", nightly),
-    feature(avx512_target_feature, stdsimd)
+    feature(avx512_target_feature, stdarch_x86_avx512)
 )]
 #![deny(
     dead_code,
