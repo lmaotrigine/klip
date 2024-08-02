@@ -101,9 +101,9 @@ impl Cli {
         let toml_config = TomlConfig::new(config);
         let config = Config::new(&toml_config, &cli)?;
         match cli.subcommand {
-            Command::Copy => crate::client::run(config, true, false),
-            Command::Move => crate::client::run(config, false, true),
-            Command::Paste => crate::client::run(config, false, false),
+            Command::Copy => crate::client::run(config, true, false).await,
+            Command::Move => crate::client::run(config, false, true).await,
+            Command::Paste => crate::client::run(config, false, false).await,
             Command::Serve(_) => crate::server::serve(State::new(config)).await,
             Command::Keygen(_) => unreachable!(),
         }

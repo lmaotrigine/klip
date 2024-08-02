@@ -2,30 +2,21 @@ use crate::{
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     error::Error,
     state::{State, TS},
-    util::TimeoutIO,
+    util::Stream,
 };
 use crypto_common::constant_time::ConstantTimeEq;
 use rand_core::RngCore;
-use std::pin::pin;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
-    net::{
-        tcp::{ReadHalf, WriteHalf},
-        TcpListener, TcpStream,
-    },
-};
+use tokio::net::TcpListener;
 
 struct Connection<'a> {
-    reader: TimeoutIO<BufReader<ReadHalf<'a>>>,
-    writer: TimeoutIO<BufWriter<WriteHalf<'a>>>,
+    stream: &'a mut Stream,
     state: &'a State,
 }
 
 impl<'a> Connection<'a> {
-    pub async fn get_operation(mut self, h1: &[u8], is_move: bool) -> Result<(), Error> {
+    pub async fn get_operation(self, h1: &[u8], is_move: bool) -> Result<(), Error> {
         let mut rbuf = [0; 32];
-        let mut reader = pin!(self.reader);
-        reader.read_exact(&mut rbuf).await?;
+        self.stream.read_exact(&mut rbuf).await?;
         let h2 = rbuf;
         let opcode = if is_move { b'M' } else { b'G' };
         let wh2 = auth2get(self.state.config().psk(), h1, opcode);
@@ -60,32 +51,31 @@ impl<'a> Connection<'a> {
         } else {
             &signature[..]
         };
-        self.writer.set_timeout(self.state.config().data_timeout());
-        let mut writer = pin!(self.writer);
+        self.stream.set_timeout(self.state.config().data_timeout());
         let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), signature);
-        writer.write_all(h3.as_bytes()).await?;
+        self.stream.write_all(h3.as_bytes()).await?;
         let ciphertext_with_encrypt_sk_and_nonce_len =
             ciphertext_with_encrypt_sk_and_nonce.len() as u64;
-        writer
+        self.stream
             .write_all(&ciphertext_with_encrypt_sk_and_nonce_len.to_le_bytes())
             .await?;
         if ts == 0 {
-            writer.flush().await?;
+            self.stream.flush().await?;
             return Ok(());
         }
-        writer.write_all(&ts.to_le_bytes()).await?;
-        writer.write_all(signature).await?;
-        writer
+        self.stream.write_all(&ts.to_le_bytes()).await?;
+        self.stream.write_all(signature).await?;
+        self.stream
             .write_all(&ciphertext_with_encrypt_sk_and_nonce)
             .await?;
-        writer.flush().await?;
+        self.stream.flush().await?;
         Ok(())
     }
 
     #[allow(clippy::cast_possible_truncation)]
-    pub async fn store_operation(mut self, h1: &[u8]) -> Result<(), Error> {
+    pub async fn store_operation(self, h1: &[u8]) -> Result<(), Error> {
         let mut rbuf = [0; 112];
-        self.reader.get_mut().read_exact(&mut rbuf).await?;
+        self.stream.read_exact(&mut rbuf).await?;
         let h2 = &rbuf[..32];
         let len_buf: [u8; 8] = [
             rbuf[32], rbuf[33], rbuf[34], rbuf[35], rbuf[36], rbuf[37], rbuf[38], rbuf[39],
@@ -122,11 +112,10 @@ impl<'a> Connection<'a> {
             return Err(Error::Auth);
         }
         let mut ciphertext_with_encrypt_sk_and_nonce =
-            Vec::with_capacity(ciphertext_with_encrypt_sk_and_nonce_len as usize);
-        self.reader.set_timeout(self.state.config().data_timeout());
-        let mut reader = pin!(self.reader);
-        reader
-            .read_buf(&mut ciphertext_with_encrypt_sk_and_nonce)
+            vec![0; ciphertext_with_encrypt_sk_and_nonce_len as usize];
+        self.stream.set_timeout(self.state.config().data_timeout());
+        self.stream
+            .read_exact(&mut ciphertext_with_encrypt_sk_and_nonce)
             .await?;
         self.state.config().sign_pk().verify_strict(
             &ciphertext_with_encrypt_sk_and_nonce[..],
@@ -139,22 +128,18 @@ impl<'a> Connection<'a> {
             content.signature = signature;
             content.ciphertext_with_encrypt_sk_and_nonce = ciphertext_with_encrypt_sk_and_nonce;
         }
-        self.writer.set_timeout(self.state.config().data_timeout());
-        let mut writer = pin!(self.writer);
-        writer.write_all(h3.as_bytes()).await?;
-        writer.flush().await?;
+        self.stream.set_timeout(self.state.config().data_timeout());
+        self.stream.write_all(h3.as_bytes()).await?;
+        self.stream.flush().await?;
         Ok(())
     }
 }
 
-pub async fn handle_connection(state: &mut State, conn: &mut TcpStream) -> Result<(), Error> {
+pub async fn handle_connection(state: &mut State, stream: &mut Stream) -> Result<(), Error> {
     let config = state.config();
     let mut rbuf = [0; 65];
-    let remote_addr = conn.peer_addr()?;
-    let (reader, writer) = conn.split();
-    let mut reader = TimeoutIO::new(BufReader::new(reader));
-    let mut writer = TimeoutIO::new(BufWriter::new(writer));
-    reader.get_mut().read_exact(&mut rbuf).await?;
+    let remote_addr = stream.peer_addr()?;
+    stream.read_exact(&mut rbuf).await?;
     let client_version = rbuf[0];
     if client_version != 1 {
         return Err(Error::IncompatibleVersions {
@@ -172,17 +157,18 @@ pub async fn handle_connection(state: &mut State, conn: &mut TcpStream) -> Resul
     let mut rand = rand_core::OsRng;
     rand.fill_bytes(&mut r2);
     let h1 = auth1(config.psk(), client_version, h0, &r2);
-    writer.get_mut().write_all(&[client_version]).await?;
-    writer.get_mut().write_all(&r2).await?;
-    writer.get_mut().write_all(h1.as_bytes()).await?;
-    writer.get_mut().flush().await?;
+    stream.write_all(&[client_version]).await?;
+    stream.write_all(&r2).await?;
+    stream.write_all(h1.as_bytes()).await?;
+    stream.flush().await?;
     state.add_trusted_ip(remote_addr.ip());
-    let mut conn = Connection {
-        reader,
-        writer,
-        state,
-    };
-    let opcode = conn.reader.get_mut().read_u8().await?;
+    let conn = Connection { state, stream };
+    let mut opcode = [0];
+    let opcode = conn
+        .stream
+        .read_exact(&mut opcode)
+        .await
+        .map(|_| opcode[0])?;
     match opcode {
         b'G' => conn.get_operation(h1.as_bytes(), false).await,
         b'M' => conn.get_operation(h1.as_bytes(), true).await,

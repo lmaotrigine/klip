@@ -1,4 +1,4 @@
-use crate::{config::Config, error::Error, server::handle_connection};
+use crate::{config::Config, error::Error, server::handle_connection, util::Stream};
 use parking_lot::RwLock;
 use std::{
     collections::VecDeque,
@@ -8,7 +8,7 @@ use std::{
         Arc,
     },
 };
-use tokio::{io::AsyncWriteExt, net::TcpStream};
+use tokio::net::TcpStream;
 
 // i gave up on borrow checker appeasement and made these global, sue me.
 pub static TS: RwLock<u64> = RwLock::new(0);
@@ -60,14 +60,16 @@ impl State {
     }
 
     pub fn is_trusted_ip(&self, ip: IpAddr) -> bool {
-        self.trusted_clients.read().contains(&ip)
+        let g = self.trusted_clients.read();
+        g.is_empty() || g.contains(&ip)
     }
 
-    pub async fn accept_client(&mut self, mut conn: TcpStream) -> Result<(), Error> {
+    pub async fn accept_client(&mut self, mut conn: Stream) -> Result<(), Error> {
         if let Err(e) = handle_connection(self, &mut conn).await {
+            self.client_count.fetch_sub(1, Ordering::SeqCst);
             conn.shutdown().await?;
             return Err(e);
-        };
+        }
         self.client_count.fetch_sub(1, Ordering::SeqCst);
         Ok(())
     }
@@ -81,7 +83,8 @@ impl State {
                 && !self.is_trusted_ip(remote_ip)
             {
                 return Err(Error::CapacityReached);
-            } else if self
+            }
+            if self
                 .client_count
                 .compare_exchange(count, count + 1, Ordering::SeqCst, Ordering::SeqCst)
                 .is_ok()
@@ -89,13 +92,8 @@ impl State {
                 break;
             }
         }
-        // there has to be a better way to do this
-        // but oh well, i tell myself this is somehow better than using
-        // std::thread::spawn
-        let conn = conn.into_std()?;
-        conn.set_read_timeout(Some(self.config.timeout()))?;
-        conn.set_write_timeout(Some(self.config.timeout()))?;
-        let conn = TcpStream::from_std(conn)?;
+        let mut conn = Stream::new(conn);
+        conn.set_timeout(self.config().timeout());
         self.accept_client(conn).await
     }
 

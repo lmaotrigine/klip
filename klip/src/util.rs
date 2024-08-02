@@ -1,204 +1,80 @@
-use std::{
-    future::Future,
-    io,
-    path::PathBuf,
-    pin::Pin,
-    task::{Context, Poll},
-    time::Duration,
-};
+use std::{path::PathBuf, time::Duration};
 use tokio::{
-    io::{AsyncRead, AsyncWrite},
-    time::{sleep_until, Instant, Sleep},
+    io::{AsyncReadExt, AsyncWriteExt, BufStream},
+    net::TcpStream,
+    time::{timeout_at, Instant},
 };
 
-#[derive(Debug)]
-struct TimeoutState {
-    timeout: Option<Duration>,
-    cur: Sleep,
-    active: bool,
+pub struct Stream {
+    inner: BufStream<TcpStream>,
+    timeout: Option<Instant>,
 }
 
-struct TimeoutStateProjection<'a>
-where
-    TimeoutState: 'a,
-{
-    timeout: &'a mut Option<Duration>,
-    cur: Pin<&'a mut Sleep>,
-    active: &'a mut bool,
+macro_rules! timed_out {
+    () => {
+        std::io::Error::from(std::io::ErrorKind::TimedOut)
+    };
 }
 
-impl TimeoutState {
-    #[inline]
-    fn new() -> Self {
+impl Stream {
+    pub fn new(stream: TcpStream) -> Self {
         Self {
+            inner: BufStream::new(stream),
             timeout: None,
-            cur: sleep_until(Instant::now()),
-            active: false,
         }
     }
 
-    #[inline]
-    fn project<'a>(self: Pin<&'a mut Self>) -> TimeoutStateProjection<'a> {
-        unsafe {
-            let Self {
-                timeout,
-                cur,
-                active,
-            } = self.get_unchecked_mut();
-            TimeoutStateProjection {
-                timeout,
-                cur: Pin::new_unchecked(cur),
-                active,
-            }
+    pub fn set_timeout(&mut self, dur: Duration) {
+        self.timeout = Some(Instant::now() + dur);
+    }
+
+    pub async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if let Some(timeout) = self.timeout {
+            timeout_at(timeout, self.inner.read_exact(buf))
+                .await
+                .map_err(|_| timed_out!())?
+        } else {
+            self.inner.read_exact(buf).await
         }
     }
 
-    #[inline]
-    fn set_timeout(&mut self, timeout: Duration) {
-        self.timeout = Some(timeout);
-    }
-
-    #[inline]
-    fn reset(self: Pin<&mut Self>) {
-        let this = self.project();
-        if *this.active {
-            *this.active = false;
-            this.cur.reset(Instant::now());
+    pub async fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize> {
+        if let Some(timeout) = self.timeout {
+            timeout_at(timeout, self.inner.read_to_end(buf))
+                .await
+                .map_err(|_| timed_out!())?
+        } else {
+            self.inner.read_to_end(buf).await
         }
     }
 
-    #[inline]
-    fn poll_check(self: Pin<&mut Self>, cx: &mut Context<'_>) -> io::Result<()> {
-        let mut this = self.project();
-        let timeout = match this.timeout {
-            Some(timeout) => *timeout,
-            None => return Ok(()),
-        };
-        if !*this.active {
-            this.cur.as_mut().reset(Instant::now() + timeout);
-            *this.active = true;
-        }
-        match this.cur.poll(cx) {
-            Poll::Ready(()) => Err(io::Error::from(io::ErrorKind::TimedOut)),
-            Poll::Pending => Ok(()),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct TimeoutIO<IO> {
-    inner: IO,
-    state: TimeoutState,
-}
-
-struct TimeoutIOProjection<'a, IO>
-where
-    TimeoutIO<IO>: 'a,
-{
-    inner: Pin<&'a mut IO>,
-    state: Pin<&'a mut TimeoutState>,
-}
-
-impl<IO> TimeoutIO<IO> {
-    pub fn new(buf_io: IO) -> Self {
-        Self {
-            inner: buf_io,
-            state: TimeoutState::new(),
+    pub async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
+        if let Some(timeout) = self.timeout {
+            timeout_at(timeout, self.inner.write_all(buf))
+                .await
+                .map_err(|_| timed_out!())?
+        } else {
+            self.inner.write_all(buf).await
         }
     }
 
-    #[inline]
-    fn project<'a>(self: Pin<&'a mut Self>) -> TimeoutIOProjection<'a, IO> {
-        unsafe {
-            let Self { inner, state } = self.get_unchecked_mut();
-            TimeoutIOProjection {
-                inner: Pin::new_unchecked(inner),
-                state: Pin::new_unchecked(state),
-            }
+    pub async fn flush(&mut self) -> std::io::Result<()> {
+        if let Some(timeout) = self.timeout {
+            timeout_at(timeout, self.inner.flush())
+                .await
+                .map_err(|_| timed_out!())?
+        } else {
+            self.inner.flush().await
         }
     }
 
-    pub fn set_timeout(&mut self, timeout: Duration) {
-        self.state.set_timeout(timeout);
+    pub fn peer_addr(&self) -> std::io::Result<std::net::SocketAddr> {
+        self.inner.get_ref().peer_addr()
     }
 
-    pub fn get_mut(&mut self) -> &mut IO {
-        &mut self.inner
+    pub async fn shutdown(mut self) -> std::io::Result<()> {
+        self.inner.shutdown().await
     }
-}
-
-impl<IO: AsyncRead> AsyncRead for TimeoutIO<IO> {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
-    ) -> Poll<io::Result<()>> {
-        let this = self.project();
-        let r = this.inner.poll_read(cx, buf);
-        match r {
-            Poll::Pending => this.state.poll_check(cx)?,
-            Poll::Ready(_) => this.state.reset(),
-        }
-        r
-    }
-}
-
-impl<IO: AsyncWrite> AsyncWrite for TimeoutIO<IO> {
-    fn poll_write(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<Result<usize, io::Error>> {
-        self.project().inner.poll_write(cx, buf)
-    }
-
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
-        self.project().inner.poll_flush(cx)
-    }
-
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
-        self.project().inner.poll_shutdown(cx)
-    }
-
-    fn poll_write_vectored(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        bufs: &[io::IoSlice<'_>],
-    ) -> Poll<Result<usize, io::Error>> {
-        self.project().inner.poll_write_vectored(cx, bufs)
-    }
-
-    fn is_write_vectored(&self) -> bool {
-        self.inner.is_write_vectored()
-    }
-}
-
-// various utils to check that our pin projections are safe
-mod __sanity_checks__ {
-    use super::{Duration, Sleep, TimeoutIO, TimeoutState};
-    use core::marker::PhantomData;
-
-    struct AssertUnpin<T: ?Sized>(PhantomData<T>);
-    impl<T: ?Sized> Unpin for AssertUnpin<T> {}
-    trait NoAutoDropImpl {}
-    #[allow(drop_bounds)]
-    impl<T: Drop> NoAutoDropImpl for T {}
-
-    struct _TimeoutStateSafetyCheck<'a> {
-        _dummy: PhantomData<&'a ()>,
-        _timeout: AssertUnpin<Option<Duration>>,
-        _cur: Sleep,
-        _active: AssertUnpin<bool>,
-    }
-    impl<'a> Unpin for TimeoutState where _TimeoutStateSafetyCheck<'a>: Unpin {}
-    impl NoAutoDropImpl for TimeoutState {}
-    struct _TimeoutIOSafetyCheck<'a, IO> {
-        _dummy: PhantomData<&'a ()>,
-        _inner: IO,
-        _state: TimeoutState,
-    }
-    impl<'a, IO> Unpin for TimeoutIO<IO> where _TimeoutIOSafetyCheck<'a, IO>: Unpin {}
-    impl<IO> NoAutoDropImpl for TimeoutIO<IO> {}
 }
 
 #[cfg(unix)]
