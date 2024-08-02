@@ -79,7 +79,7 @@ cargo-no-default-features := if default-features == "false" {
 }
 
 default-cargo-features := if cargo-buildstd != "" {
-  "nightly,"
+  ""
 } else {
   ""
 }

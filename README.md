@@ -67,10 +67,15 @@ is 1.70). My blake2b implementation currently uses portable SIMD (I will start
 writing target feature specific backends soon&trade;), and enabling it requires
 a nightly compiler. Use either of the following incantations:
 
+> &#x26a0;&#xfe0f; **Warning**: The SIMD backend is broken on recent nightlies.
+> Don't use the nightly feature mentioned below. Fixing it is non-trivial, and
+> I'll get around to it when I have the bandwidth.
+
 ```console
 $ cargo build --release
 ```
 
+***Once again, the below command will result in compile errors on recent toolchains.***
 ```console
 $ cargo +nightly build --release --features nightly
 ```
@@ -293,3 +298,4 @@ s := Sig(ekid || n || ct)
 ## TODO
 
 - [ ] remove dependency on clap due to frequent major version bumps
+- [ ] fix blake2b SIMD backend. requires reimplementation.
