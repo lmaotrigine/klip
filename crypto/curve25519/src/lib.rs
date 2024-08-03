@@ -1,7 +1,11 @@
 #![no_std]
 #![allow(unexpected_cfgs)]
 #![cfg_attr(
-    all(curve25519_backend = "simd", nightly),
+    all(
+        curve25519_backend = "simd",
+        nightly,
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
     feature(avx512_target_feature, stdarch_x86_avx512)
 )]
 #![deny(
