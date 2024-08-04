@@ -41,8 +41,5 @@ features = [
   "Win32_UI_Shell",
 ]
 
-[features]
-nightly = ["blake2b/simd_asm"]
-
 [lints]
 workspace = true

@@ -11,11 +11,16 @@ repository.workspace = true
 [dependencies]
 crypto-common = { version = "0.0.0", path = "../common" }
 
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
+target_features = { version = "0.0.0", path = "../target_features" }
+
 [features]
 default = []
-simd = []
-simd_opt = ["simd"]
-simd_asm = ["simd_opt"]
+# there's a lot of #[inline(always)] here. on ARM Cortex-M0 (and probably other
+# small chips), some of that inlining actually hurts performance. this feature
+# disables some inlining, improving the performance of the portable
+# implementation in those specific cases.
+uninline = []
 
 [lints]
 workspace = true

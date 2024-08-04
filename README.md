@@ -63,26 +63,21 @@ This project is written in pure Rust, with some inline assembly for SIMD
 accelerated cryptography and minimal FFI to interact with the operating system.
 
 It is known to build on the latest stable compiler (at the time of writing, this
-is 1.70). My blake2b implementation currently uses portable SIMD (I will start
-writing target feature specific backends soon&trade;), and enabling it requires
-a nightly compiler. Use either of the following incantations:
-
-> &#x26a0;&#xfe0f; **Warning**: The SIMD backend is broken on recent nightlies.
-> Don't use the nightly feature mentioned below. Fixing it is non-trivial, and
-> I'll get around to it when I have the bandwidth.
+is 1.70). Enabling SIMD optimizations in the curve25519 implementation requires
+a nightly compiler. Your mileage with SIMD may vary quite a bit. I have done
+some extensive benchmarking, but if you find a corner case that hinders
+performance, please let me know! Use either of the following incantations:
 
 ```console
 $ cargo build --release
 ```
 
-***Once again, the below command will result in compile errors on recent toolchains.***
-```console
-$ cargo +nightly build --release --features nightly
-```
+Only required if you are either developing, or you want AVX512 SIMD acceleration
+for Curve25519 scalar multiplication.
 
-The latter enables SIMD acceleration for BLAKE2b via portable SIMD. Don't enable
-the feature if you're fine with a software backend. Do note that portable SIMD
-in particular is experimental, and your mileage may vary quite a bit.
+```console
+$ cargo +nightly build --release
+```
 
 The `klip` executable should then be available in the `target/release` directory.
 
@@ -302,4 +297,3 @@ s := Sig(ekid || n || ct)
 ## TODO
 
 - [ ] remove dependency on clap due to frequent major version bumps
-- [ ] fix blake2b SIMD backend. requires reimplementation.

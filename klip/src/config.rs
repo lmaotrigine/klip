@@ -48,8 +48,10 @@ impl TomlConfig {
                 .map_err(|()| Error::InvalidField("encrypt_sk_id"))?;
         } else {
             let encrypt_sk = self.encrypt_sk()?;
-            let mut hasher =
-                blake2b::Blake2b::new_with_params(&[], crate::DOMAIN.as_bytes(), &[], 8);
+            let mut hasher = blake2b::Params::new()
+                .personal(crate::DOMAIN.as_bytes())
+                .hash_length(8)
+                .to_state();
             hasher.update(&encrypt_sk);
             buf.copy_from_slice(hasher.finalize().as_bytes());
         }
