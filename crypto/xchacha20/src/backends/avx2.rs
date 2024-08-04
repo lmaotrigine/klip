@@ -53,7 +53,7 @@ impl super::Backend<PAR_BLOCKS> for Backend {
             for c in &mut self.ctr {
                 *c = _mm256_add_epi32(*c, _mm256_set_epi32(0, 0, 0, 1, 0, 0, 0, 1));
             }
-            let res0 = core::mem::transmute::<_, [__m128i; 8]>(res[0]);
+            let res0 = core::mem::transmute::<[__m256i; 4], [__m128i; 8]>(res[0]);
             let block_ptr = block.as_mut_ptr().cast::<__m128i>();
             for i in 0..4 {
                 _mm_storeu_si128(block_ptr.add(i), res0[2 * i]);
@@ -72,7 +72,7 @@ impl super::Backend<PAR_BLOCKS> for Backend {
             }
             let mut block_ptr = blocks.as_mut_ptr().cast::<__m128i>();
             for v in vs {
-                let t = core::mem::transmute::<_, [__m128i; 8]>(v);
+                let t = core::mem::transmute::<[__m256i; 4], [__m128i; 8]>(v);
                 for i in 0..4 {
                     _mm_storeu_si128(block_ptr.add(i), t[2 * i]);
                     _mm_storeu_si128(block_ptr.add(4 + i), t[2 * i + 1]);

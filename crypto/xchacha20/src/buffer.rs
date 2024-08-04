@@ -30,7 +30,7 @@ impl<'a, T> MutableBuffer<'a, T> {
     }
 
     #[inline(always)]
-    pub fn split_at(self, mid: usize) -> (MutableBuffer<'a, T>, MutableBuffer<'a, T>) {
+    pub fn split_at(self, mid: usize) -> (Self, Self) {
         debug_assert!(mid <= self.len);
         let (tail_in_ptr, tail_out_ptr) = unsafe { (self.in_ptr.add(mid), self.out_ptr.add(mid)) };
         (
@@ -50,9 +50,7 @@ impl<'a, T> MutableBuffer<'a, T> {
     }
 
     #[inline(always)]
-    pub const fn into_chunks<const N: usize>(
-        self,
-    ) -> (MutableBuffer<'a, [T; N]>, MutableBuffer<'a, T>) {
+    pub const fn into_chunks<const N: usize>(self) -> (MutableBuffer<'a, [T; N]>, Self) {
         let chunks = self.len() / N;
         let tail_pos = N * chunks;
         let tail_len = self.len() - tail_pos;

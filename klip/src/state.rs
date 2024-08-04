@@ -51,7 +51,7 @@ impl State {
         &self.config
     }
 
-    pub fn add_trusted_ip(&mut self, ip: IpAddr) {
+    pub fn add_trusted_ip(&self, ip: IpAddr) {
         let mut lock = self.trusted_clients.write();
         if lock.len() >= self.config.trusted_ip_count() {
             lock.pop_front();
@@ -64,7 +64,7 @@ impl State {
         g.is_empty() || g.contains(&ip)
     }
 
-    pub async fn accept_client(&mut self, mut conn: Stream) -> Result<(), Error> {
+    pub async fn accept_client(&self, mut conn: Stream) -> Result<(), Error> {
         if let Err(e) = handle_connection(self, &mut conn).await {
             self.client_count.fetch_sub(1, Ordering::SeqCst);
             conn.shutdown().await?;
@@ -74,7 +74,7 @@ impl State {
         Ok(())
     }
 
-    pub async fn maybe_accept_client(&mut self, conn: TcpStream) -> Result<(), Error> {
+    pub async fn maybe_accept_client(&self, conn: TcpStream) -> Result<(), Error> {
         let remote_ip = conn.peer_addr()?.ip();
         let mut count;
         loop {

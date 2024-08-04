@@ -15,7 +15,9 @@ members = [ "cli",
   "klip",
 ]
 default-members = ["klip"]
-package.publish = ["_5ht2"]
+package.publish = false
+package.readme = "README.md"
+package.repository = "https://git.5ht2.me/lmaotrigine/klip"
 
 [workspace.lints.rust]
 dead_code = "deny"

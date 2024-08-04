@@ -1,5 +1,5 @@
+#![allow(clippy::cast_sign_loss)]
 use core::ops::{Add, AddAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Sub};
-
 macro_rules! impl_shared {
     ($ty:ident, $lane_ty:ident, $add:ident, $sub:ident, $shl:ident, $shr:ident, $extract:ident) => {
         #[allow(non_camel_case_types)]
@@ -170,7 +170,13 @@ impl u32x8 {
         x6: u32,
         x7: u32,
     ) -> Self {
-        unsafe { Self(core::mem::transmute([x0, x1, x2, x3, x4, x5, x6, x7])) }
+        unsafe {
+            Self(
+                core::mem::transmute::<[u32; 8], core::arch::x86_64::__m256i>([
+                    x0, x1, x2, x3, x4, x5, x6, x7,
+                ]),
+            )
+        }
     }
 
     #[inline]
@@ -200,7 +206,9 @@ impl u32x8 {
 impl u64x4 {
     #[inline]
     pub const fn new_const(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
-        unsafe { Self(core::mem::transmute([x0, x1, x2, x3])) }
+        unsafe {
+            Self(core::mem::transmute::<[u64; 4], core::arch::x86_64::__m256i>([x0, x1, x2, x3]))
+        }
     }
 
     #[inline]

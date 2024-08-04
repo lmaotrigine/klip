@@ -135,7 +135,7 @@ impl<'a> Connection<'a> {
     }
 }
 
-pub async fn handle_connection(state: &mut State, stream: &mut Stream) -> Result<(), Error> {
+pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(), Error> {
     let config = state.config();
     let mut rbuf = [0; 65];
     let remote_addr = stream.peer_addr()?;
@@ -162,7 +162,7 @@ pub async fn handle_connection(state: &mut State, stream: &mut Stream) -> Result
     stream.write_all(h1.as_bytes()).await?;
     stream.flush().await?;
     state.add_trusted_ip(remote_addr.ip());
-    let conn = Connection { state, stream };
+    let conn = Connection { stream, state };
     let mut opcode = [0];
     let opcode = conn
         .stream
@@ -177,7 +177,7 @@ pub async fn handle_connection(state: &mut State, stream: &mut Stream) -> Result
     }
 }
 
-pub async fn serve(mut state: State) -> Result<(), Error> {
+pub async fn serve(state: State) -> Result<(), Error> {
     tokio::spawn(async move { State::handle_siginfo().await });
     let listener = TcpListener::bind(state.config().listen()).await?;
     loop {

@@ -131,6 +131,7 @@ impl ConstantTimeEq for Choice {
 
 macro_rules! impl_ints {
     ($u:ty, $i:ty, $w:expr) => {
+        #[allow(clippy::cast_possible_truncation)]
         impl ConstantTimeEq for $u {
             #[inline]
             #[allow(trivial_numeric_casts)]
@@ -140,6 +141,7 @@ macro_rules! impl_ints {
                 ((y ^ (1)) as u8).into()
             }
         }
+        #[allow(clippy::cast_sign_loss)]
         impl ConstantTimeEq for $i {
             #[inline]
             fn ct_eq(&self, other: &Self) -> Choice {
@@ -236,7 +238,7 @@ macro_rules! to_signed_int {
 macro_rules! generate_integer_conditional_select {
     ($($t:tt)*) => {
         $(
-            #[allow(trivial_numeric_casts)]
+            #[allow(trivial_numeric_casts, clippy::cast_lossless, clippy::cast_possible_wrap, clippy::cast_sign_loss)]
             impl ConditionallySelectable for $t {
                 #[inline]
                 fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
