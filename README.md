@@ -183,6 +183,10 @@ privilege of seeing the content. The choice was between this race and latency on
 every request. I chose the race because this is not commonly encountered in
 practice (at least during my usage).
 
+```console
+$ klip move
+```
+
 Well, that's it!
 
 Feed it anything. Text, binary data, whatever. If it fits it memory, it'll work.
