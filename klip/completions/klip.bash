@@ -30,6 +30,9 @@ _klip() {
             klip,serve)
                 cmd="klip__serve"
                 ;;
+            klip,version)
+                cmd="klip__version"
+                ;;
             klip__help,copy)
                 cmd="klip__help__copy"
                 ;;
@@ -48,6 +51,9 @@ _klip() {
             klip__help,serve)
                 cmd="klip__help__serve"
                 ;;
+            klip__help,version)
+                cmd="klip__help__version"
+                ;;
             *)
                 ;;
         esac
@@ -55,7 +61,7 @@ _klip() {
 
     case "${cmd}" in
         klip)
-            opts="-c -h -V --config --help --version copy paste move serve genkeys help"
+            opts="-c -h -V --config --help --version copy paste move serve genkeys version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -105,7 +111,7 @@ _klip() {
             return 0
             ;;
         klip__help)
-            opts="copy paste move serve genkeys help"
+            opts="copy paste move serve genkeys version help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -202,6 +208,20 @@ _klip() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        klip__help__version)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         klip__move)
             opts="-h --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
@@ -261,6 +281,20 @@ _klip() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        klip__version)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
                 *)
                     COMPREPLY=()
                     ;;

@@ -29,6 +29,7 @@ set edit:completion:arg-completer[klip] = {|@words|
             cand move 'retrieve and delete content'
             cand serve 'start a server'
             cand genkeys 'generate keys'
+            cand version 'show version information'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'klip;copy'= {
@@ -63,12 +64,17 @@ set edit:completion:arg-completer[klip] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
+        &'klip;version'= {
+            cand -h 'Print help'
+            cand --help 'Print help'
+        }
         &'klip;help'= {
             cand copy 'store content'
             cand paste 'retrieve content'
             cand move 'retrieve and delete content'
             cand serve 'start a server'
             cand genkeys 'generate keys'
+            cand version 'show version information'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'klip;help;copy'= {
@@ -80,6 +86,8 @@ set edit:completion:arg-completer[klip] = {|@words|
         &'klip;help;serve'= {
         }
         &'klip;help;genkeys'= {
+        }
+        &'klip;help;version'= {
         }
         &'klip;help;help'= {
         }

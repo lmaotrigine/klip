@@ -37,6 +37,8 @@ pub enum Command {
     /// generate keys
     #[clap(name = "genkeys")]
     Keygen(KeygenArgs),
+    /// show version information
+    Version,
 }
 
 #[derive(Debug, Clone, Copy, Parser)]
@@ -101,6 +103,10 @@ impl Cli {
         let toml_config = TomlConfig::new(config);
         let config = Config::new(&toml_config, &cli)?;
         match cli.subcommand {
+            Command::Version => {
+                println!("{}", crate::EXPANDED_VERSION);
+                Ok(())
+            }
             Command::Copy => crate::client::run(config, true, false).await,
             Command::Move => crate::client::run(config, false, true).await,
             Command::Paste => crate::client::run(config, false, false).await,
