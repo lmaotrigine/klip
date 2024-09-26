@@ -224,6 +224,14 @@ klfr() {
 alias klpr='klip paste | tar xJpvf -'
 ```
 
+## KLIP integration in third-party applications
+
+- The [KLIP extension for VSCode](https://git.5ht2.me/lmaotrigine/vscode-klip)
+  is a first-party extension that allows copying and pasting text between hosts
+  running the Visual Studio Code text editor.
+- [`klip.vim`](https://git.5ht2.me/lmaotrigine/klip.vim) is a plugin for Vim/
+  Neovim that allows copying and pasting text.
+
 ## Use cases
 
 Use it to
