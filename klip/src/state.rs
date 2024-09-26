@@ -64,17 +64,24 @@ impl State {
         g.is_empty() || g.contains(&ip)
     }
 
-    pub async fn accept_client(&self, mut conn: Stream) -> Result<(), Error> {
-        if let Err(e) = handle_connection(self, &mut conn).await {
+    pub fn accept_client(self: Arc<Self>, mut conn: Stream) {
+        let fut = async move {
+            if let Err(e) = handle_connection(&self, &mut conn).await {
+                self.client_count.fetch_sub(1, Ordering::SeqCst);
+                conn.shutdown().await?;
+                return Err(e);
+            }
             self.client_count.fetch_sub(1, Ordering::SeqCst);
-            conn.shutdown().await?;
-            return Err(e);
-        }
-        self.client_count.fetch_sub(1, Ordering::SeqCst);
-        Ok(())
+            Ok(())
+        };
+        tokio::spawn(async move {
+            if let Err(e) = fut.await {
+                eprintln!("error: {e}");
+            }
+        });
     }
 
-    pub async fn maybe_accept_client(&self, conn: TcpStream) -> Result<(), Error> {
+    pub async fn maybe_accept_client(self: Arc<Self>, conn: TcpStream) -> Result<(), Error> {
         let remote_ip = conn.peer_addr()?.ip();
         let mut count;
         loop {
@@ -94,7 +101,8 @@ impl State {
         }
         let mut conn = Stream::new(conn);
         conn.set_timeout(self.config().timeout());
-        self.accept_client(conn).await
+        self.accept_client(conn);
+        Ok(())
     }
 
     #[cfg_attr(

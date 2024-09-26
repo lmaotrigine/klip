@@ -1,7 +1,6 @@
 // use crate::cli::flags::ParseError;
 use std::fmt::{Debug, Display};
 
-#[derive(Debug)]
 pub enum Error {
     Auth,
     CapacityReached,
@@ -60,6 +59,12 @@ impl Display for Error {
             Self::UnknownOp => f.write_str("unknown opcode"),
             //            Self::ArgumentParsing(e) => Display::fmt(e, f),
         }
+    }
+}
+
+impl Debug for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     error::Error,
@@ -178,11 +180,12 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
 }
 
 pub async fn serve(state: State) -> Result<(), Error> {
+    let state = Arc::new(state);
     tokio::spawn(async move { State::handle_siginfo().await });
     let listener = TcpListener::bind(state.config().listen()).await?;
     loop {
         let (conn, _) = listener.accept().await?;
-        if let Err(e) = state.maybe_accept_client(conn).await {
+        if let Err(e) = state.clone().maybe_accept_client(conn).await {
             eprintln!("error: {e}");
         }
     }
