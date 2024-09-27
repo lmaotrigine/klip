@@ -10,10 +10,10 @@ const fn sha512load(v0: [u64; 2], v1: [u64; 2]) -> [u64; 2] {
 
 const fn sha512_schedule_x2(v0: [u64; 2], v1: [u64; 2], v4to5: [u64; 2], v7: [u64; 2]) -> [u64; 2] {
     const fn sigma0(x: u64) -> u64 {
-        ((x << 63) | (x >> 1)) ^ ((x << 56) | (x >> 8)) ^ (x >> 7)
+        x.rotate_right(1) ^ x.rotate_right(8) ^ (x >> 7)
     }
     const fn sigma1(x: u64) -> u64 {
-        ((x << 45) | (x >> 19)) ^ ((x << 3) | (x >> 61)) ^ (x >> 6)
+        x.rotate_right(19) ^ x.rotate_left(3) ^ (x >> 6)
     }
     let [w1, w0] = v0;
     let [_, w2] = v1;

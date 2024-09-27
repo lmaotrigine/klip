@@ -185,7 +185,7 @@ pub async fn serve(state: State) -> Result<(), Error> {
     let listener = TcpListener::bind(state.config().listen()).await?;
     loop {
         let (conn, _) = listener.accept().await?;
-        if let Err(e) = state.clone().maybe_accept_client(conn).await {
+        if let Err(e) = state.clone().maybe_accept_client(conn) {
             eprintln!("error: {e}");
         }
     }

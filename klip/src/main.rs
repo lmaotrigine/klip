@@ -70,6 +70,7 @@ use error::Error;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 #[tokio::main]
+#[allow(clippy::needless_return)] // macro generated false positive
 async fn main() -> Result<(), Error> {
     #[cfg(windows)]
     windows_preflight();

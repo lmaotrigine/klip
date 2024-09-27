@@ -81,7 +81,7 @@ impl State {
         });
     }
 
-    pub async fn maybe_accept_client(self: Arc<Self>, conn: TcpStream) -> Result<(), Error> {
+    pub fn maybe_accept_client(self: Arc<Self>, conn: TcpStream) -> Result<(), Error> {
         let remote_ip = conn.peer_addr()?.ip();
         let mut count;
         loop {
