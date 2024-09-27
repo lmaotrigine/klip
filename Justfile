@@ -213,21 +213,29 @@ lipo-prepare: package-dir
 package: package-prepare
   cd packages/prep && tar cv {{output-filename}} | xz -9 > "../klip-{{target}}.tar.xz"
   cd packages/prep && tar cv * | xz -9 > "../klip-{{target}}.full.tar.xz"
+  cd packages && shasum -a 256 "klip-{{target}}.tar.xz" > "klip-{{target}}.tar.xz.sha256"
+  cd packages && shasum -a 256 "klip-{{target}}.full.tar.xz" > "klip-{{target}}.full.tar.xz.sha256"
 
 [macos]
 package: package-prepare
   cd packages/prep && zip -r -9 "../klip-{{target}}.zip" {{output-filename}}
   cd packages/prep && zip -r -9 "../klip-{{target}}.full.zip" *
+  cd packages && shasum -a 256 "klip-{{target}}.zip" > "klip-{{target}}.zip.sha256"
+  cd packages && shasum -a 256 "klip-{{target}}.full.zip" > "klip-{{target}}.full.zip.sha256"
 
 [windows]
 package: package-prepare
   cd packages/prep && 7z a -mx9 "../klip-{{target}}.zip" {{output-filename}}
   cd packages/prep && 7z a -mx9 "../kli-{{target}}.full.zip" *
+  cd packages && certutil -hashfile "klip-{{target}}.zip" SHA256 > "klip-{{target}}.zip.sha256"
+  cd packages && certutil -hashfile "klip-{{target}}.full.zip" SHA256 > "klip-{{target}}.full.zip.sha256"
 
 [macos]
 package-lipo: lipo-prepare
   cd packages/prep && zip -r -9 "../klip-universal-apple-darwin.zip" {{output-filename}}
   cd packages/prep && zip -r -9 "../klip-universal-apple-darwin.full.zip" *
+  cd packages && shasum -a 256 "klip-universal-apple-darwin.zip" > "klip-universal-apple-darwin.zip.sha256"
+  cd packages && shasum -a 256 "klip-universal-apple-darwin.full.zip" > "klip-universal-apple-darwin.full.zip.sha256"
 
 [macos]
 repackage-lipo: package-dir
@@ -241,3 +249,5 @@ repackage-lipo: package-dir
   rm -rf packages/prep/{arm64,x64,x64h}
   cd packages/prep && zip -r -9 "../klip-universal-apple-darwin.zip" {{output-filename}}
   cd packages/prep && zip -r -9 "../klip-universal-apple-darwin.full.zip" *
+  cd packages && shasum -a 256 "klip-universal-apple-darwin.zip" > "klip-universal-apple-darwin.zip.sha256"
+  cd packages && shasum -a 256 "klip-universal-apple-darwin.full.zip" > "klip-universal-apple-darwin.full.zip.sha256"
