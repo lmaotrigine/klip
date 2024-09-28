@@ -36,12 +36,21 @@ pedantic = "deny"
 nursery = "deny"
 cargo = "deny"
 
+[workspace.lints.rust.unexpected_cfgs] # for curve25519 build-time cfgs and tests
+priority = 1
+level = "warn"
+check-cfg = ['cfg(disabled)', 'cfg(feature, values("dummy"))']
+
 [workspace.dependencies]
 libc = "0.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "io-util", "time"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 
+# our dependency tree is amenable to aggressive optimization without much
+# compile time overhead. it still takes a bit, though.
 [profile.release]
+# on some platforms, opt-level = 2 performs better. i haven't profiled this
+# extensively enough to make a decision.
 opt-level = 3
 debug = 1
 split-debuginfo = "packed"
