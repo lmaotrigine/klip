@@ -23,10 +23,6 @@ xchacha20 = { version = "0.0.0", path = "../crypto/xchacha20" }
 [target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
 jemallocator = "0.5"
 
-[target.'cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))'.dependencies.tokio]
-workspace = true
-features = ["signal"]
-
 [target.'cfg(unix)'.dependencies]
 libc.workspace = true
 

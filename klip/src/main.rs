@@ -69,12 +69,39 @@ use error::Error;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
+#[allow(clippy::redundant_pub_crate)] // macro generated
+async fn shutdown() {
+    let ctrlc = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install ^C handler");
+    };
+    #[cfg(unix)]
+    let term = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+    #[cfg(not(unix))]
+    let term = core::future::pending::<()>();
+    tokio::select! {
+        () = ctrlc => (),
+        () = term => (),
+    }
+}
 #[tokio::main]
-#[allow(clippy::needless_return)] // macro generated false positive
+#[allow(clippy::needless_return, clippy::redundant_pub_crate)] // macro generated
 async fn main() -> Result<(), Error> {
     #[cfg(windows)]
     windows_preflight();
-    Cli::run().await
+    tokio::select! {
+        r = async { Cli::run().await } => r,
+        () = shutdown() => {
+            eprintln!("violently shutting down");
+            std::process::exit(1);
+        },
+    }
 }
 
 /// Windows preflight security mitigations.
