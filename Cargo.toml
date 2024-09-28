@@ -14,9 +14,11 @@ members = [ "cli",
   "klip",
 ]
 default-members = ["klip"]
+package.version = "0.1.0"
 package.publish = false
 package.readme = "README.md"
 package.repository = "https://git.5ht2.me/lmaotrigine/klip"
+metadata.crane.name = "klip"
 
 [workspace.lints.rust]
 dead_code = "deny"
