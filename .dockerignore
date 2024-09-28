@@ -1,0 +1,6 @@
+/target
+/result
+.vscode/
+.idea/
+.DS_Store
+/packages
