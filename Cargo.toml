@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
-members = [ "cli",
+members = [
+  "cli",
   "crypto/blake2b",
   "crypto/common",
   "crypto/curve25519",
@@ -14,11 +15,13 @@ members = [ "cli",
   "klip",
 ]
 default-members = ["klip"]
-package.version = "0.1.0"
-package.publish = false
-package.readme = "README.md"
-package.repository = "https://git.5ht2.me/lmaotrigine/klip"
 metadata.crane.name = "klip"
+
+[workspace.package]
+version = "0.1.0"  #:version
+publish = false
+readme = "README.md"
+repository = "https://git.5ht2.me/lmaotrigine/klip"
 
 [workspace.lints.rust]
 dead_code = "deny"
