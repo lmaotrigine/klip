@@ -13,7 +13,7 @@ class KlipBin < Formula
   def install
     bin.install "klip"
     #man1.install "doc/klip.1"
-    #bash_completion.install "complete/klip.bash"
-    #zsh_completion.install "complete/_klip"
+    bash_completion.install "complete/klip.bash"
+    zsh_completion.install "complete/_klip"
   end
 end
