@@ -16,8 +16,22 @@
     clippy::unwrap_used
 )]
 
+fn set_git_hash() {
+    use std::process::Command;
+    let args = &["rev-parse", "--short", "HEAD"];
+    let Ok(output) = Command::new("git").args(args).output() else {
+        return;
+    };
+    let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if hash.is_empty() {
+        return;
+    }
+    println!("cargo:rustc-env=KLIP_BUILD_GIT_HASH={hash}");
+}
+
 fn main() {
     const MANIFEST: &str = "../pkg/windows/Manifest.xml";
+    set_git_hash();
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-env-changed=TARGET");
     let target_os = std::env::var("CARGO_CFG_TARGET_OS");

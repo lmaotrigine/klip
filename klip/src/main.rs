@@ -23,7 +23,9 @@ use std::{
 const EXPANDED_VERSION: &str = concat!(
     "v",
     env!("CARGO_PKG_VERSION"),
-    " (protocol version ",
+    " (rev ",
+    env!("KLIP_BUILD_GIT_HASH"),
+    ") (protocol version ",
     default_client_version!(),
     ")"
 );
