@@ -177,9 +177,11 @@ lint: clippy fmt-check
 
 package-dir:
   rm -rf packages/prep
-  mkdir -p packages/prep
-  cp LICENSE packages/prep || true
+  mkdir -p packages/prep/doc
+  cp LICENSE packages/prep
   cp README.md packages/prep
+  cp -r completions packages/prep
+  cp doc/klip.1 packages/prep/doc
 
 [macos]
 package-prepare: build package-dir
