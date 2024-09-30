@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-  "cli",
   "crypto/blake2b",
   "crypto/common",
   "crypto/curve25519",
