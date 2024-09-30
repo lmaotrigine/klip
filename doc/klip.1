@@ -108,8 +108,7 @@ to the commands they are associated with.
 \fI\-c\fP \fIFILE\fP, \fI\-\-config\fP=\fIFILE\fP
 .RS 4
 Load configuration from \fIFILE\fP. If this flag is not specified, klip will
-look for a config file at \fI$HOME/.klip.toml\fP on Unix-like systems and
-\fI%USERPROFILE%\\klip.toml\fP on Windows.
+look for a config file at \fI$HOME/.klip.toml\fP.
 .RE
 \fI\-h\fP, \fI\-\-help\fP
 .RS 4
@@ -171,9 +170,8 @@ catastrophic errors and for soft errors.
 .
 .SH CONFIGURATION FILES
 klip reads its configuration from a TOML file. The default location for this
-file is \fI$HOME/.klip.toml\fP on Unix-like systems and
-\fI%USERPROFILE%\\klip.toml\fP on Windows. This can be overridden with the
-\fI\-\-config\fP option.
+file is \fI$HOME/.klip.toml\fP. This can be overridden with the \fI\-\-config\fP
+option.
 .sp
 A configuration file can be generated using the \fIgenkeys\fP command. Each
 invocation of this command produces a set of keys for the server and client.
