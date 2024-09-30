@@ -41,3 +41,22 @@ features = [
 
 [lints]
 workspace = true
+
+[package.metadata.deb]
+section = "utils"
+assets = [
+  ["target/release/klip", "usr/bin/", "755"],
+  ["../LICENSE", "usr/share/doc/klip/", "644"],
+  ["../README.md", "usr/share/doc/klip/README", "644"],
+  ["../CHANGELOG.md", "usr/share/doc/klip/CHANGELOG", "644"],
+  ["../doc/klip.1", "usr/share/man/man1/klip.1", "644"],
+  ["../completions/klip.bash", "usr/share/bash-completion/completions/klip", "644"],
+  ["../completions/klip.fish", "usr/share/fish/vendor_completions.d/klip.fish", "644"],
+  ["../completions/_klip", "usr/share/zsh/vendor-completions/_klip", "644"],
+  ["../completions/klip.elv", "usr/share/elvish/lib/", "644"],
+]
+extended-description = """\
+klip allows you to share arbitrary content between hosts anywhere on the
+internet. It works by transferring the content to an intermediary server, which
+every client with the correct credentials can query.
+"""
