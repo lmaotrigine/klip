@@ -93,7 +93,7 @@ impl State {
             }
             if self
                 .client_count
-                .compare_exchange(count, count + 1, Ordering::SeqCst, Ordering::SeqCst)
+                .compare_exchange_weak(count, count + 1, Ordering::SeqCst, Ordering::SeqCst)
                 .is_ok()
             {
                 break;
