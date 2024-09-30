@@ -1,0 +1,214 @@
+.TH KLIP 1 2024-09-29 "0.1.0" "User Commands"
+.
+.
+.SH NAME
+klip \- copy/paste anything over the network
+.
+.
+.SH SYNOPSIS
+.sp
+\fBklip\fP [\fIOPTIONS\fP] <\fICOMMAND\fP>
+.sp
+\fBklip\fP [\fIOPTIONS\fP] \fBhelp\fP [\fICOMMAND\fP]
+.sp
+\fBklip\fP [\fIOPTIONS\fP] \fBversion\fP
+.sp
+\fBklip\fP [\fIOPTIONS\fP] \fB\-\-help\fP
+.sp
+\fBklip\fP [\fIOPTIONS\fP] \fB\-\-version\fP
+.
+.
+.SH DESCRIPTION
+klip is a tool for copying and pasting anything over the network. It works by
+sending content to an intermediary server, which can then be retrieved by any
+client with the correct credentials. This allows for sharing data across hosts
+that are behind different NATs, firewalls, or are otherwise unable to
+communicate directly.
+.sp
+The server does not know much about the data it is handling, and can therefore
+be exposed to the public internet without much risk.
+.sp
+klip reads from standard input and writes to standard output. For the sake of
+simplicity and ease of maintenance, there are no options to change the input or
+output to point to files or sockets or anything else. Instead, one can use
+pipes or redirection to achieve the desired effect.
+.
+.
+.SH COMMANDS
+.TP 12
+\fIc\fP, \fIcopy\fP
+.RS 4
+Send the content of standard input to the klip clipboard.
+.sp
+The clipboard is not persisted anywhere and has no history. This command will
+overwrite any existing content.
+.RE
+.TP 12
+\fIp\fP, \fIpaste\fP
+.RS 4
+Retrieve content from the klip clipboard and write it to standard output.
+.sp
+The content on the server is left intact until the next \fIcopy\fP or \fImove\fP
+command.
+.RE
+.TP 12
+\fIm\fP, \fImove\fP
+.RS 4
+Retrieve and delete content from the klip clipboard and write it to standard
+output.
+.sp
+This operation is not atomic. This means that there is the possibility of a race
+condition if multiple clients query the clipboard. There is no ordering of
+individual client connections, therefore it cannot be determined which of the
+racing clients will actually receive the content. However, the client that
+issued the move is guaranteed to receive the content.
+.RE
+.TP 12
+\fIserve\fP [\fIOPTIONS\fP]
+.RS 4
+Start a klip server.
+.sp
+This command must be run on a machine that is accessible to all clients that
+you wish to share content with. Like other commands, this is also silent and
+there are no access logs.
+.RE
+.TP 12
+\fIgenkeys\fP [\fIOPTIONS\fP]
+.RS 4
+Generates all required keys and writes the resultant configuration to standard
+output.
+.sp
+The configuration printed includes the default listen and connect addresses and
+is formatted as a TOML document for ease of copying into a configuration file.
+.sp
+Not all keys are actually necessary for both clients and servers. There are
+separate sections in the output for each use case, and it is recommended to only
+store what is necessary in the configuration file for each host.
+.RE 
+.TP 12
+\fIhelp\fP [\fICOMMAND\fP]
+.RS 4
+Display help information for a specific command.
+.sp
+If no command is specified, this will display general help information.
+.RE
+.TP 12
+\fIversion\fP
+.RS 4
+Display version information.
+.RE
+.
+.
+.SH OPTIONS
+This section documents all flags that klip accepts. Flags are grouped according
+to the commands they are associated with.
+.
+.SS KLIP OPTIONS
+.sp
+\fI\-c\fP \fIFILE\fP, \fI\-\-config\fP=\fIFILE\fP
+.RS 4
+Load configuration from \fIFILE\fP. If this flag is not specified, klip will
+look for a config file at \fI$HOME/.klip.toml\fP on Unix-like systems and
+\fI%USERPROFILE%\\klip.toml\fP on Windows.
+.RE
+\fI\-h\fP, \fI\-\-help\fP
+.RS 4
+Display help information for the command.
+.RE
+\fI\-V\fP, \fI\-\-version\fP
+.RS 4
+Display version information.
+.RE
+.
+.SS SERVE OPTIONS
+.sp
+\fI\-\-max\-clients\fP=\fINUM\fP
+.RS 4
+Set the maximum number of simultaneous client connections. Defaults to 10.
+.RE
+\fI\-\-max\-len\-mb\fP=\fINUM\fP
+.RS 4
+Set the maximum content length to accept in MiB. Set to 0 for no limit (which is
+the default).
+.RE
+\fI\-t\fP \fITIMEOUT\fP, \fI\-\-timeout\fP=\fITIMEOUT\fP
+.RS 4
+Set the connection timeout in seconds. Defaults to 10.
+.sp
+This refers only to the timeout for establishing a connection. Use the
+\fI\-\-data\-timeout\fP flag to set the data transmission timeout.
+.RE
+\fI\-\-data\-timeout\fP=\fITIMEOUT\fP
+.RS 4
+Set the data transmission timeout in seconds. Defaults to 3600.
+.RE
+.
+.SS GENKEYS OPTIONS
+.sp
+\fI\-p\fP, \fI\-\-password\fP
+.RS 4
+If set, the keys are generated deterministically from a password. The password
+must be provided at the subsequent prompt and will not be displayed on the
+screen while typing.
+.sp
+This flag is not recommended to be set on most systems, and randomly generated
+keys should be used instead. This is provided because it is useful in some
+airgapped systems.
+.RE
+.
+.
+.SH EXIT STATUS
+After successful execution, the exit status of the program is \fB0\fP. If an
+error occurred, the exit status is \fB1\fP.
+.sp
+.IP \(bu 3n
+\fB0\fP exit status indicates that the command was successful.
+.
+.IP \(bu 3n
+\fB1\fP exit status indicates that an error occurred. This is true for both
+catastrophic errors and for soft errors.
+.
+.
+.SH CONFIGURATION FILES
+klip reads its configuration from a TOML file. The default location for this
+file is \fI$HOME/.klip.toml\fP on Unix-like systems and
+\fI%USERPROFILE%\\klip.toml\fP on Windows. This can be overridden with the
+\fI\-\-config\fP option.
+.sp
+A configuration file can be generated using the \fIgenkeys\fP command. Each
+invocation of this command produces a set of keys for the server and client.
+Clients that share these keys can all share content with each other through the
+server.
+.sp
+Only the \fBlisten\fP and \fBconnect\fP fields are meant to be edited manually.
+These fields represent the address that the server should bind to, and the
+address that the client should connect to, respectively.
+.
+.
+.SH SHELL COMPLETION
+Shell completion files are included in the release tarball for Bash, Fish, Zsh,
+PowerShell, and Elvish.
+.sp
+For \fBbash\fP, move \fBklip.bash\fP to \fB$XDG_CONFIG_HOME/bash_completion\fP
+or \fB/etc/bash_completion.d/\fP.
+.sp
+For \fBfish\fP, move \fBklip.fish\fP to \fB$HOME/.config/fish/completions/\fP.
+.sp
+For \fBzsh\fP, move \fB_klip\fP to one of your \fB$fpath\fP directories.
+.
+.
+.SH VERSION
+0.1.0
+.
+.
+.SH HOMEPAGE
+\fIhttps://git.5ht2.me/lmaotrigine/klip\fP
+.sp
+Please report bugs and feature requests to the issue tracker. Please do your
+best to provide a reproducible test case for bugs. This should include the
+content being copied, the \fBklip\fP command, the actual output, and the
+expected output.
+.
+.
+.SH AUTHORS
+Isis Ebsen <\fIisis@5ht2.me\fP>
