@@ -18,6 +18,8 @@ metadata.crane.name = "klip"
 
 [workspace.package]
 version = "0.1.0"  #:version
+authors = ["Isis Ebsen <isis@5ht2.me>"]
+license = "MPL-2.0"
 publish = false
 readme = "README.md"
 repository = "https://git.5ht2.me/lmaotrigine/klip"
