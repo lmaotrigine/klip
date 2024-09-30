@@ -47,7 +47,6 @@ mod state;
 mod util;
 
 use cli::Cli;
-use error::Error;
 
 // since Rust no longer uses jemalloc by default, klip will, by default, use the
 // system allocator. on linux, this would normally be glibc's allocator, which
@@ -94,7 +93,7 @@ async fn shutdown() {
 }
 #[tokio::main]
 #[allow(clippy::needless_return, clippy::redundant_pub_crate)] // macro generated
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<(), error::Context> {
     #[cfg(windows)]
     windows_preflight();
     tokio::select! {

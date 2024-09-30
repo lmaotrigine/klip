@@ -1,6 +1,6 @@
 use crate::{
     config::{Config, TomlConfig},
-    error::Error,
+    error::{Context, Error, ResultExt},
     state::State,
     util::home_dir,
 };
@@ -27,10 +27,13 @@ pub struct Cli {
 #[derive(Debug, Clone, Copy, Subcommand)]
 pub enum Command {
     /// store content
+    #[clap(alias = "c")]
     Copy,
     /// retrieve content
+    #[clap(alias = "p")]
     Paste,
     /// retrieve and delete content
+    #[clap(alias = "m")]
     Move,
     /// start a server
     Serve(ServerArgs),
@@ -77,7 +80,7 @@ pub struct KeygenArgs {
 }
 
 impl Cli {
-    pub async fn run() -> Result<(), Error> {
+    pub async fn run() -> Result<(), Context> {
         let cli = Self::parse();
 
         if let Command::Keygen(KeygenArgs { password }) = cli.subcommand {
@@ -86,7 +89,7 @@ impl Cli {
                 None => Self::default_config_file()?,
             };
             let key = if password {
-                crate::password::get()?
+                crate::password::get().context("failed to read password interactively")?
             } else {
                 String::new()
             };
@@ -97,12 +100,20 @@ impl Cli {
             Some(config_file) => config_file.clone(),
             None => Self::default_config_file()?,
         };
-        let config = toml::from_str::<toml::value::Table>(&std::fs::read_to_string(
-            config_file.canonicalize()?,
-        )?)?;
+        let config = toml::from_str::<toml::value::Table>(
+            &std::fs::read_to_string(config_file.canonicalize().context(format!(
+                "failed to canonicalize config file path '{}'",
+                config_file.display()
+            ))?)
+            .context(format!(
+                "while reading config file at '{}'",
+                config_file.display()
+            ))?,
+        )
+        .context("while parsing config file")?;
         let toml_config = TomlConfig::new(config);
         let config = Config::new(&toml_config, &cli)?;
-        match cli.subcommand {
+        let ret = match cli.subcommand {
             Command::Version => {
                 println!("{}", crate::EXPANDED_VERSION);
                 Ok(())
@@ -112,7 +123,8 @@ impl Cli {
             Command::Paste => crate::client::run(config, false, false).await,
             Command::Serve(_) => crate::server::serve(State::new(config)).await,
             Command::Keygen(_) => unreachable!(),
-        }
+        };
+        Ok(ret?)
     }
 
     fn default_config_file() -> Result<PathBuf, Error> {

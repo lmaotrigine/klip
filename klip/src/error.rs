@@ -1,5 +1,7 @@
-// use crate::cli::flags::ParseError;
-use std::fmt::{Debug, Display};
+use std::{
+    borrow::Cow,
+    fmt::{Debug, Display},
+};
 
 pub enum Error {
     Auth,
@@ -20,7 +22,6 @@ pub enum Error {
     Signature,
     Toml(toml::de::Error),
     UnknownOp,
-    //    ArgumentParsing(ParseError),
 }
 
 impl Display for Error {
@@ -57,7 +58,6 @@ impl Display for Error {
             Self::Signature => f.write_str("signature verification failed"),
             Self::Toml(e) => write!(f, "could not parse TOML config: {e}"),
             Self::UnknownOp => f.write_str("unknown opcode"),
-            //            Self::ArgumentParsing(e) => Display::fmt(e, f),
         }
     }
 }
@@ -86,8 +86,45 @@ impl From<ed25519::SignatureError> for Error {
     }
 }
 
-// impl From<ParseError> for Error {
-//     fn from(value: ParseError) -> Self {
-//         Self::ArgumentParsing(value)
-//     }
-// }
+pub struct Context {
+    error: Error,
+    context: Option<Cow<'static, str>>,
+}
+
+impl Display for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(context) = &self.context {
+            write!(f, "{}: {}", context, self.error)
+        } else {
+            Display::fmt(&self.error, f)
+        }
+    }
+}
+
+impl Debug for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self, f)
+    }
+}
+
+impl From<Error> for Context {
+    fn from(error: Error) -> Self {
+        Self {
+            error,
+            context: None,
+        }
+    }
+}
+
+pub trait ResultExt<T> {
+    fn context<C: Into<Cow<'static, str>>>(self, context: C) -> Result<T, Context>;
+}
+
+impl<T, E: Into<Error>> ResultExt<T> for Result<T, E> {
+    fn context<C: Into<Cow<'static, str>>>(self, context: C) -> Result<T, Context> {
+        self.map_err(|e| Context {
+            error: e.into(),
+            context: Some(context.into()),
+        })
+    }
+}
