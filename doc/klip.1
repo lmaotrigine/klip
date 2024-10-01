@@ -57,11 +57,8 @@ command.
 Retrieve and delete content from the klip clipboard and write it to standard
 output.
 .sp
-This operation is not atomic. This means that there is the possibility of a race
-condition if multiple clients query the clipboard. There is no ordering of
-individual client connections, therefore it cannot be determined which of the
-racing clients will actually receive the content. However, the client that
-issued the move is guaranteed to receive the content.
+This operation is atomic, meaning that the content is deleted only after all
+existing clients have finished interacting with it.
 .RE
 .TP 12
 \fIserve\fP [\fIOPTIONS\fP]

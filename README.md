@@ -172,11 +172,8 @@ Retrieve the content of the clipboard and spit it to standard output:
 $ klip paste
 ```
 
-Retrieve the content of the clipboard, spit it to standard output, and clear the
-clipboard. Not necessarily in that order. Only one lucky client will have the
-privilege of seeing the content. The choice was between this race and latency on
-every request. I chose the race because this is not commonly encountered in
-practice (at least during my usage).
+Retrieve the content of the clipboard, clear the clipboard, and spit it to
+standard output.
 
 ```console
 $ klip move
