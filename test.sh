@@ -4,7 +4,7 @@ set -eux
 
 TMPDIR=${TMPDIR:-/tmp}
 TARGET=${TARGET:-x86_64-unknown-linux-gnu}
-#cargo +nightly -Zbuild-std=std,panic_abort build --target "${TARGET}" --release -p klip
+#cargo +nightly -Zbuild-std=std,panic_abort build --target "${TARGET}" --release --locked -p klip
 __cmdline="target/${TARGET}/release/klip"
 KLIP_S="${__cmdline} -c ${TMPDIR}/klip-test-server.toml serve"
 KLIP_C="${__cmdline} -c ${TMPDIR}/klip-test-client.toml"

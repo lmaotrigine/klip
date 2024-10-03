@@ -129,7 +129,7 @@ link-args := if target-os == "windows" {
 }
 
 cargo-check-args := (" --target ") + (target) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" }) + (cargo-split-debuginfo)
-cargo-build-args := (if release != "" { "--release" } else { "" }) + (cargo-check-args) + (cargo-no-default-features) + (if cargo-features != "" { " --features " + cargo-features } else { "" }) + (if timings != "" { "--timings" } else { "" })
+cargo-build-args :=  " --locked " + (if release != "" { "--release" } else { "" }) + (cargo-check-args) + (cargo-no-default-features) + (if cargo-features != "" { " --features " + cargo-features } else { "" }) + (if timings != "" { "--timings" } else { "" })
 export RUSTFLAGS := (rustc-gcclibs) + (rustc-icf) + (link-args) + (share-generics) + " -C symbol-mangling-version=v0" + (if ci == "" { " -C target-cpu=native" } else { "" })
 
 toolchain-name := if cargo-buildstd != "" { "nightly" } else { "stable" }

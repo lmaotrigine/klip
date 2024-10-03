@@ -20,7 +20,7 @@ COPY . .
 RUN --mount=type=cache,target=/root/.cargo/registry \
   --mount=type=cache,target=/root/.cargo/git \
   --mount=type=cache,target=/root/target \
-  cargo zigbuild --target "$(cat rust_target.txt)" --release && \
+  cargo zigbuild --target "$(cat rust_target.txt)" --release --locked && \
   cp "target/$(cat rust_target.txt)/release/klip" /klip
 
 FROM scratch

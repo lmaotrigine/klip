@@ -69,14 +69,14 @@ some extensive benchmarking, but if you find a corner case that hinders
 performance, please let me know! Use either of the following incantations:
 
 ```console
-$ cargo build --release
+$ cargo build --release --locked
 ```
 
 Only required if you are either developing, or you want AVX512 SIMD acceleration
 for Curve25519 scalar multiplication.
 
 ```console
-$ cargo +nightly build --release
+$ cargo +nightly build --release --locked
 ```
 
 The `klip` executable should then be available in the `target/release` directory.
