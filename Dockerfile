@@ -25,8 +25,14 @@ RUN --mount=type=cache,target=/root/.cargo/registry \
   cp "target/$(cat rust_target.txt)/release/klip" /klip
 
 FROM scratch
+LABEL org.opencontainers.image.source "https://git.5ht2.me/lmaotrigine/klip"
+LABEL org.opencontainers.image.authors "isis@5ht2.me"
+LABEL org.opencontainers.image.title "klip"
+LABEL org.opencontainers.image.description "Copy/paste anything over the network."
+LABEL org.opencontainers.image.licenses "MPL-2.0"
 COPY --from=build /klip /klip
 WORKDIR /
 ENV HOME=/
+RUN ["/klip", "--version"]
 ENTRYPOINT ["/klip"]
 CMD ["serve"]
