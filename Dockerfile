@@ -2,7 +2,8 @@ FROM --platform=$BUILDPLATFORM ubuntu:24.04 AS build
 ENV HOME="/root"
 WORKDIR $HOME
 SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential=* curl=* python3-venv=* clang=* lld=*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  git=* build-essential=* curl=* python3-venv=* clang=* lld=*
 RUN python3 -m venv $HOME/.venv && .venv/bin/pip install cargo-zigbuild
 ENV PATH="$HOME/.venv/bin:$PATH"
 ARG TARGETPLATFORM
