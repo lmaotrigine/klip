@@ -1,12 +1,12 @@
-# KLIP
+# klip
 
 Copy/paste anything over the network.
 
-![KLIP](doc/klip.svg)
+![klip](doc/klip.svg)
 
 Ever needed a clipboard that works over the network?
 
-KLIP seamlessly transfers URLs, code snippets, documents, and virtually anything
+klip seamlessly transfers URLs, code snippets, documents, and virtually anything
 else between arbitrary hosts.
 
 No SSH needed, and hosts can sit behind NAT gateways, on different networks.
@@ -17,7 +17,7 @@ Fill in the clipboard ("copy") with whatever comes into the standard input:
 $ echo "clipboard content" | klc
 ```
 
-Magically retrieve the content from any other host that has KLIP installed with
+Magically retrieve the content from any other host that has klip installed with
 the same configuration:
 
 ```console
@@ -83,7 +83,7 @@ The `klip` executable should then be available in the `target/release` directory
 
 ## Setup
 
-KLIP requires a bunch of keys. Generate them all with
+klip requires a bunch of keys. Generate them all with
 
 ```console
 $ klip genkeys
@@ -221,9 +221,9 @@ klfr() {
 alias klpr='klip paste | tar xJpvf -'
 ```
 
-## KLIP integration in third-party applications
+## klip integration in third-party applications
 
-- The [KLIP extension for VSCode](https://git.5ht2.me/lmaotrigine/vscode-klip)
+- The [klip extension for VSCode](https://git.5ht2.me/lmaotrigine/vscode-klip)
   is a first-party extension that allows copying and pasting text between hosts
   running the Visual Studio Code text editor.
 - [`klip.vim`](https://git.5ht2.me/lmaotrigine/klip.vim) is a plugin for Vim/
