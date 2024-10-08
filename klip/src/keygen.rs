@@ -27,9 +27,7 @@ impl rand_core::RngCore for DeterministicRandom {
         let req_len = dest.len();
         let left = self.pool.len() - self.pos;
         if left < req_len {
-            return Err(
-                unsafe { NonZeroU32::new_unchecked(rand_core::Error::CUSTOM_START + 2) }.into(),
-            );
+            return Err(new_nonzero(rand_core::Error::CUSTOM_START + 2).into());
         }
         dest.copy_from_slice(&self.pool[self.pos..self.pos + req_len]);
         for i in 0..req_len {
@@ -153,6 +151,13 @@ pub fn generate_keys(config_file_name: impl std::fmt::Display, key: &[u8]) {
 }
 
 #[inline]
+#[allow(unsafe_code)]
 const fn from_utf8(b: &[u8]) -> &str {
     unsafe { std::str::from_utf8_unchecked(b) }
+}
+
+#[inline]
+#[allow(unsafe_code)]
+const fn new_nonzero(n: u32) -> NonZeroU32 {
+    unsafe { NonZeroU32::new_unchecked(n) }
 }

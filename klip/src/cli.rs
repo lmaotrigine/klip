@@ -2,12 +2,10 @@ use crate::{
     config::{Config, TomlConfig},
     error::{Context, Error, ResultExt},
     state::State,
-    util::home_dir,
 };
 use clap::{Parser, Subcommand};
+use platform::env::home_dir;
 use std::{num::NonZeroUsize, path::PathBuf};
-
-// mod flags;
 
 #[derive(Debug, Parser)]
 #[clap(about, author, version = crate::EXPANDED_VERSION)]
@@ -89,7 +87,7 @@ impl Cli {
                 None => Self::default_config_file()?,
             };
             let key = if password {
-                crate::password::get().context("failed to read password interactively")?
+                platform::password::get().context("failed to read password interactively")?
             } else {
                 String::new()
             };

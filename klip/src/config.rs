@@ -135,9 +135,10 @@ impl std::fmt::Debug for Config {
             let mut out = [0; 16];
             let inp = self.encrypt_sk_id.to_le_bytes();
             crate::util::hex(&inp, &mut out);
-            s.field("encrypt_sk_id", &unsafe {
-                std::str::from_utf8_unchecked(&out)
-            });
+            s.field(
+                "encrypt_sk_id",
+                &std::str::from_utf8(&out).expect("hex should be valid utf8"),
+            );
             s.field("psk", &self.psk);
             s.field("sign_pk", &self.sign_pk);
             s.field("sign_sk", &self.sign_sk);

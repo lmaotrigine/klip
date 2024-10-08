@@ -8,6 +8,7 @@
     rust_2018_idioms,
     trivial_casts,
     trivial_numeric_casts,
+    unsafe_code,
     unused,
     clippy::all,
     clippy::pedantic,
@@ -41,7 +42,6 @@ mod client;
 mod config;
 mod error;
 mod keygen;
-mod password;
 mod server;
 mod state;
 mod util;
@@ -95,32 +95,12 @@ async fn shutdown() {
 #[allow(clippy::needless_return, clippy::redundant_pub_crate)] // macro generated
 async fn main() -> Result<(), error::Context> {
     #[cfg(windows)]
-    windows_preflight();
+    platform::preflight();
     tokio::select! {
         r = async { Cli::run().await } => r,
         () = shutdown() => {
             eprintln!("violently shutting down");
             std::process::exit(1);
         },
-    }
-}
-
-/// Windows preflight security mitigations.
-///
-/// This attempts to defend against malicious DLLs that *may* sit alongside klip
-/// in the same directory.
-#[cfg(windows)]
-fn windows_preflight() {
-    use windows_sys::Win32::System::LibraryLoader::{
-        SetDefaultDllDirectories, LOAD_LIBRARY_SEARCH_SYSTEM32,
-    };
-    // default to delay loading DLLs from the system directory.
-    // for DLLs loaded at load time, this relies on the `/DELAYLOAD` linker flag.
-    // this is only necessary prior to Windows 10 RS1.
-    unsafe {
-        let result = SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32);
-        // SetDefaultDllDirectories should never fail if given valid arguments.
-        // But just to be safe, bail if it didn't.
-        assert_ne!(result, 0);
     }
 }

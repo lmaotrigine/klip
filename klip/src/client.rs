@@ -2,9 +2,10 @@ use crate::{
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     config::Config,
     error::Error,
-    util::{is_a_tty, Stream},
+    util::Stream,
 };
 use crypto_common::constant_time::ConstantTimeEq;
+use platform::tty::isatty;
 use rand_core::RngCore;
 use std::{
     io::{self, Read, Write},
@@ -76,7 +77,7 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     if wh3.as_bytes().ct_eq(h3).to_u8() != 1 {
         return Err(Error::Auth);
     }
-    if is_a_tty(true) {
+    if isatty(true) {
         eprintln!("Sent");
     }
     Ok(())

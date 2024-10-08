@@ -16,6 +16,7 @@ clap = { version = "4", features = ["wrap_help", "derive"] }
 crypto-common = { version = "0.0.0", path = "../crypto/common" }
 ed25519 = { version = "0.0.0", path = "../crypto/ed25519" }
 parking_lot = "0.12"
+platform = { version = "0.0.0", path = "../lib/platform" }
 rand_core = { version = "0.6", features = ["getrandom"] }
 scrypt = { version = "0.0.0", path = "../crypto/scrypt" }
 tokio.workspace = true
@@ -24,20 +25,6 @@ xchacha20 = { version = "0.0.0", path = "../crypto/xchacha20" }
 
 [target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
 jemallocator = "0.5"
-
-[target.'cfg(unix)'.dependencies]
-libc.workspace = true
-
-[target.'cfg(windows)'.dependencies.windows-sys]
-version = "0.52"
-features = [
-  "Win32_Foundation",
-  "Win32_Security",
-  "Win32_Storage_FileSystem",
-  "Win32_System_Console",
-  "Win32_System_LibraryLoader",
-  "Win32_UI_Shell",
-]
 
 [lints]
 workspace = true

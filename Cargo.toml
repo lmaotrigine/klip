@@ -12,6 +12,7 @@ members = [
   "crypto/target_features",
   "crypto/xchacha20",
   "klip",
+  "lib/platform",
 ]
 default-members = ["klip"]
 metadata.crane.name = "klip"

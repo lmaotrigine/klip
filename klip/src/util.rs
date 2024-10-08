@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufStream},
     net::TcpStream,
@@ -75,79 +75,6 @@ impl Stream {
     pub async fn shutdown(mut self) -> std::io::Result<()> {
         self.inner.shutdown().await
     }
-}
-
-#[cfg(unix)]
-#[inline]
-pub fn is_a_tty(stderr: bool) -> bool {
-    unsafe {
-        libc::isatty(if stderr {
-            libc::STDERR_FILENO
-        } else {
-            libc::STDOUT_FILENO
-        }) != 0
-    }
-}
-
-#[cfg(windows)]
-pub fn is_a_tty(stderr: bool) -> bool {
-    use windows_sys::Win32::System::Console::{
-        GetConsoleMode, GetStdHandle, STD_ERROR_HANDLE, STD_OUTPUT_HANDLE,
-    };
-    unsafe {
-        let handle = GetStdHandle(if stderr {
-            STD_ERROR_HANDLE
-        } else {
-            STD_OUTPUT_HANDLE
-        });
-        let mut out = 0;
-        GetConsoleMode(handle, &mut out) != 0
-    }
-}
-
-#[cfg(any(unix, target_os = "redox"))]
-pub fn home_dir() -> Option<PathBuf> {
-    #[allow(deprecated)]
-    std::env::home_dir()
-}
-
-#[cfg(all(windows, not(target_vendor = "uwp")))]
-fn home_dir_crt() -> Option<PathBuf> {
-    use std::os::windows::ffi::OsStringExt;
-    use windows_sys::Win32::{
-        Foundation::{MAX_PATH, S_OK},
-        UI::Shell::{SHGetFolderPathW, CSIDL_PROFILE},
-    };
-    extern "C" {
-        fn wcslen(buf: *const u16) -> usize;
-    }
-    let mut path = Vec::with_capacity(MAX_PATH as usize);
-    #[allow(clippy::cast_possible_wrap)]
-    unsafe {
-        match SHGetFolderPathW(0, CSIDL_PROFILE as i32, 0, 0, path.as_mut_ptr()) {
-            S_OK => {
-                let len = wcslen(path.as_ptr());
-                path.set_len(len);
-                let s = std::ffi::OsString::from_wide(&path);
-                Some(PathBuf::from(s))
-            }
-            _ => None,
-        }
-    }
-}
-
-#[cfg(all(windows, target_vendor = "uwp"))]
-#[allow(clippy::missing_const_for_fn)]
-fn home_dir_crt() -> Option<PathBuf> {
-    None
-}
-
-#[cfg(windows)]
-pub fn home_dir() -> Option<PathBuf> {
-    std::env::var_os("USERPROFILE")
-        .filter(|s| !s.is_empty())
-        .map(PathBuf::from)
-        .or_else(home_dir_crt)
 }
 
 struct Hex<'a> {
