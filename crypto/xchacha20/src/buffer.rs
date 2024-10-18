@@ -70,7 +70,7 @@ impl<'a, T> MutableBuffer<'a, T> {
     }
 }
 
-impl<'a> MutableBuffer<'a, u8> {
+impl MutableBuffer<'_, u8> {
     #[inline(always)]
     pub fn xor(&mut self, data: &[u8]) {
         assert_eq!(self.len(), data.len());
@@ -113,7 +113,7 @@ pub struct Mut<'a, T> {
     _marker: PhantomData<&'a ()>,
 }
 
-impl<'a, const N: usize> Mut<'a, [u8; N]> {
+impl<const N: usize> Mut<'_, [u8; N]> {
     #[inline(always)]
     pub fn xor(&mut self, data: &[u8; N]) {
         unsafe {
@@ -127,7 +127,7 @@ impl<'a, const N: usize> Mut<'a, [u8; N]> {
     }
 }
 
-impl<'a, const N: usize, const M: usize> Mut<'a, [[u8; N]; M]> {
+impl<const N: usize, const M: usize> Mut<'_, [[u8; N]; M]> {
     #[inline(always)]
     pub fn xor(&mut self, data: &[[u8; N]; M]) {
         unsafe {

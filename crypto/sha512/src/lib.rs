@@ -15,19 +15,63 @@
     clippy::nursery
 )]
 #![allow(clippy::inline_always)]
+#![cfg_attr(
+    any(sha512_backend = "riscv-zknh", sha512_backend = "riscv-zknh-compact"),
+    feature(riscv_ext_intrinsics)
+)]
+
+#[cfg(all(
+    any(sha512_backend = "riscv-zknh", sha512_backend = "riscv-zknh-compact"),
+    not(any(target_arch = "riscv32", target_arch = "riscv64"))
+))]
+compile_error!("zknh backends are only supported on RISC-V");
 
 #[cfg(target_arch = "aarch64")]
 mod aarch64;
 #[cfg(target_arch = "aarch64")]
 use aarch64::compress;
 mod consts;
+#[allow(dead_code)]
 mod soft;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    all(
+        any(target_arch = "riscv32", target_arch = "riscv64"),
+        any(sha512_backend = "riscv-zknh", sha512_backend = "riscv-zknh-compact")
+    )
+)))]
 use soft::compress;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use x86::compress;
+#[cfg(all(
+    any(target_arch = "riscv32", target_arch = "riscv64"),
+    sha512_backend = "riscv-zknh"
+))]
+mod riscv_zknh;
+#[cfg(all(
+    any(target_arch = "riscv32", target_arch = "riscv64"),
+    sha512_backend = "riscv-zknh"
+))]
+use riscv_zknh::compress;
+#[cfg(all(
+    any(target_arch = "riscv32", target_arch = "riscv64"),
+    sha512_backend = "riscv-zknh-compact"
+))]
+mod riscv_zknh_compact;
+#[cfg(all(
+    any(target_arch = "riscv32", target_arch = "riscv64"),
+    sha512_backend = "riscv-zknh-compact"
+))]
+use riscv_zknh_compact::compress;
+#[cfg(all(
+    any(target_arch = "riscv32", target_arch = "riscv64"),
+    any(sha512_backend = "riscv-zknh", sha512_backend = "riscv-zknh-compact")
+))]
+mod riscv_zknh_utils;
 
 type Block = crypto_common::blocks::Block<128>;
 type Buffer = crypto_common::blocks::Buffer<128>;

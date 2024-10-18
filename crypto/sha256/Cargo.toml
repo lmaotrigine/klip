@@ -8,7 +8,10 @@ publish.workspace = true
 
 [dependencies]
 crypto-common = { version = "0.0.0", path = "../common" }
+
+[target.'cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))'.dependencies]
 target_features = { version = "0.0.0", path = "../target_features" }
 
-[lints]
-workspace = true
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ['cfg(sha256_backend, values("riscv-zknh", "riscv-zknh-compact"))']

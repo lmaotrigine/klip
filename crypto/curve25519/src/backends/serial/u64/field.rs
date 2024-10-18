@@ -201,7 +201,7 @@ impl<'a> AddAssign<&'a Self> for FieldElement51 {
     }
 }
 
-impl<'a, 'b> Add<&'b FieldElement51> for &'a FieldElement51 {
+impl<'b> Add<&'b FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     fn add(self, rhs: &'b FieldElement51) -> FieldElement51 {
@@ -218,7 +218,7 @@ impl<'a> SubAssign<&'a Self> for FieldElement51 {
     }
 }
 
-impl<'a, 'b> Sub<&'b FieldElement51> for &'a FieldElement51 {
+impl<'b> Sub<&'b FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     fn sub(self, rhs: &'b FieldElement51) -> FieldElement51 {
@@ -239,7 +239,7 @@ impl<'a> MulAssign<&'a Self> for FieldElement51 {
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
+impl<'b> Mul<&'b FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     fn mul(self, rhs: &'b FieldElement51) -> FieldElement51 {
@@ -289,7 +289,7 @@ impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
     }
 }
 
-impl<'a> Neg for &'a FieldElement51 {
+impl Neg for &FieldElement51 {
     type Output = FieldElement51;
 
     fn neg(self) -> FieldElement51 {

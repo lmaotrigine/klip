@@ -157,7 +157,7 @@ impl ConditionallySelectable for AffineNielsPoint {
     }
 }
 
-impl<'a> Neg for &'a AffineNielsPoint {
+impl Neg for &AffineNielsPoint {
     type Output = AffineNielsPoint;
 
     fn neg(self) -> Self::Output {
@@ -223,7 +223,7 @@ impl Erase for ProjectiveNielsPoint {
     }
 }
 
-impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn add(self, rhs: &'b ProjectiveNielsPoint) -> Self::Output {
@@ -243,7 +243,7 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
+impl<'b> Sub<&'b ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn sub(self, rhs: &'b ProjectiveNielsPoint) -> Self::Output {
@@ -263,7 +263,7 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn add(self, rhs: &'b AffineNielsPoint) -> Self::Output {
@@ -282,7 +282,7 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
+impl<'b> Sub<&'b AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn sub(self, rhs: &'b AffineNielsPoint) -> Self::Output {

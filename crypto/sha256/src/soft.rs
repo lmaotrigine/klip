@@ -1,10 +1,12 @@
+use crate::consts::K;
+
 #[inline(always)]
-const fn shl(v: [u32; 4], o: u32) -> [u32; 4] {
+const fn shr(v: [u32; 4], o: u32) -> [u32; 4] {
     [v[0] >> o, v[1] >> o, v[2] >> o, v[3] >> o]
 }
 
 #[inline(always)]
-const fn shr(v: [u32; 4], o: u32) -> [u32; 4] {
+const fn shl(v: [u32; 4], o: u32) -> [u32; 4] {
     [v[0] << o, v[1] << o, v[2] << o, v[3] << o]
 }
 
@@ -28,6 +30,28 @@ const fn add(v: [u32; 4], o: [u32; 4]) -> [u32; 4] {
     ]
 }
 
+#[inline(always)]
+fn add_round_const(mut a: [u32; 4], i: usize) -> [u32; 4] {
+    #[cfg_attr(
+        any(target_arch = "x86", target_arch = "x86_64"),
+        allow(clippy::missing_const_for_fn)
+    )]
+    fn k(i: usize, j: usize) -> u32 {
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        use core::ptr::read as r;
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        use core::ptr::read_volatile as r;
+
+        unsafe { r(K.as_ptr().add(4 * i + j)) }
+    }
+
+    a[3] = a[3].wrapping_add(k(i, 0));
+    a[2] = a[2].wrapping_add(k(i, 1));
+    a[1] = a[1].wrapping_add(k(i, 2));
+    a[0] = a[0].wrapping_add(k(i, 3));
+    a
+}
+
 const fn sha256load(v2: [u32; 4], v3: [u32; 4]) -> [u32; 4] {
     [v3[3], v2[0], v2[1], v2[2]]
 }
@@ -39,9 +63,9 @@ const fn sha256swap(v0: [u32; 4]) -> [u32; 4] {
 const fn sha256msg1(v0: [u32; 4], v1: [u32; 4]) -> [u32; 4] {
     #[inline]
     const fn sigma0x4(x: [u32; 4]) -> [u32; 4] {
-        let t1 = or(shl(x, 7), shr(x, 25));
-        let t2 = or(shl(x, 18), shr(x, 14));
-        let t3 = shl(x, 3);
+        let t1 = or(shr(x, 7), shl(x, 25));
+        let t2 = or(shr(x, 18), shl(x, 14));
+        let t3 = shr(x, 3);
         xor(xor(t1, t2), t3)
     }
     add(v0, sigma0x4(sha256load(v0, v1)))
@@ -128,7 +152,7 @@ const fn schedule(v0: [u32; 4], v1: [u32; 4], v2: [u32; 4], v3: [u32; 4]) -> [u3
 
 macro_rules! rounds4 {
     ($abef:ident, $cdgh:ident, $rest:expr, $i:expr) => {{
-        let t1 = add($rest, crate::consts::KX4[$i]);
+        let t1 = add_round_const($rest, $i);
         $cdgh = sha256_digest_round_x2($cdgh, $abef, t1);
         let t2 = sha256swap(t1);
         $abef = sha256_digest_round_x2($abef, $cdgh, t2);
@@ -143,7 +167,7 @@ macro_rules! schedule_rounds4 {
 }
 
 #[allow(clippy::many_single_char_names)]
-fn sha256_digest_block_u32(state: &mut [u32; 8], block: &[u32; 16]) {
+fn sha256_digest_block_u32(state: &mut [u32; 8], block: [u32; 16]) {
     let mut abef = [state[0], state[1], state[4], state[5]];
     let mut cdgh = [state[2], state[3], state[6], state[7]];
     let mut w0 = [block[3], block[2], block[1], block[0]];
@@ -179,15 +203,18 @@ fn sha256_digest_block_u32(state: &mut [u32; 8], block: &[u32; 16]) {
     state[7] = state[7].wrapping_add(h);
 }
 
+#[inline(always)]
+fn to_u32s(block: &[u8; 64]) -> [u32; 16] {
+    let mut res = [0; 16];
+    for (src, dst) in block.chunks_exact(4).zip(res.iter_mut()) {
+        *dst = u32::from_be_bytes(src.try_into().expect("math has died"));
+    }
+    res
+}
+
 #[allow(unused)]
 pub fn compress(state: &mut [u32; 8], blocks: &[[u8; 64]]) {
-    let mut block_u32 = [0; 16];
-    let mut state_copy = *state;
-    for block in blocks {
-        for (o, chunk) in block_u32.iter_mut().zip(block.chunks_exact(4)) {
-            *o = u32::from_be_bytes(chunk.try_into().unwrap());
-        }
-        sha256_digest_block_u32(&mut state_copy, &block_u32);
+    for block in blocks.iter().map(to_u32s) {
+        sha256_digest_block_u32(state, block);
     }
-    *state = state_copy;
 }

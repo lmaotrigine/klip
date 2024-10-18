@@ -1,7 +1,8 @@
 use crate::consts::K;
 use core::arch::{
     aarch64::{
-        uint32x4_t, vaddq_u32, vld1q_u32, vld1q_u8, vreinterpretq_u32_u8, vrev32q_u8, vst1q_u32,
+        uint32x4_t, vaddq_u32, vld1q_u32, vld1q_u8, vreinterpretq_u32_u8, vrev32q_u8,
+        vsha256h2q_u32, vsha256hq_u32, vsha256su0q_u32, vsha256su1q_u32, vst1q_u32,
     },
     asm,
 };
@@ -70,40 +71,4 @@ unsafe fn sha256_compress(state: &mut [u32; 8], blocks: &[[u8; 64]]) {
     }
     vst1q_u32(state[0..4].as_mut_ptr(), abcd);
     vst1q_u32(state[4..8].as_mut_ptr(), efgh);
-}
-
-#[inline(always)]
-unsafe fn vsha256hq_u32(
-    mut hash_efgh: uint32x4_t,
-    hash_abcd: uint32x4_t,
-    wk: uint32x4_t,
-) -> uint32x4_t {
-    asm!("SHA256H {:q}, {:q}, {:v}.4S", inout(vreg) hash_efgh, in(vreg) hash_abcd, in(vreg) wk, options(pure, nomem, nostack, preserves_flags));
-    hash_efgh
-}
-
-#[inline(always)]
-unsafe fn vsha256h2q_u32(
-    mut hash_efgh: uint32x4_t,
-    hash_abcd: uint32x4_t,
-    wk: uint32x4_t,
-) -> uint32x4_t {
-    asm!("SHA256H2 {:q}, {:q}, {:v}.4S", inout(vreg) hash_efgh, in(vreg) hash_abcd, in(vreg) wk, options(pure, nomem, nostack, preserves_flags));
-    hash_efgh
-}
-
-#[inline(always)]
-unsafe fn vsha256su0q_u32(mut w0_3: uint32x4_t, w4_7: uint32x4_t) -> uint32x4_t {
-    asm!("SHA256SU0 {:v}.4S, {:v}.4S", inout(vreg) w0_3, in(vreg) w4_7, options(pure, nomem, nostack, preserves_flags));
-    w0_3
-}
-
-#[inline(always)]
-unsafe fn vsha256su1q_u32(
-    mut tw0_3: uint32x4_t,
-    w8_11: uint32x4_t,
-    w12_15: uint32x4_t,
-) -> uint32x4_t {
-    asm!("SHA256SU1 {:v}.4S, {:v}.4S, {:v}.4S", inout(vreg) tw0_3, in(vreg) w8_11, in(vreg) w12_15, options(pure, nomem, nostack, preserves_flags));
-    tw0_3
 }

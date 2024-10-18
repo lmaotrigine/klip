@@ -1,6 +1,6 @@
 pub struct Backend<'a>(pub &'a mut crate::Core);
 
-impl<'a> super::Backend<1> for Backend<'a> {
+impl super::Backend<1> for Backend<'_> {
     #[inline(always)]
     fn gen_ks_block(&mut self, block: &mut crate::Block) {
         let res = rounds(&self.0.state);

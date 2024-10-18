@@ -118,7 +118,7 @@ impl syn::parse::Parse for SpecializeArgs {
 
 fn process_args(
     args: &syn::punctuated::Punctuated<syn::FnArg, syn::token::Comma>,
-    outer: &Option<(syn::Generics, Box<syn::Type>)>,
+    outer: Option<&(syn::Generics, Box<syn::Type>)>,
 ) -> Result<(Vec<syn::Ident>, Vec<syn::FnArg>, Vec<syn::FnArg>)> {
     let mut function_call_args = Vec::new();
     let mut function_args_outer = Vec::new();
@@ -265,7 +265,7 @@ fn process_function(
     let function_args = function.sig.inputs;
     let function_body = function.block;
     let (function_call_args, function_args_outer, function_args_inner) =
-        match process_args(&function_args, &outer) {
+        match process_args(&function_args, outer.as_ref()) {
             Ok(v) => v,
             Err(e) => return e,
         };
@@ -358,7 +358,7 @@ fn process_impl(attributes: &syn::LitStr, mut item_impl: syn::ItemImpl) -> proc_
 fn process_mod(
     attributes: &syn::LitStr,
     mut item_mod: syn::ItemMod,
-    spec_features: &Option<Vec<String>>,
+    spec_features: Option<&Vec<String>>,
 ) -> TokenStream {
     if let Some((_, content)) = item_mod.content.as_mut() {
         'next_item: for item in content {
@@ -434,7 +434,7 @@ fn process_item(
     match item {
         syn::Item::Fn(function) => process_function(attributes, function, None),
         syn::Item::Impl(item_impl) => process_impl(attributes, item_impl),
-        syn::Item::Mod(item_mod) => process_mod(attributes, item_mod, &None).into(),
+        syn::Item::Mod(item_mod) => process_mod(attributes, item_mod, None).into(),
         item => {
             if strict {
                 unsupported!(item)
@@ -481,7 +481,7 @@ pub fn target_feature_specialize(
                 ident,
                 ..item_mod.clone()
             },
-            &Some(features),
+            Some(&features),
         );
         out.push(item_mod);
     }

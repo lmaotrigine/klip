@@ -265,7 +265,7 @@ impl Default for EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
 
     fn add(self, rhs: &'b EdwardsPoint) -> Self::Output {
@@ -273,7 +273,7 @@ impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
     }
 }
 
-impl<'a> Neg for &'a EdwardsPoint {
+impl Neg for &EdwardsPoint {
     type Output = EdwardsPoint;
 
     fn neg(self) -> Self::Output {
@@ -314,7 +314,7 @@ impl EdwardsBasepointTable {
     }
 }
 
-impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b crate::Scalar {
+impl<'a> Mul<&'a EdwardsBasepointTable> for &crate::Scalar {
     type Output = EdwardsPoint;
 
     fn mul(self, table: &'a EdwardsBasepointTable) -> Self::Output {
