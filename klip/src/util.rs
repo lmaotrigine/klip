@@ -82,11 +82,11 @@ struct Hex<'a> {
     next: Option<u8>,
 }
 
-impl<'a> Hex<'a> {
+impl Hex<'_> {
     const TABLE: &'static [u8; 16] = b"0123456789abcdef";
 }
 
-impl<'a> Iterator for Hex<'a> {
+impl Iterator for Hex<'_> {
     type Item = u8;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -106,7 +106,7 @@ impl<'a> Iterator for Hex<'a> {
     }
 }
 
-impl<'a> core::iter::ExactSizeIterator for Hex<'a> {
+impl core::iter::ExactSizeIterator for Hex<'_> {
     fn len(&self) -> usize {
         let mut length = self.inner.len() * 2;
         if self.next.is_some() {
