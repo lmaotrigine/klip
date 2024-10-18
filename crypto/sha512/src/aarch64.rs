@@ -2,7 +2,7 @@ use crate::consts::K;
 use core::arch::{
     aarch64::{
         uint64x2_t, vaddq_u64, vextq_u64, vld1q_u64, vld1q_u8, vreinterpretq_u64_u8, vrev64q_u8,
-        vst1q_u64, vsha512h2q_u64, vsha512hq_u64, vsha512su0q_u64, vsha512su1q_u64,
+        vsha512h2q_u64, vsha512hq_u64, vsha512su0q_u64, vsha512su1q_u64, vst1q_u64,
     },
     asm,
 };
