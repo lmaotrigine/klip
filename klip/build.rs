@@ -18,6 +18,10 @@
 
 fn set_git_hash() {
     use std::process::Command;
+    if let Ok(hash) = std::env::var("KLIP_BUILD_GIT_HASH") {
+        println!("cargo:rustc-env=KLIP_BUILD_GIT_HASH={hash}");
+        return;
+    }
     let args = &["rev-parse", "--short", "HEAD"];
     let Ok(output) = Command::new("git").args(args).output() else {
         return;

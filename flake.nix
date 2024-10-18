@@ -15,9 +15,11 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
-        rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-        nativeBuildInputs = [ rustToolchain pkgs.lld pkgs.clang ];
-        craneLib = crane.mkLib pkgs;
+        rustToolchain = (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override {
+          targets = [ "x86_64-unknown-linux-musl" ];
+        };
+        nativeBuildInputs = [ rustToolchain pkgs.lld pkgs.clang pkgs.git ];
+        craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
         src = craneLib.cleanCargoSource ./.;
         common = {
           inherit src nativeBuildInputs;
@@ -26,11 +28,23 @@
         cargoArtifacts = craneLib.buildDepsOnly common;
         klip = craneLib.buildPackage (common // {
           inherit cargoArtifacts;
+          preConfigurePhases = ["set_hash"];
+          set_hash = ''
+            export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "unknown")}
+          '';
+          CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+          CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         });
+        docker = pkgs.dockerTools.streamLayeredImage {
+          name = "klip";
+          tag = "latest";
+          contents = [ klip ];
+          config.Cmd = [ "${klip}/bin/klip" ];
+        };
       in
       {
         packages = {
-          inherit klip;
+          inherit klip docker;
           default = klip;
         };
         devShells.default = pkgs.mkShell {
