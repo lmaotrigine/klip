@@ -43,6 +43,10 @@ fn main() {
     if !(target_os.as_deref() == Ok("windows") && target_env.as_deref() == Ok("msvc")) {
         return;
     }
+    println!("cargo:rustc-link-arg-bin=klip=/DEPENDENTLOADFLAG:0x800");
+    println!("cargo:rustc-link-arg-bin=klip=/DELAYLOAD:bcrypt.dll");
+    println!("cargo:rustc-link-arg-bin=klip=delayimp.lib");
+    println!("cargo:rustc-link-arg-bin=klip=/WX");
     println!("cargo:rerun-if-changed={MANIFEST}");
     let Ok(mut manifest) = std::env::current_dir() else {
         return;
@@ -51,10 +55,6 @@ fn main() {
     let Some(manifest) = manifest.to_str() else {
         return;
     };
-    println!("cargo:rustc-link-arg-bin=klip=/DEPENDENTLOADFLAG:0x800");
-    println!("cargo:rustc-link-arg-bin=klip=/DELAYLOAD:bcrypt.dll");
-    println!("cargo:rustc-link-arg-bin=klip=delayimp.lib");
     println!("cargo:rustc-link-arg-bin=klip=/MANIFEST:EMBED");
     println!("cargo:rustc-link-arg-bin=klip=/MANIFESTINPUT:{manifest}");
-    println!("cargo:rustc-link-arg-bin=klip=/WX");
 }
