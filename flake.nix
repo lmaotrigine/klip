@@ -28,7 +28,7 @@
         cargoArtifacts = craneLib.buildDepsOnly common;
         klip = craneLib.buildPackage (common // {
           inherit cargoArtifacts;
-          preConfigurePhases = ["set_hash"];
+          preConfigurePhases = [ "set_hash" ];
           set_hash = ''
             export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "unknown")}
           '';
