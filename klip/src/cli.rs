@@ -10,7 +10,8 @@ use std::{num::NonZeroUsize, path::PathBuf};
 #[derive(Debug, Parser)]
 #[clap(about, author, version = crate::EXPANDED_VERSION)]
 #[clap(help_template = r"{name} {version}
-{author-with-newline}{about-with-newline}
+{author-with-newline}
+{about-with-newline}
 {usage-heading} {usage}
 
 {all-args}")]
