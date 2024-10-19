@@ -5,6 +5,7 @@ index = "sparse+https://code.5ht2.me/api/packages/lmaotrigine/cargo/"
 rustflags = [
   #"-C", "target-cpu=native",  # TODO: find a way to add this by default but *not* in CI.
   "-C", "symbol-mangling-version=v0",
+  "-C", "force-frame-pointers=yes",
 ]
 
 [target.'cfg(unix)']
