@@ -33,7 +33,6 @@
             export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "unknown")}
           '';
           CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
-          CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         });
         docker = pkgs.dockerTools.streamLayeredImage {
           name = "klip";
