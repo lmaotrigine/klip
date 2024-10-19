@@ -10,7 +10,7 @@ publish.workspace = true
 crypto-common = { path = "../../crypto/common" }
 
 [target.'cfg(windows)'.dependencies.windows-sys]
-version = "0.52"
+version = "0.59"
 features = [
   "Win32_Foundation",
   "Win32_Storage_FileSystem",
