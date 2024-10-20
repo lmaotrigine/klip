@@ -105,7 +105,7 @@ mod inner_spec {
     const IS_AVX2: bool = true;
     #[test]
     fn test_specialized() {
-        assert!(IS_AVX2);
+        assert!(!IS_AVX2);
     }
     #[cfg(test)]
     mod tests {
