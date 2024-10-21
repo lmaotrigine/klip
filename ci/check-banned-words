@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -eux
+
+which rg
+
+! rg -g !ci/check-banned-words -i 'dbg!|fixme|todo|xxx'

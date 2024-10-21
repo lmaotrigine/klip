@@ -299,6 +299,6 @@ h2 := Hk,2(h1 || opcode)
 s := Sig(ekid || n || ct)
 ```
 
-## TODO
+## Future work
 
 - [ ] remove dependency on clap due to frequent major version bumps
