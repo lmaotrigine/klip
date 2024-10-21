@@ -1,13 +1,19 @@
 [registries.alphamethyl]
 index = "sparse+https://code.5ht2.me/api/packages/lmaotrigine/cargo/"
 
+# other targets are not guaranteed to build, but just in case, we don't want to
+# mess with their defaults.
 [target.'cfg(any(unix, windows))']
 rustflags = [
-  #"-C", "target-cpu=native",  # TODO: find a way to add this by default but *not* in CI.
+  # this should be preferred, but for mostly portability reasons, it's kept
+  # opt-in. the Justfile enables it by default if not in CI.
+  #"-C", "target-cpu=native",
   "-C", "symbol-mangling-version=v0",
   "-C", "force-frame-pointers=yes",
 ]
 
+# lld is just better. mold doesn't work on darwin
+# older gcc versions don't support -fuse-ld, so we enforce clang
 [target.'cfg(unix)']
 linker = "clang"
 rustflags = [
@@ -15,11 +21,14 @@ rustflags = [
   "-C", "link-arg=-Wl,--compress-debug-sections=zlib"
 ]
 
+# eliminate runtime dependency on vcruntime.dll
 [target.'cfg(windows)']
 rustflags = [
   "-C", "target-feature=+crt-static",
 ]
 
+# although static CRT is currently the default for musl targets, this is likely
+# to change in the future.
 [target.x86_64-unknown-linux-musl]
 rustflags = [
   "-C", "target-feature=+crt-static",
