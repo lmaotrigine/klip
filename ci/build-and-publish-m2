@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# requires a nightly rust toolchain, `just`, and `gh`
+
+set -e
+
+version="$1"
+if [ -z "$version" ]; then
+  echo "missing version" >&2
+  echo "Usage: $(basename "$0") <version>" >&2
+  exit 1
+fi
+if ! grep -q "version = \"$version\"" Cargo.toml; then
+  echo "version does not match Cargo.toml" >&2
+  exit 1
+fi
+
+CI=1 RELEASE=1 BUILD_STD=1 CARGO_BUILD_TARGET=aarch64-apple-darwin just package
+archive_base="packages/klip-aarch64-apple-darwin"
+shasum -a 256 "${archive_base}.tar.xz" > "${archive_base}.tar.xz.sha256"
+shasum -a 256 "${archive_base}.full.tar.xz" > "${archive_base}.full.tar.xz.sha256"
+gh release upload "$version" "${archive_base}.tar.xz" "${archive_base}.tar.xz.sha256" "${archive_base}.full.tar.xz" "${archive_base}.full.tar.xz.sha256"
