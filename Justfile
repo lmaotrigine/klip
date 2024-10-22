@@ -152,6 +152,9 @@ print-rustflags:
 build: print-env
   {{cargo}} build {{cargo-build-args}}
 
+deb: print-env
+  cargo deb --profile deb --locked --target {{target}}
+
 check: print-env
   {{cargo}} check {{cargo-build-args}}
   cargo hack check --feature-powerset {{cargo-check-args}}
