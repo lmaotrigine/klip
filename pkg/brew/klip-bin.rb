@@ -12,7 +12,7 @@ class KlipBin < Formula
   conflicts_with "klip"
   def install
     bin.install "klip"
-    #man1.install "doc/klip.1"
+    man1.install "doc/klip.1"
     bash_completion.install "complete/klip.bash"
     zsh_completion.install "complete/_klip"
   end
