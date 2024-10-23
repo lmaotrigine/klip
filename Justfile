@@ -122,10 +122,12 @@ link-args := if target-os == "windows" {
   " -C target-feature=+crt-static"
 } else if target =~ "-musl" {
   " -C target-feature=+crt-static -C link-self-contained=yes -C link-arg=-fuse-ld=lld -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
-} else if target-os != "macos" {
-  " -C link-arg=-fuse-ld=lld -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
-} else {
+} else if target-os == "macos" {
   " -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
+} else if use-cross != "" {
+  " -C link-arg=-Wl,--compress-debug-sections=zlib"
+} else {
+  " -C link-arg=-fuse-ld=lld -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
 }
 
 cargo-check-args := (" --target ") + (target) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" }) + (cargo-split-debuginfo)
