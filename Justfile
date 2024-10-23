@@ -5,14 +5,16 @@
 ci := env_var_or_default("CI", "")
 release := env_var_or_default("RELEASE", "")
 use-cross := env_var_or_default("USE_CROSS", "")
+use-zigbuild := env_var_or_default("USE_ZIGBUILD", "")
 extra-build-args := env_var_or_default("EXTRA_BUILD_ARGS", "")
 extra-features := env_var_or_default("EXTRA_FEATURES", "")
 default-features := env_var_or_default("DEFAULT_FEATURES", "")
 override-features := env_var_or_default("OVERRIDE_FEATURES", "")
+glibc-version := env_var_or_default("GLIBC_VERSION", "")
 timings := env_var_or_default("TIMINGS", "")
 build-std := env_var_or_default("BUILD_STD", "")
 
-cargo := if use-cross != "" { "cross" } else { "cargo" }
+cargo := if use-cross != "" { "cross" } else if use-zigbuild != "" { "cargo-zigbuild" } else { "cargo" }
 export CARGO := cargo
 
 host := `rustc -vV | grep host: | cut -d ' ' -f2`
@@ -120,6 +122,8 @@ share-generics := if cargo-buildstd != "" {
 
 link-args := if target-os == "windows" {
   " -C target-feature=+crt-static"
+} else if use-zigbuild != "" {
+  " -C link-arg=-Wl,--compress-debug-sections=zlib"
 } else if target =~ "-musl" {
   " -C target-feature=+crt-static -C link-self-contained=yes -C link-arg=-fuse-ld=lld -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
 } else if target-os == "macos" {
@@ -130,7 +134,17 @@ link-args := if target-os == "windows" {
   " -C link-arg=-fuse-ld=lld -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
 }
 
-cargo-check-args := (" --target ") + (target) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" }) + (cargo-split-debuginfo)
+glibc-ver-postfix := if glibc-version != "" {
+  if use-zigbuild != "" {
+    "." + glibc-version
+  } else {
+    ""
+  }
+} else {
+  ""
+}
+
+cargo-check-args := (" --target ") + (target) + (glibc-ver-postfix) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" }) + (cargo-split-debuginfo)
 cargo-build-args :=  " --locked " + (if release != "" { "--release" } else { "" }) + (cargo-check-args) + (cargo-no-default-features) + (if cargo-features != "" { " --features " + cargo-features } else { "" }) + (if timings != "" { "--timings" } else { "" })
 export RUSTFLAGS := (rustc-gcclibs) + (rustc-icf) + (link-args) + (share-generics) + " -C symbol-mangling-version=v0 -C force-frame-pointers=yes" + (if ci == "" { " -C target-cpu=native" } else { "" })
 
