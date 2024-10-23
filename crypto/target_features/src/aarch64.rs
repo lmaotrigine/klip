@@ -7,7 +7,7 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __unless {
-    ($($tf:tt),+ => body:expr) => {{
+    ($($tf:tt),+ => $body:expr) => {{
         #[cfg(not(all($(target_feature = $tf,)+)))]
         $body
         #[cfg(all($(target_feature = $tf,)+))]
@@ -26,6 +26,8 @@ macro_rules! __detect {
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
+#[doc(hidden)]
+#[allow(dead_code)]
 pub fn hwcaps() -> u64 {
     unsafe { libc::getauxval(libc::AT_HWCAP) }
 }
@@ -62,6 +64,7 @@ __generate_check! {
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[doc(hidden)]
+#[allow(dead_code)]
 pub mod caps {
     pub const SHA2: u64 = libc::HWCAP_SHA2;
     pub const SHA3: u64 = libc::HWCAP_SHA3 | libc::HWCAP_SHA512;

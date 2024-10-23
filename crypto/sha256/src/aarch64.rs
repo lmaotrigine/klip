@@ -1,10 +1,7 @@
 use crate::consts::K;
-use core::arch::{
-    aarch64::{
-        uint32x4_t, vaddq_u32, vld1q_u32, vld1q_u8, vreinterpretq_u32_u8, vrev32q_u8,
-        vsha256h2q_u32, vsha256hq_u32, vsha256su0q_u32, vsha256su1q_u32, vst1q_u32,
-    },
-    asm,
+use core::arch::aarch64::{
+    vaddq_u32, vld1q_u32, vld1q_u8, vreinterpretq_u32_u8, vrev32q_u8, vsha256h2q_u32,
+    vsha256hq_u32, vsha256su0q_u32, vsha256su1q_u32, vst1q_u32,
 };
 
 target_features::detect!(sha2_hwcap, "sha2");

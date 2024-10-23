@@ -96,7 +96,7 @@
 
 #[cfg(not(miri))]
 #[cfg(target_arch = "aarch64")]
-mod aarch64;
+pub mod aarch64;
 #[cfg(miri)]
 mod miri;
 #[cfg(not(miri))]
