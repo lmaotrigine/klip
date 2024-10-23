@@ -17,6 +17,4 @@ fi
 
 CI=1 RELEASE=1 BUILD_STD=1 CARGO_BUILD_TARGET=aarch64-apple-darwin just package
 archive_base="packages/klip-aarch64-apple-darwin"
-shasum -a 256 "${archive_base}.tar.xz" > "${archive_base}.tar.xz.sha256"
-shasum -a 256 "${archive_base}.full.tar.xz" > "${archive_base}.full.tar.xz.sha256"
 gh release upload "$version" "${archive_base}.tar.xz" "${archive_base}.tar.xz.sha256" "${archive_base}.full.tar.xz" "${archive_base}.full.tar.xz.sha256"
