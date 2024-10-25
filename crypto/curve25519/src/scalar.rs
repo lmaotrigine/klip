@@ -97,11 +97,8 @@ impl Scalar {
         output
     }
 
-    #[allow(
-        clippy::cast_possible_truncation,
-        clippy::cast_possible_wrap,
-        clippy::manual_div_ceil // MSRV not understood
-    )]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    #[cfg_attr(nightly, allow(clippy::manual_div_ceil))]
     pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64] {
         debug_assert!(w >= 4);
         debug_assert!(w <= 8);
