@@ -1,0 +1,65 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# This file isn't distributed in any pre-built packages, since rolling your own
+# is fairly trivial, and I don't want to assume the responibility of creating
+# users, installing and removing this service on update, etc. This file is kept
+# in the source tree to illustrate some best practices in hardening for a
+# service that really doesn't need much access to the system (all it does is
+# read one file and bind to one address).
+# This file is the result of removing all privileges, and then adding things
+# back one by one in order to just make this functional.
+# `systemd-analyze security klip.service` will illustrate exactly how small the
+# attack surface is.
+# This set of restrictions is in fact the bare minimum and will cover most use
+# cases. It may be further hardened by setting for example `IPAddressDeny=any`
+# and `IPAddressAllow=` to the specific IP address you want to bind to, and
+# `ProtectHome=yes` if you don't keep the binary or configuration file in any
+# user's home directory.
+[Unit]
+Description=klip staging server
+After=multi-user.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# maybe use DynamicUser?
+User=klip
+Group=klip
+ExecStart=/usr/local/bin/klip -c /etc/klip/klip.toml serve
+Type=idle
+Restart=always
+RestartSec=10
+TimeoutStopSec=10
+
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+SystemCallErrorNumber=EPERM
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+RestrictNamespaces=uts ipc pid cgroup
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectProc=invisible
+PrivateDevices=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+PrivateIPC=yes
+SystemCallArchitectures=native
+# bunch of stuff we don't need when running as a server
+CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_CHOWN CAP_SETUID CAP_SETGID CAP_FOWNER
+CapabilityBoundingSet=~CAP_SETPCAP CAP_SYS_PTRACE CAP_FSETID CAP_SETFCAP
+CapabilityBoundingSet=~CAP_SYS_TIME CAP_DAC_READ_SEARCH CAP_DAC_OVERRIDE
+CapabilityBoundingSet=~CAP_IPC_OWNER CAP_NET_ADMIN CAP_SYS_NICE CAP_SYS_RESOURCE
+CapabilityBoundingSet=~CAP_KILL
+ProtectKernelLogs=yes
+PrivateUsers=yes
+ProtectClock=yes
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target
