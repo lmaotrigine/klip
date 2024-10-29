@@ -35,6 +35,7 @@ ${KLIP_C} move > /tmp/kl2
 cmp /tmp/kl /tmp/kl2
 ${KLIP_C} paste && exit 1
 kill $pid
+wait $pid || true
 
 echo
 echo 'Success!'
