@@ -30,7 +30,7 @@
           inherit cargoArtifacts;
           preConfigurePhases = [ "set_hash" ];
           set_hash = ''
-            export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "unknown")}
+            export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
           '';
           CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
         });

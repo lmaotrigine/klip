@@ -19,7 +19,11 @@
 fn set_git_hash() {
     use std::process::Command;
     if let Ok(hash) = std::env::var("KLIP_BUILD_GIT_HASH") {
-        println!("cargo:rustc-env=KLIP_BUILD_GIT_HASH={hash}");
+        if hash == "skip" {
+            println!("cargo:rustc-env=KLIP_BUILD_GIT_HASH=");
+        } else {
+            println!("cargo:rustc-env=KLIP_BUILD_GIT_HASH= (rev {hash})");
+        }
         return;
     }
     let args = &["rev-parse", "--short", "HEAD"];
@@ -30,11 +34,12 @@ fn set_git_hash() {
     if hash.is_empty() {
         return;
     }
-    println!("cargo:rustc-env=KLIP_BUILD_GIT_HASH={hash}");
+    println!("cargo:rustc-env=KLIP_BUILD_GIT_HASH= (rev {hash})");
 }
 
 fn main() {
     const MANIFEST: &str = "../pkg/windows/Manifest.xml";
+    println!("cargo:rerun-if-env-changed=KLIP_BUILD_GIT_HASH");
     set_git_hash();
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-env-changed=TARGET");
