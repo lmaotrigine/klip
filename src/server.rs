@@ -15,7 +15,7 @@ struct Connection<'a> {
     state: &'a State,
 }
 
-impl<'a> Connection<'a> {
+impl Connection<'_> {
     pub async fn get_operation(self, h1: &[u8], is_move: bool) -> Result<(), Error> {
         let mut rbuf = [0; 32];
         self.stream.read_exact(&mut rbuf).await?;
