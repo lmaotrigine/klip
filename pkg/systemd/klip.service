@@ -55,11 +55,15 @@ CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_CHOWN CAP_SETUID CAP_SETGID CAP_FOWNER
 CapabilityBoundingSet=~CAP_SETPCAP CAP_SYS_PTRACE CAP_FSETID CAP_SETFCAP
 CapabilityBoundingSet=~CAP_SYS_TIME CAP_DAC_READ_SEARCH CAP_DAC_OVERRIDE
 CapabilityBoundingSet=~CAP_IPC_OWNER CAP_NET_ADMIN CAP_SYS_NICE CAP_SYS_RESOURCE
-CapabilityBoundingSet=~CAP_KILL
+CapabilityBoundingSet=~CAP_KILL CAP_SYS_PACCT CAP_LINUX_IMMUTABLE CAP_IPC_LOCK
+CapabilityBoundingSet=~CAP_BPF CAP_SYS_TTY_CONFIG CAP_SYS_BOOT CAP_SYS_CHROOT
+CapabilityBoundingSet=~CAP_LEASE CAP_BLOCK_SUSPEND CAP_AUDIT_CONTROL
+ProtectHostname=yes
 ProtectKernelLogs=yes
 PrivateUsers=yes
 ProtectClock=yes
 ProtectHome=read-only
+ProcSubset=pid
 
 [Install]
 WantedBy=multi-user.target
