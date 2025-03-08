@@ -143,7 +143,7 @@ pub fn from_hex(s: &str, buf: &mut [u8]) -> Result<(), ()> {
         return Err(());
     }
     for (i, b) in buf.iter_mut().enumerate() {
-        *b = decode_char(bytes[i * 2])? << 4 | decode_char(bytes[i * 2 + 1])?;
+        *b = (decode_char(bytes[i * 2])? << 4) | decode_char(bytes[i * 2 + 1])?;
     }
     Ok(())
 }
