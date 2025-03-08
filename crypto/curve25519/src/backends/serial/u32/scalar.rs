@@ -1,10 +1,12 @@
+use super::consts;
 use core::{
     fmt::Debug,
     ops::{Index, IndexMut},
 };
-use crypto_common::erase::Erase;
-
-use super::consts;
+use crypto_common::{
+    constant_time::{Choice, ConditionallySelectable},
+    erase::Erase,
+};
 
 #[derive(Clone, Copy)]
 pub struct Scalar29(pub [u32; 9]);
@@ -155,10 +157,11 @@ impl Scalar29 {
             borrow = a[i].wrapping_sub(b[i] + (borrow >> 31));
             difference[i] = borrow & mask;
         }
-        let underflow_mask = ((borrow >> 31) ^ 1).wrapping_sub(1);
         let mut carry = 0;
         for i in 0..9 {
-            carry = (carry >> 29) + difference[i] + (consts::L[i] & underflow_mask);
+            let underflow = Choice::from((borrow >> 31) as u8);
+            let addend = u32::conditional_select(&0, &consts::L[i], underflow);
+            carry = (carry >> 29) + difference[i] + addend;
             difference[i] = carry & mask;
         }
         difference

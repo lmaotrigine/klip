@@ -3,7 +3,10 @@ use core::{
     fmt::Debug,
     ops::{Index, IndexMut},
 };
-use crypto_common::erase::Erase;
+use crypto_common::{
+    constant_time::{Choice, ConditionallySelectable},
+    erase::Erase,
+};
 
 #[derive(Clone, Copy)]
 pub struct Scalar52(pub [u64; 5]);
@@ -116,10 +119,11 @@ impl Scalar52 {
             borrow = a[i].wrapping_sub(b[i] + (borrow >> 63));
             difference[i] = borrow & mask;
         }
-        let underflow_mask = ((borrow >> 63) ^ 1).wrapping_sub(1);
         let mut carry = 0;
         for i in 0..5 {
-            carry = (carry >> 52) + difference[i] + (consts::L[i] & underflow_mask);
+            let underflow = Choice::from((borrow >> 63) as u8);
+            let addend = u64::conditional_select(&0, &consts::L[i], underflow);
+            carry = (carry >> 52) + difference[i] + addend;
             difference[i] = carry & mask;
         }
         difference
