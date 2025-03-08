@@ -168,6 +168,7 @@ impl XChaCha20 {
         64 - self.get_pos()
     }
 
+    #[allow(clippy::manual_div_ceil)]
     fn check_remaining(&self, data_len: usize) -> Result<(), Error> {
         let Some(rem_blocks) = self.core.remaining_blocks() else {
             return Ok(());
@@ -177,7 +178,7 @@ impl XChaCha20 {
             Some(0) | None => return Ok(()),
             Some(res) => res,
         };
-        let blocks = data_len.div_ceil(64);
+        let blocks = (data_len + 63) / 64;
         if blocks > rem_blocks {
             Err(Error)
         } else {

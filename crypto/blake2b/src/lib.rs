@@ -332,12 +332,12 @@ impl Params {
         [
             IV[0]
                 ^ self.hash_length as u64
-                ^ (self.key_length as u64) << 8
-                ^ (self.fanout as u64) << 16
-                ^ (self.max_depth as u64) << 24
-                ^ (self.max_leaf_length as u64) << 32,
+                ^ ((self.key_length as u64) << 8)
+                ^ ((self.fanout as u64) << 16)
+                ^ ((self.max_depth as u64) << 24)
+                ^ ((self.max_leaf_length as u64) << 32),
             IV[1] ^ self.node_offset,
-            IV[2] ^ self.node_depth as u64 ^ (self.inner_hash_length as u64) << 8,
+            IV[2] ^ self.node_depth as u64 ^ ((self.inner_hash_length as u64) << 8),
             IV[3],
             IV[4] ^ u64::from_le_bytes(*salt_left),
             IV[5] ^ u64::from_le_bytes(*salt_right),
