@@ -38,7 +38,7 @@ fn set_git_hash() {
 }
 
 fn main() {
-    const MANIFEST: &str = "../pkg/windows/Manifest.xml";
+    const MANIFEST: &str = "pkg/windows/Manifest.xml";
     println!("cargo:rerun-if-env-changed=KLIP_BUILD_GIT_HASH");
     set_git_hash();
     println!("cargo:rerun-if-changed=build.rs");

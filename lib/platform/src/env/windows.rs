@@ -23,7 +23,13 @@ fn home_dir_crt() -> Option<PathBuf> {
         let mut path = Vec::with_capacity(MAX_PATH as _);
         #[allow(clippy::cast_possible_wrap)] // 40 as i32 doesn't wrap.
         unsafe {
-            match SHGetFolderPathW(0, CSIDL_PROFILE as _, 0, 0, path.as_mut_ptr()) {
+            match SHGetFolderPathW(
+                core::ptr::null_mut(),
+                CSIDL_PROFILE as _,
+                core::ptr::null_mut(),
+                0,
+                path.as_mut_ptr(),
+            ) {
                 S_OK => {
                     let len = wcslen(path.as_ptr());
                     path.set_len(len);

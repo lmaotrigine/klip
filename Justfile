@@ -103,9 +103,7 @@ cargo-features := trim_end_match(
 )
 cargo-split-debuginfo := if cargo-buildstd != "" { " --config='profile.release.split-debuginfo=\"packed\"' --config=profile.release.debug=1" } else { "" }
 rustc-icf := if release != "" {
-  if target-os == "windows" {
-    " -C link-arg=-Wl,--icf=safe"
-  } else if target-os == "linux" {
+  if target-os == "linux" {
     " -C link-arg=-Wl,--icf=safe"
   } else {
     ""
