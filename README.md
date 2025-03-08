@@ -63,7 +63,7 @@ This project is written in pure Rust, with some inline assembly for SIMD
 accelerated cryptography and minimal FFI to interact with the operating system.
 
 It is known to build on the latest stable compiler (at the time of writing, this
-is 1.70). Enabling SIMD optimizations in the curve25519 implementation requires
+is 1.85). Enabling SIMD optimizations in the curve25519 implementation requires
 a nightly compiler. Your mileage with SIMD may vary quite a bit. I have done
 some extensive benchmarking, but if you find a corner case that hinders
 performance, please let me know! Use either of the following incantations:
