@@ -20,7 +20,7 @@ impl Salsa {
     }
 
     #[inline(always)]
-    fn set_block_pos(&mut self, pos: u64) {
+    const fn set_block_pos(&mut self, pos: u64) {
         self.state[8] = (pos & 0xffff_ffff) as u32;
         self.state[9] = ((pos >> 32) & 0xffff_ffff) as u32;
     }
@@ -44,7 +44,7 @@ impl Drop for Salsa {
 impl EraseOnDrop for Salsa {}
 
 #[inline]
-fn quarter_round(a: usize, b: usize, c: usize, d: usize, state: &mut [u32; STATE_WORDS]) {
+const fn quarter_round(a: usize, b: usize, c: usize, d: usize, state: &mut [u32; STATE_WORDS]) {
     state[b] ^= state[a].wrapping_add(state[d]).rotate_left(7);
     state[c] ^= state[b].wrapping_add(state[a]).rotate_left(9);
     state[d] ^= state[c].wrapping_add(state[b]).rotate_left(13);

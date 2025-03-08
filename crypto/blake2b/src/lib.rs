@@ -408,43 +408,43 @@ impl Params {
     }
 
     #[inline]
-    pub fn fanout(&mut self, fanout: u8) -> &mut Self {
+    pub const fn fanout(&mut self, fanout: u8) -> &mut Self {
         self.fanout = fanout;
         self
     }
 
     #[inline]
-    pub fn max_depth(&mut self, max_depth: u8) -> &mut Self {
+    pub const fn max_depth(&mut self, max_depth: u8) -> &mut Self {
         self.max_depth = max_depth;
         self
     }
 
     #[inline]
-    pub fn max_leaf_length(&mut self, max_leaf_length: u32) -> &mut Self {
+    pub const fn max_leaf_length(&mut self, max_leaf_length: u32) -> &mut Self {
         self.max_leaf_length = max_leaf_length;
         self
     }
 
     #[inline]
-    pub fn node_offset(&mut self, node_offset: u64) -> &mut Self {
+    pub const fn node_offset(&mut self, node_offset: u64) -> &mut Self {
         self.node_offset = node_offset;
         self
     }
 
     #[inline]
-    pub fn node_depth(&mut self, node_depth: u8) -> &mut Self {
+    pub const fn node_depth(&mut self, node_depth: u8) -> &mut Self {
         self.node_depth = node_depth;
         self
     }
 
     #[inline]
-    pub fn inner_hash_length(&mut self, inner_hash_length: u8) -> &mut Self {
+    pub const fn inner_hash_length(&mut self, inner_hash_length: u8) -> &mut Self {
         self.inner_hash_length = inner_hash_length;
         self
     }
 
     #[inline]
-    pub fn last_node(&mut self, last_node: bool) -> &mut Self {
+    pub const fn last_node(&mut self, last_node: bool) -> &mut Self {
         self.last_node = last_node;
         self
     }

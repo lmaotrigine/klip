@@ -173,7 +173,7 @@ fn process_second_block(current_state: &mut State, t2: &RoundStates) {
 }
 
 #[inline(always)]
-fn sha_round(s: &mut State, x: u64) {
+const fn sha_round(s: &mut State, x: u64) {
     macro_rules! big_sigma0 {
         ($a:expr) => {
             $a.rotate_right(28) ^ $a.rotate_right(34) ^ $a.rotate_right(39)

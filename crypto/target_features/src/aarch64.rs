@@ -28,6 +28,7 @@ macro_rules! __detect {
 #[cfg(any(target_os = "android", target_os = "linux"))]
 #[doc(hidden)]
 #[allow(dead_code)]
+#[must_use]
 pub fn hwcaps() -> u64 {
     unsafe { libc::getauxval(libc::AT_HWCAP) }
 }

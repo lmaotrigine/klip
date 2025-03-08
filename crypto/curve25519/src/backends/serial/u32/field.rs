@@ -15,7 +15,7 @@ impl FieldElement2625 {
         Self(limbs)
     }
 
-    pub fn negate(&mut self) {
+    pub const fn negate(&mut self) {
         let neg = Self::reduce([
             ((0x03ff_ffed << 4) - self.0[0]) as u64,
             ((0x01ff_ffff << 4) - self.0[1]) as u64,

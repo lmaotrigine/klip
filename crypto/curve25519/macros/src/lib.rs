@@ -403,7 +403,6 @@ fn process_mod(
                                 }
                             }
                             index += 1;
-                            continue;
                         }
                     }
                     _ => {

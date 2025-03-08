@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[inline(always)]
-fn g(v: &mut [u64; 16], a: usize, b: usize, c: usize, d: usize, x: u64, y: u64) {
+const fn g(v: &mut [u64; 16], a: usize, b: usize, c: usize, d: usize, x: u64, y: u64) {
     v[a] = v[a].wrapping_add(v[b]).wrapping_add(x);
     v[d] = (v[d] ^ v[a]).rotate_right(32);
     v[c] = v[c].wrapping_add(v[d]);
@@ -19,7 +19,7 @@ fn g(v: &mut [u64; 16], a: usize, b: usize, c: usize, d: usize, x: u64, y: u64) 
 }
 
 #[cfg_attr(not(feature = "uninline"), inline(always))]
-fn round(r: usize, m: &[u64; 16], v: &mut [u64; 16]) {
+const fn round(r: usize, m: &[u64; 16], v: &mut [u64; 16]) {
     // select the message schedule based on the round
     let s = SIGMA[r];
     // mix the columns.
@@ -35,7 +35,7 @@ fn round(r: usize, m: &[u64; 16], v: &mut [u64; 16]) {
 }
 
 #[inline(always)]
-fn compress_block(
+const fn compress_block(
     block: &[u8; BLOCK_BYTES],
     words: &mut [u64; 8],
     count: u128,

@@ -30,7 +30,7 @@ impl FieldElement51 {
         Self(limbs)
     }
 
-    pub fn negate(&mut self) {
+    pub const fn negate(&mut self) {
         let neg = Self::reduce([
             36_028_797_018_963_664 - self.0[0],
             36_028_797_018_963_952 - self.0[1],
