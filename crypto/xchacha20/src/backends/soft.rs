@@ -30,7 +30,7 @@ fn rounds(state: &[u32; 16]) -> [u32; 16] {
     res
 }
 
-fn quarter_round(a: usize, b: usize, c: usize, d: usize, state: &mut [u32; 16]) {
+const fn quarter_round(a: usize, b: usize, c: usize, d: usize, state: &mut [u32; 16]) {
     state[a] = state[a].wrapping_add(state[b]);
     state[d] ^= state[a];
     state[d] = state[d].rotate_left(16);

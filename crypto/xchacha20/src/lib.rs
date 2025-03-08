@@ -107,7 +107,14 @@ impl Core {
         }
         #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
         {
-            ctx.call(&mut backends::soft::Backend(self));
+            #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+            {
+                unsafe { backends::neon::inner(&mut self.state, ctx) };
+            }
+            #[cfg(not(all(target_arch = "aarch64", target_feature = "neon")))]
+            {
+                ctx.call(&mut backends::soft::Backend(self));
+            }
         }
     }
 
@@ -170,7 +177,7 @@ impl XChaCha20 {
             Some(0) | None => return Ok(()),
             Some(res) => res,
         };
-        let blocks = (data_len + 63) / 64;
+        let blocks = data_len.div_ceil(64);
         if blocks > rem_blocks {
             Err(Error)
         } else {
@@ -229,7 +236,7 @@ impl core::fmt::Debug for XChaCha20 {
     }
 }
 
-fn quarter_round(a: usize, b: usize, c: usize, d: usize, state: &mut [u32; 16]) {
+const fn quarter_round(a: usize, b: usize, c: usize, d: usize, state: &mut [u32; 16]) {
     state[a] = state[a].wrapping_add(state[b]);
     state[d] ^= state[a];
     state[d] = state[d].rotate_left(16);

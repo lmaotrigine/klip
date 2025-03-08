@@ -2,6 +2,9 @@ use crate::Block;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub mod avx2;
+#[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+pub mod neon;
+#[cfg(not(all(target_arch = "aarch64", target_feature = "neon")))]
 pub mod soft;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub mod sse2;
