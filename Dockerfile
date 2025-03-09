@@ -1,11 +1,13 @@
 FROM --platform=$BUILDPLATFORM ubuntu:24.04 AS build
 ENV HOME="/root"
 WORKDIR $HOME
-SHELL [ "/bin/bash", "-o", "pipefail", "-c" ]
+SHELL [ "/bin/bash", "-euo", "pipefail", "-c" ]
 RUN apt-get update && apt-get install -y --no-install-recommends \
   git=* build-essential=* curl=* python3-venv=* clang=* lld=*
 RUN python3 -m venv $HOME/.venv && .venv/bin/pip install cargo-zigbuild
 ENV PATH="$HOME/.venv/bin:$PATH"
+RUN echo '#!/bin/sh\n/root/.venv/bin/python -m ziglang "$@"' > /usr/bin/zig && \
+  chmod +x /usr/bin/zig
 ARG TARGETPLATFORM
 RUN case "$TARGETPLATFORM" in \
   "linux/arm64") echo "aarch64-unknown-linux-musl" > rust_target.txt ;; \
