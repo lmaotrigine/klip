@@ -92,11 +92,10 @@ rand_core = { version = "0.6", features = ["getrandom"] }
 # our dependency tree is amenable to aggressive optimization without much
 # compile time overhead. it still takes a bit, though.
 [profile.release]
-# on some platforms, opt-level = 2 performs better. i haven't profiled this
+# on some platforms, opt-level = 3 performs better. i haven't profiled this
 # extensively enough to make a decision.
-opt-level = 3
-debug = 1
-split-debuginfo = "packed"
+opt-level = 2
+debug = false
 strip = true
 debug-assertions = false
 overflow-checks = false

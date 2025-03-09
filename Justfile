@@ -101,7 +101,6 @@ cargo-features := trim_end_match(
   },
   ","
 )
-cargo-split-debuginfo := if cargo-buildstd != "" { " --config='profile.release.split-debuginfo=\"packed\"' --config=profile.release.debug=1" } else { "" }
 rustc-icf := if release != "" {
   if target-os == "linux" {
     " -C link-arg=-Wl,--icf=safe"
@@ -120,16 +119,12 @@ share-generics := if cargo-buildstd != "" {
 
 link-args := if target-os == "windows" {
   " -C target-feature=+crt-static"
-} else if use-zigbuild != "" {
-  " -C link-arg=-Wl,--compress-debug-sections=zlib"
 } else if target =~ "-musl" {
-  " -C target-feature=+crt-static -C link-self-contained=yes -C link-arg=-fuse-ld=lld -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
+  " -C target-feature=+crt-static -C link-self-contained=yes -C link-arg=-fuse-ld=lld -C linker=clang"
 } else if target-os == "macos" {
-  " -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
-} else if use-cross != "" {
-  " -C link-arg=-Wl,--compress-debug-sections=zlib"
+  " -C linker=clang"
 } else {
-  " -C link-arg=-fuse-ld=lld -C link-arg=-Wl,--compress-debug-sections=zlib -C linker=clang"
+  " -C link-arg=-fuse-ld=lld -C linker=clang"
 }
 
 glibc-ver-postfix := if glibc-version != "" {
@@ -142,7 +137,7 @@ glibc-ver-postfix := if glibc-version != "" {
   ""
 }
 
-cargo-check-args := (" --target ") + (target) + (glibc-ver-postfix) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" }) + (cargo-split-debuginfo)
+cargo-check-args := (" --target ") + (target) + (glibc-ver-postfix) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" })
 cargo-build-args :=  " --locked " + (if release != "" { "--release" } else { "" }) + (cargo-check-args) + (cargo-no-default-features) + (if cargo-features != "" { " --features " + cargo-features } else { "" }) + (if timings != "" { "--timings" } else { "" })
 export RUSTFLAGS := (rustc-gcclibs) + (rustc-icf) + (link-args) + (share-generics) + " -C symbol-mangling-version=v0 -C force-frame-pointers=yes" + (if ci == "" { " -C target-cpu=native" } else { "" })
 
@@ -205,17 +200,14 @@ package-dir:
 [macos]
 package-prepare: build package-dir
   just get-binary packages/prep
-  -just get-output klip.dSYM packages/prep
 
 [linux]
 package-prepare: build package-dir
   just get-binary packages/prep
-  -cp {{output-dir}}/deps/klip-*.dwp packages/prep/klip.dwp
 
 [windows]
 package-prepare: build package-dir
   just get-binary packages/prep
-  -just get-output deps/klip.pdb packages/prep
 
 [macos]
 lipo-prepare: package-dir
