@@ -1,6 +1,0 @@
-services:
-  klip:
-    image: klip:latest
-    ports:
-      - 8075:8075
-    stop_signal: SIGINT
