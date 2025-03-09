@@ -90,7 +90,7 @@ macro_rules! __check {
 #[doc(hidden)]
 pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
     let mut val = 0;
-    let mut val_ptr: *mut u32 = &mut val;
+    let val_ptr: *mut u32 = &mut val;
     let mut size = core::mem::size_of::<u32>();
     let ret = libc::sysctlbyname(
         name.as_ptr().cast(),
