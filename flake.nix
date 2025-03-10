@@ -85,6 +85,59 @@
                   Restart = "on-failure";
                   User = "klip";
                   Group = "klip";
+                  Type = "idle";
+                  RestartSec = 10;
+                  TimeoutStopSec = 10;
+                  SystemCallFilter = "@system-service ~@privileged @resources";
+                  SystemCallErrorNumber = "EPERM";
+                  PrivateTmp = true;
+                  NoNewPrivileges = true;
+                  ProtectSystem = "strict";
+                  RestrictNamespaces = "uts ipc pid cgroup";
+                  ProtectProc = "invisible";
+                  ProtectKernelTunables = true;
+                  ProtectKernelModules = true;
+                  ProtectControlGroups = true;
+                  PrivateDevices = true;
+                  RestrictSUIDSGID = true;
+                  RestrictAddressFamilies = "AF_INET AF_INET6";
+                  PrivateIPC = true;
+                  SystemCallArchitectures = "native";
+                  CapabilityBoundingSet = [
+                    "~CAP_SYS_ADMIN"
+                    "~CAP_CHOWN"
+                    "~CAP_SETUID"
+                    "~CAP_SETGID"
+                    "~CAP_FOWNER"
+                    "~CAP_SETPCAP"
+                    "~CAP_SYS_PTRACE"
+                    "~CAP_FSETID"
+                    "~CAP_SETFCAP"
+                    "~CAP_SYS_TIME"
+                    "~CAP_DAC_READ_SEARCH"
+                    "~CAP_DAC_OVERRIDE"
+                    "~CAP_IPC_OWNER"
+                    "~CAP_NET_ADMIN"
+                    "~CAP_SYS_NICE"
+                    "~CAP_SYS_RESOURCE"
+                    "~CAP_KILL"
+                    "~CAP_SYS_PACCT"
+                    "~CAP_LINUX_IMMUTABLE"
+                    "~CAP_IPC_LOCK"
+                    "~CAP_BPF"
+                    "~CAP_SYS_TTY_CONFIG"
+                    "~CAP_SYS_BOOT"
+                    "~CAP_SYS_CHROOT"
+                    "~CAP_LEASE"
+                    "~CAP_BLOCK_SUSPEND"
+                    "~CAP_AUDIT_CONTROL"
+                  ];
+                  ProtectHostname = true;
+                  ProtectKernelLogs = true;
+                  PrivateUsers = true;
+                  ProtectClock = true;
+                  ProtectHome = "read-only";
+                  ProcSubset = "pid";
                 };
               };
             };
