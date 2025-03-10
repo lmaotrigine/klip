@@ -167,7 +167,7 @@
                     Wants = [ "network-online.target" ];
                   };
                   Service = baseServiceConfig // {
-                    ExecStart = mkCmd cfg.configFile pkgs.system;
+                    ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
                   };
                 };
               };
