@@ -9,46 +9,169 @@
     crane.url = "github:ipetkov/crane";
   };
   outputs = { self, nixpkgs, flake-utils, rust-overlay, crane }:
-    flake-utils.lib.eachDefaultSystem (system:
+    flake-utils.lib.eachDefaultSystem
+      (system:
+        let
+          overlays = [ (import rust-overlay) ];
+          pkgs = import nixpkgs {
+            inherit system overlays;
+          };
+          rustToolchain = (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override {
+            targets = [ "x86_64-unknown-linux-musl" ];
+          };
+          nativeBuildInputs = [ rustToolchain pkgs.lld pkgs.clang pkgs.git ];
+          craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
+          src = craneLib.cleanCargoSource ./.;
+          common = {
+            inherit src nativeBuildInputs;
+            doCheck = false;
+          };
+          cargoArtifacts = craneLib.buildDepsOnly common;
+          klip = craneLib.buildPackage (common // {
+            inherit cargoArtifacts;
+            preConfigurePhases = [ "set_hash" ];
+            set_hash = ''
+              export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
+            '';
+            CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+          });
+          docker = pkgs.dockerTools.streamLayeredImage {
+            name = "klip";
+            tag = "latest";
+            contents = [ klip ];
+            config.Cmd = [ "${klip}/bin/klip" ];
+          };
+        in
+        {
+
+          packages = {
+            inherit klip docker;
+            default = klip;
+          };
+          devShells.default = pkgs.mkShell {
+            inputsFrom = [ klip ];
+          };
+
+        }
+      ) // (
       let
-        overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs {
-          inherit system overlays;
+        moduleOptions = {
+          configFile = nixpkgs.lib.mkOption {
+            description = "Configuration file to use.";
+            type = nixpkgs.lib.types.str;
+          };
         };
-        rustToolchain = (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override {
-          targets = [ "x86_64-unknown-linux-musl" ];
-        };
-        nativeBuildInputs = [ rustToolchain pkgs.lld pkgs.clang pkgs.git ];
-        craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
-        src = craneLib.cleanCargoSource ./.;
-        common = {
-          inherit src nativeBuildInputs;
-          doCheck = false;
-        };
-        cargoArtifacts = craneLib.buildDepsOnly common;
-        klip = craneLib.buildPackage (common // {
-          inherit cargoArtifacts;
-          preConfigurePhases = [ "set_hash" ];
-          set_hash = ''
-            export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
-          '';
-          CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
-        });
-        docker = pkgs.dockerTools.streamLayeredImage {
-          name = "klip";
-          tag = "latest";
-          contents = [ klip ];
-          config.Cmd = [ "${klip}/bin/klip" ];
+        mkCmd = c: s: [ "${self.packages.${s}.klip}/bin/klip" "-c" c "serve" ];
+        baseServiceConfig = {
+          Restart = "on-failure";
+          Type = "idle";
+          RestartSec = 10;
+          TimeoutStopSec = 10;
+          SystemCallFilter = "@system-service ~@privileged @resources";
+          SystemCallErrorNumber = "EPERM";
+          PrivateTmp = true;
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          RestrictNamespaces = "uts ipc pid cgroup";
+          ProtectProc = "invisible";
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectControlGroups = true;
+          PrivateDevices = true;
+          RestrictSUIDSGID = true;
+          RestrictAddressFamilies = "AF_INET AF_INET6";
+          PrivateIPC = true;
+          SystemCallArchitectures = "native";
+          CapabilityBoundingSet = [
+            "~CAP_SYS_ADMIN"
+            "~CAP_CHOWN"
+            "~CAP_SETUID"
+            "~CAP_SETGID"
+            "~CAP_FOWNER"
+            "~CAP_SETPCAP"
+            "~CAP_SYS_PTRACE"
+            "~CAP_FSETID"
+            "~CAP_SETFCAP"
+            "~CAP_SYS_TIME"
+            "~CAP_DAC_READ_SEARCH"
+            "~CAP_DAC_OVERRIDE"
+            "~CAP_IPC_OWNER"
+            "~CAP_NET_ADMIN"
+            "~CAP_SYS_NICE"
+            "~CAP_SYS_RESOURCE"
+            "~CAP_KILL"
+            "~CAP_SYS_PACCT"
+            "~CAP_LINUX_IMMUTABLE"
+            "~CAP_IPC_LOCK"
+            "~CAP_BPF"
+            "~CAP_SYS_TTY_CONFIG"
+            "~CAP_SYS_BOOT"
+            "~CAP_SYS_CHROOT"
+            "~CAP_LEASE"
+            "~CAP_BLOCK_SUSPEND"
+            "~CAP_AUDIT_CONTROL"
+          ];
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          PrivateUsers = true;
+          ProtectClock = true;
+          ProtectHome = "read-only";
+          ProcSubset = "pid";
         };
       in
       {
-        packages = {
-          inherit klip docker;
-          default = klip;
+        overlay = oSelf: oSuper: {
+          klip = self.packages.default.${oSuper.system};
         };
-        devShells.default = pkgs.mkShell {
-          inputsFrom = [ klip ];
-        };
+        nixosModule = { config, pkgs, ... }:
+          let
+            cfg = config.services.klip;
+
+          in
+          {
+            options.services.klip = moduleOptions;
+            config = {
+              users.users.klip = { isSystemUser = true; group = "klip"; };
+              users.groups.klip = { };
+              systemd.services.klip = {
+                description = "klip staging server";
+                after = [ "multi-user.target" "network-online.target" ];
+                wantedBy = [ "multi-user.target" ];
+                wants = [ "network-online.target" ];
+                serviceConfig = baseServiceConfig // {
+                  ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
+                  User = "klip";
+                  Group = "klip";
+                };
+              };
+            };
+          };
+        darwinModule = { config, pkgs, ... }:
+          let cfg = config.services.klip;
+          in {
+            options.services.klip = moduleOptions;
+            config = {
+              launchd.user.agents.klip = {
+                serviceConfig = {
+                  ProgramArguments = mkCmd cfg.configFile pkgs.system;
+                  RunAtLoad = true;
+                  KeepAlive = true;
+                };
+              };
+            };
+          };
+        homeManagerModule = { config, pkgs, ... }:
+          let cfg = config.services.klip;
+          in {
+            options.services.klip = moduleOptions;
+            config = {
+              systemd.user.services.klip = {
+                serviceConfig = baseServiceConfig // {
+                  ExecStart = mkCmd cfg.configFile pkgs.system;
+                };
+              };
+            };
+          };
       }
     );
 }
