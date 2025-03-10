@@ -18,7 +18,7 @@
               type = nixpkgs.lib.types.str;
             };
           };
-          mkCmd = c: [ "${self.packages.default.${system}}/bin/klip" "-c" c "serve" ];
+          mkCmd = c: s: [ "${self.packages.default.${s}}/bin/klip" "-c" c "serve" ];
           overlays = [ (import rust-overlay) ];
           pkgs = import nixpkgs {
             inherit system overlays;
@@ -73,7 +73,7 @@
                   wantedBy = [ "multi-user.target" ];
                   after = [ "network.target" ];
                   serviceConfig = {
-                    ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile);
+                    ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
                     Restart = "on-failure";
                     User = "klip";
                   };
@@ -86,7 +86,7 @@
               config = {
                 launchd.user.agents.klip = {
                   serviceConfig = {
-                    ProgramArguments = mkCmd cfg.configFile;
+                    ProgramArguments = mkCmd cfg.configFile pkgs.system;
                     RunAtLoad = true;
                     KeepAlive = true;
                   };
