@@ -61,7 +61,7 @@
             type = nixpkgs.lib.types.str;
           };
         };
-        mkCmd = c: s: [ "${self.packages.default.${s}}/bin/klip" "-c" c "serve" ];
+        mkCmd = c: s: [ "${self.packages.${s}.klip}/bin/klip" "-c" c "serve" ];
       in
       {
         overlay = oSelf: oSuper: {
