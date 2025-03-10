@@ -74,7 +74,7 @@
           {
             options.services.klip = moduleOptions;
             config = {
-              users.users.klip.isSystemUser = true;
+              users.users.klip = { isSystemUser = true; group = "klip"; };
               systemd.services.klip = {
                 description = "Klip server";
                 wantedBy = [ "multi-user.target" ];
@@ -83,6 +83,7 @@
                   ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
                   Restart = "on-failure";
                   User = "klip";
+                  Group = "klip";
                 };
               };
             };
