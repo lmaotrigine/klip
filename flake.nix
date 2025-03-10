@@ -75,6 +75,7 @@
             options.services.klip = moduleOptions;
             config = {
               users.users.klip = { isSystemUser = true; group = "klip"; };
+              users.groups.klip = { };
               systemd.services.klip = {
                 description = "Klip server";
                 wantedBy = [ "multi-user.target" ];
