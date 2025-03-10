@@ -66,6 +66,12 @@
       ) // (
       let
         moduleOptions = {
+          enable = nixpkgs.lib.mkOption {
+            description = "Whether to enable the klip service.";
+            type = nixpkgs.lib.types.bool;
+            default = false;
+            example = true;
+          };
           configFile = nixpkgs.lib.mkOption {
             description = "Configuration file to use.";
             type = nixpkgs.lib.types.str;
@@ -140,7 +146,7 @@
             in
             {
               options.services.klip = moduleOptions;
-              config = {
+              config = nixpkgs.lib.mkIf cfg.enable {
                 users.users.klip = { isSystemUser = true; group = "klip"; };
                 users.groups.klip = { };
                 systemd.services.klip = {
@@ -159,7 +165,7 @@
           homeManager = { config, pkgs, ... }:
             let cfg = config.services.klip; in {
               options.services.klip = moduleOptions;
-              config = {
+              config = nixpkgs.lib.mkIf cfg.enable {
                 systemd.user.services.klip = {
                   Unit = {
                     Description = "klip staging server";
@@ -177,7 +183,7 @@
           let cfg = config.services.klip;
           in {
             options.services.klip = moduleOptions;
-            config = {
+            config = nixpkgs.lib.mkIf cfg.enable {
               launchd.user.agents.klip = {
                 serviceConfig = {
                   ProgramArguments = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
