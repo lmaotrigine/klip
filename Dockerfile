@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   git=* build-essential=* curl=* python3-venv=* clang=* lld=*
 RUN python3 -m venv $HOME/.venv && .venv/bin/pip install cargo-zigbuild
 ENV PATH="$HOME/.venv/bin:$PATH"
-RUN echo '#!/bin/sh\n/root/.venv/bin/python -m ziglang "$@"' > /usr/bin/zig && \
+RUN printf '#!/bin/sh\n/root/.venv/bin/python -m ziglang "$@"\n' > /usr/bin/zig && \
   chmod +x /usr/bin/zig
 ARG TARGETPLATFORM
 RUN case "$TARGETPLATFORM" in \
