@@ -77,7 +77,7 @@
           Type = "idle";
           RestartSec = 10;
           TimeoutStopSec = 10;
-          SystemCallFilter = "@system-service ~@privileged @resources";
+          SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" ];
           SystemCallErrorNumber = "EPERM";
           PrivateTmp = true;
           NoNewPrivileges = true;
@@ -180,7 +180,7 @@
             config = {
               launchd.user.agents.klip = {
                 serviceConfig = {
-                  ProgramArguments = mkCmd cfg.configFile pkgs.system;
+                  ProgramArguments = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
                   RunAtLoad = true;
                   KeepAlive = true;
                 };
