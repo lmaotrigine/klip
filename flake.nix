@@ -17,9 +17,16 @@
           pkgs = import nixpkgs {
             inherit system overlays;
           };
-          rustToolchain = (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override {
-            targets = [ "x86_64-unknown-linux-musl" ];
-          };
+          targetArgs =
+            if system == "aarch64-linux" then {
+              targets = [ "aarch64-unknown-linux-musl" ];
+              CARGO_BUILD_TARGET = "aarch64-unknown-linux-musl";
+            } else if system == "x86_64-linux" then {
+              targets = [ "x86_64-unknown-linux-musl" ];
+              CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+            } else { };
+          _rustToolchain = (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml);
+          rustToolchain = if system == "aarch64-linux" || system == "x86_64-linux" then _rustToolchain.override { targets = targetArgs.targets; } else _rustToolchain;
           nativeBuildInputs = [ rustToolchain pkgs.lld pkgs.clang pkgs.git ];
           craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
           src = craneLib.cleanCargoSource ./.;
@@ -28,20 +35,22 @@
             doCheck = false;
           };
           cargoArtifacts = craneLib.buildDepsOnly common;
-          klip = craneLib.buildPackage (common // {
-            inherit cargoArtifacts;
-            preConfigurePhases = [ "set_hash" ];
-            set_hash = ''
-              export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
-            '';
-            CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
-          });
-          docker = pkgs.dockerTools.streamLayeredImage {
-            name = "klip";
-            tag = "latest";
-            contents = [ klip ];
-            config.Cmd = [ "${klip}/bin/klip" ];
-          };
+          klip = craneLib.buildPackage
+            (common // {
+              inherit cargoArtifacts;
+              preConfigurePhases = [ "set_hash" ];
+              set_hash = ''
+                export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
+              '';
+            } // targetArgs);
+          docker =
+            pkgs.dockerTools.streamLayeredImage
+              {
+                name = "klip";
+                tag = "latest";
+                contents = [ klip ];
+                config.Cmd = [ "${klip}/bin/klip" ];
+              };
         in
         {
 
@@ -121,33 +130,50 @@
         };
       in
       {
-        overlay = oSelf: oSuper: {
-          klip = self.packages.default.${oSuper.system};
+        overlays.default = final: prev: {
+          klip = self.packages.default.${prev.system};
         };
-        nixosModule = { config, pkgs, ... }:
-          let
-            cfg = config.services.klip;
-
-          in
-          {
-            options.services.klip = moduleOptions;
-            config = {
-              users.users.klip = { isSystemUser = true; group = "klip"; };
-              users.groups.klip = { };
-              systemd.services.klip = {
-                description = "klip staging server";
-                after = [ "multi-user.target" "network-online.target" ];
-                wantedBy = [ "multi-user.target" ];
-                wants = [ "network-online.target" ];
-                serviceConfig = baseServiceConfig // {
-                  ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
-                  User = "klip";
-                  Group = "klip";
+        nixosModules = {
+          default = { config, pkgs, ... }:
+            let
+              cfg = config.services.klip;
+            in
+            {
+              options.services.klip = moduleOptions;
+              config = {
+                users.users.klip = { isSystemUser = true; group = "klip"; };
+                users.groups.klip = { };
+                systemd.services.klip = {
+                  description = "klip staging server";
+                  after = [ "multi-user.target" "network-online.target" ];
+                  wantedBy = [ "multi-user.target" ];
+                  wants = [ "network-online.target" ];
+                  serviceConfig = baseServiceConfig // {
+                    ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
+                    User = "klip";
+                    Group = "klip";
+                  };
                 };
               };
             };
-          };
-        darwinModule = { config, pkgs, ... }:
+          homeManager = { config, pkgs, ... }:
+            let cfg = config.services.klip; in {
+              options.services.klip = moduleOptions;
+              config = {
+                systemd.user.services.klip = {
+                  Unit = {
+                    Description = "klip staging server";
+                    After = [ "network-online.target" ];
+                    Wants = [ "network-online.target" ];
+                  };
+                  Service = baseServiceConfig // {
+                    ExecStart = mkCmd cfg.configFile pkgs.system;
+                  };
+                };
+              };
+            };
+        };
+        darwinModules.default = { config, pkgs, ... }:
           let cfg = config.services.klip;
           in {
             options.services.klip = moduleOptions;
@@ -157,18 +183,6 @@
                   ProgramArguments = mkCmd cfg.configFile pkgs.system;
                   RunAtLoad = true;
                   KeepAlive = true;
-                };
-              };
-            };
-          };
-        homeManagerModule = { config, pkgs, ... }:
-          let cfg = config.services.klip;
-          in {
-            options.services.klip = moduleOptions;
-            config = {
-              systemd.user.services.klip = {
-                serviceConfig = baseServiceConfig // {
-                  ExecStart = mkCmd cfg.configFile pkgs.system;
                 };
               };
             };
