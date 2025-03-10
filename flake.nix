@@ -12,13 +12,6 @@
     flake-utils.lib.eachDefaultSystem
       (system:
         let
-          moduleOptions = {
-            configFile = nixpkgs.lib.mkOption {
-              description = "Configuration file to use.";
-              type = nixpkgs.lib.types.str;
-            };
-          };
-          mkCmd = c: s: [ "${self.packages.default.${s}}/bin/klip" "-c" c "serve" ];
           overlays = [ (import rust-overlay) ];
           pkgs = import nixpkgs {
             inherit system overlays;
@@ -50,9 +43,7 @@
           };
         in
         {
-          overlay = oSelf: oSuper: {
-            klip = self.packages.default.${oSuper.system};
-          };
+
           packages = {
             inherit klip docker;
             default = klip;
@@ -60,39 +51,55 @@
           devShells.default = pkgs.mkShell {
             inputsFrom = [ klip ];
           };
-          nixOsModule = { config, pkgs, ... }:
-            let
-              cfg = config.services.klip;
-            in
-            {
-              options.services.klip = moduleOptions;
-              config = {
-                users.users.klip.isSystemUser = true;
-                systemd.services.klip = {
-                  description = "Klip server";
-                  wantedBy = [ "multi-user.target" ];
-                  after = [ "network.target" ];
-                  serviceConfig = {
-                    ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
-                    Restart = "on-failure";
-                    User = "klip";
-                  };
-                };
-              };
-            };
-          darwinModule = { config, pkgs, ... }:
-            let cfg = config.services.klip; in {
-              options.services.klip = moduleOptions;
-              config = {
-                launchd.user.agents.klip = {
-                  serviceConfig = {
-                    ProgramArguments = mkCmd cfg.configFile pkgs.system;
-                    RunAtLoad = true;
-                    KeepAlive = true;
-                  };
-                };
-              };
-            };
+
         }
-      );
+      ) // (
+      let
+        moduleOptions = {
+          configFile = nixpkgs.lib.mkOption {
+            description = "Configuration file to use.";
+            type = nixpkgs.lib.types.str;
+          };
+        };
+        mkCmd = c: s: [ "${self.packages.default.${s}}/bin/klip" "-c" c "serve" ];
+      in
+      {
+        overlay = oSelf: oSuper: {
+          klip = self.packages.default.${oSuper.system};
+        };
+        nixOsModule = { config, pkgs, ... }:
+          let
+            cfg = config.services.klip;
+          in
+          {
+            options.services.klip = moduleOptions;
+            config = {
+              users.users.klip.isSystemUser = true;
+              systemd.services.klip = {
+                description = "Klip server";
+                wantedBy = [ "multi-user.target" ];
+                after = [ "network.target" ];
+                serviceConfig = {
+                  ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
+                  Restart = "on-failure";
+                  User = "klip";
+                };
+              };
+            };
+          };
+        darwinModule = { config, pkgs, ... }:
+          let cfg = config.services.klip; in {
+            options.services.klip = moduleOptions;
+            config = {
+              launchd.user.agents.klip = {
+                serviceConfig = {
+                  ProgramArguments = mkCmd cfg.configFile pkgs.system;
+                  RunAtLoad = true;
+                  KeepAlive = true;
+                };
+              };
+            };
+          };
+      }
+    );
 }
