@@ -27,9 +27,17 @@
             } else { };
           _rustToolchain = (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml);
           rustToolchain = if system == "aarch64-linux" || system == "x86_64-linux" then _rustToolchain.override { targets = targetArgs.targets; } else _rustToolchain;
-          nativeBuildInputs = [ rustToolchain pkgs.lld pkgs.clang pkgs.git ];
+          nativeBuildInputs = [ rustToolchain pkgs.llvmPackages.bintools pkgs.clang pkgs.git ];
           craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
-          src = craneLib.cleanCargoSource ./.;
+          unfilteredRoot = ./.;
+          src = pkgs.lib.fileset.toSource {
+            root = unfilteredRoot;
+            fileset = pkgs.lib.fileset.unions [
+              (craneLib.fileset.commonCargoSources unfilteredRoot)
+              (pkgs.lib.fileset.maybeMissing ./completions)
+              (pkgs.lib.fileset.maybeMissing ./doc)
+            ];
+          };
           common = {
             inherit src nativeBuildInputs;
             doCheck = false;
@@ -41,6 +49,12 @@
               preConfigurePhases = [ "set_hash" ];
               set_hash = ''
                 export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
+              '';
+              postInstall = ''
+                install -Dm644 completions/klip.bash $out/share/bash-completion/completions/klip.bash
+                install -Dm644 completions/klip.fish $out/share/fish/vendor_completions.d/klip.fish
+                install -Dm644 doc/klip.1 $out/share/man/man1/klip.1
+                install -Dm644 completions/_klip $out/share/zsh/site-functions/_klip
               '';
             } // targetArgs);
           docker =
