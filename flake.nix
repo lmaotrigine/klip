@@ -17,23 +17,13 @@
           pkgs = import nixpkgs {
             inherit system overlays;
           };
-          targetArgs =
-            if system == "aarch64-linux" then {
-              targets = [ "aarch64-unknown-linux-musl" ];
-              CARGO_BUILD_TARGET = "aarch64-unknown-linux-musl";
-            } else if system == "x86_64-linux" then {
-              targets = [ "x86_64-unknown-linux-musl" ];
-              CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
-            } else { };
-          _rustToolchain = (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml);
-          rustToolchain = if system == "aarch64-linux" || system == "x86_64-linux" then _rustToolchain.override { targets = targetArgs.targets; } else _rustToolchain;
+          rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
           nativeBuildInputs = [ rustToolchain pkgs.llvmPackages.bintools pkgs.clang pkgs.git ];
           craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
-          unfilteredRoot = ./.;
           src = pkgs.lib.fileset.toSource {
-            root = unfilteredRoot;
+            root = ./.;
             fileset = pkgs.lib.fileset.unions [
-              (craneLib.fileset.commonCargoSources unfilteredRoot)
+              (craneLib.fileset.commonCargoSources ./.)
               (pkgs.lib.fileset.maybeMissing ./completions)
               (pkgs.lib.fileset.maybeMissing ./doc)
             ];
@@ -56,20 +46,11 @@
                 install -Dm644 doc/klip.1 $out/share/man/man1/klip.1
                 install -Dm644 completions/_klip $out/share/zsh/site-functions/_klip
               '';
-            } // targetArgs);
-          docker =
-            pkgs.dockerTools.streamLayeredImage
-              {
-                name = "klip";
-                tag = "latest";
-                contents = [ klip ];
-                config.Cmd = [ "${klip}/bin/klip" ];
-              };
+            });
         in
         {
-
           packages = {
-            inherit klip docker;
+            inherit klip;
             default = klip;
           };
           devShells.default = pkgs.mkShell {
@@ -92,6 +73,7 @@
           };
         };
         mkCmd = c: s: [ "${self.packages.${s}.klip}/bin/klip" "-c" c "serve" ];
+        cmdline = c: s: nixpkgs.lib.escapeShellArgs (mkCmd c s);
         baseServiceConfig = {
           Restart = "on-failure";
           Type = "idle";
@@ -155,10 +137,7 @@
         };
         nixosModules = {
           default = { config, pkgs, ... }:
-            let
-              cfg = config.services.klip;
-            in
-            {
+            let cfg = config.services.klip; in {
               options.services.klip = moduleOptions;
               config = nixpkgs.lib.mkIf cfg.enable {
                 users.users.klip = { isSystemUser = true; group = "klip"; };
@@ -169,7 +148,7 @@
                   wantedBy = [ "multi-user.target" ];
                   wants = [ "network-online.target" ];
                   serviceConfig = baseServiceConfig // {
-                    ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
+                    ExecStart = cmdline cfg.configFile pkgs.system;
                     User = "klip";
                     Group = "klip";
                   };
@@ -187,7 +166,7 @@
                     Wants = [ "network-online.target" ];
                   };
                   Service = baseServiceConfig // {
-                    ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
+                    ExecStart = cmdline cfg.configFile pkgs.system;
                   };
                   Install = {
                     WantedBy = [ "default.target" ];
@@ -197,13 +176,12 @@
             };
         };
         darwinModules.default = { config, pkgs, ... }:
-          let cfg = config.services.klip;
-          in {
+          let cfg = config.services.klip; in {
             options.services.klip = moduleOptions;
             config = nixpkgs.lib.mkIf cfg.enable {
               launchd.user.agents.klip = {
                 serviceConfig = {
-                  ProgramArguments = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
+                  ProgramArguments = cmdline cfg.configFile pkgs.system;
                   RunAtLoad = true;
                   KeepAlive = true;
                 };
