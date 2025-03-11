@@ -2,14 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# This file isn't distributed in any pre-built packages, since rolling your own
-# is fairly trivial, and I don't want to assume the responibility of creating
-# users, installing and removing this service on update, etc. This file is kept
-# in the source tree to illustrate some best practices in hardening for a
-# service that really doesn't need much access to the system (all it does is
-# read one file and bind to one address).
-# This file is the result of removing all privileges, and then adding things
-# back one by one in order to just make this functional.
+# This file incorporates some best practices in hardening for a service that
+# really doesn't need much access to the system (all it does is read one file
+# and bind to one address). This file is the result of removing all privileges,
+# and then adding things back one by one in order to just make this functional.
 # `systemd-analyze security klip.service` will illustrate exactly how small the
 # attack surface is.
 # This set of restrictions is in fact the bare minimum and will cover most use

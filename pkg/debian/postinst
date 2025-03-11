@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+USER=klip
+
+setup_dir() {
+  DIR=$1
+  MODE=$2
+  GROUP=$3
+  mkdir -pZ "$DIR"
+  if ! dpkg-statoverride --list "$DIR" >/dev/null 2>&1; then
+    chown ${USER}:"${GROUP}" "$DIR"
+    chmod "$MODE" "$DIR"
+  fi
+}
+
+if [ "$1" = configure ]; then
+  adduser --system --home /var/lib/klip --quiet --group $USER || true
+  setup_dir /var/lib/klip 750 $USER
+  setup_dir /etc/klip 2770 $USER
+fi
+
+#DEBHELPER#
+
+exit 0

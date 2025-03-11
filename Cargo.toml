@@ -127,3 +127,9 @@ internet. It works by transferring the content to an intermediary server, which
 every client with the correct credentials can query.
 """
 depends = ""  # NOTE: will break unless target is x86_64-unknown-linux-musl
+maintainer-scripts = "pkg/debian"
+
+[package.metadata.deb.systemd-units]
+unit-scripts = "pkg/systemd"
+enable = false
+start = false

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+#DEBHELPER#
+
+if [ "$1" = purge ]; then
+  rm -rf /var/lib/klip /etc/klip
+fi
+
+exit 0
