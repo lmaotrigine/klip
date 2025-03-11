@@ -189,6 +189,9 @@
                   Service = baseServiceConfig // {
                     ExecStart = nixpkgs.lib.escapeShellArgs (mkCmd cfg.configFile pkgs.system);
                   };
+                  Install = {
+                    WantedBy = [ "default.target" ];
+                  };
                 };
               };
             };
