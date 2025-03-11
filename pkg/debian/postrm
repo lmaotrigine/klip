@@ -1,10 +1,14 @@
 #!/bin/sh
 set -eu
 
+KLIP_CONF=/etc/klip.toml
+
+case $1 in
+  purge)
+    if [ -f $KLIP_CONF ]; then
+      rm $KLIP_CONF
+    fi
+    ;;
+esac
+
 #DEBHELPER#
-
-if [ "$1" = purge ]; then
-  rm -rf /var/lib/klip /etc/klip
-fi
-
-exit 0

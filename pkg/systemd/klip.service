@@ -15,6 +15,7 @@
 # user's home directory.
 [Unit]
 Description=klip staging server
+Documentation=man:klip(1)
 After=multi-user.target
 After=network-online.target
 Wants=network-online.target
@@ -23,7 +24,7 @@ Wants=network-online.target
 # maybe use DynamicUser?
 User=klip
 Group=klip
-ExecStart=/usr/local/bin/klip -c /etc/klip/klip.toml serve
+ExecStart=/usr/local/bin/klip -c /etc/klip.toml serve
 Type=idle
 Restart=always
 RestartSec=10

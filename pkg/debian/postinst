@@ -1,25 +1,33 @@
 #!/bin/sh
 set -eu
 
-USER=klip
+KLIP_CONF=/etc/klip.toml
+KLIP_CONF_MODE=640
+KLIP_HOME=/var/lib/klip/
+KLIP_USER=klip
 
-setup_dir() {
-  DIR=$1
-  MODE=$2
-  GROUP=$3
-  mkdir -pZ "$DIR"
-  if ! dpkg-statoverride --list "$DIR" >/dev/null 2>&1; then
-    chown ${USER}:"${GROUP}" "$DIR"
-    chmod "$MODE" "$DIR"
+create_user() {
+  if id $KLIP_USER >/dev/null 2>&1; then return; fi
+  adduser --system --home $KLIP_HOME --group $KLIP_USER
+}
+
+generate_config() {
+  klip genkeys | tail -n6
+}
+
+create_first_time_config() {
+  if [ ! -f $KLIP_CONF ]; then
+    generate_config > $KLIP_CONF
+    chown $KLIP_USER:$KLIP_USER $KLIP_CONF
+    chmod $KLIP_CONF_MODE $KLIP_CONF
   fi
 }
 
-if [ "$1" = configure ]; then
-  adduser --system --home /var/lib/klip --quiet --group $USER || true
-  setup_dir /var/lib/klip 750 $USER
-  setup_dir /etc/klip 2770 $USER
-fi
+case $1 in
+  configure)
+    create_user
+    create_first_time_config
+    ;;
+esac
 
 #DEBHELPER#
-
-exit 0
