@@ -1,226 +1,227 @@
 #compdef klip
+#shellcheck disable=all
 
 autoload -U is-at-least
 
 _klip() {
-    typeset -A opt_args
-    typeset -a _arguments_options
-    local ret=1
+  typeset -A opt_args
+  typeset -a _arguments_options
+  local ret=1
 
-    if is-at-least 5.2; then
-        _arguments_options=(-s -S -C)
-    else
-        _arguments_options=(-s -C)
-    fi
+  if is-at-least 5.2; then
+    _arguments_options=(-s -S -C)
+  else
+    _arguments_options=(-s -C)
+  fi
 
-    local context curcontext="$curcontext" state line
-    _arguments "${_arguments_options[@]}" : \
-'-c+[path to the configuration file (default=\$HOME/.klip.toml)]:CONFIG:_files' \
-'--config=[path to the configuration file (default=\$HOME/.klip.toml)]:CONFIG:_files' \
-'-h[Print help]' \
-'--help[Print help]' \
-'-V[Print version]' \
-'--version[Print version]' \
-":: :_klip_commands" \
-"*::: :->klip" \
-&& ret=0
-    case $state in
+  local context curcontext="$curcontext" state line
+  _arguments "${_arguments_options[@]}" : \
+    '-c+[path to the configuration file (default=\$HOME/.klip.toml)]:CONFIG:_files' \
+    '--config=[path to the configuration file (default=\$HOME/.klip.toml)]:CONFIG:_files' \
+    '-h[Print help]' \
+    '--help[Print help]' \
+    '-V[Print version]' \
+    '--version[Print version]' \
+    ":: :_klip_commands" \
+    "*::: :->klip" \
+    && ret=0
+  case $state in
     (klip)
-        words=($line[1] "${words[@]}")
-        (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:klip-command-$line[1]:"
-        case $line[1] in
-            (copy)
-_arguments "${_arguments_options[@]}" : \
-'-h[Print help]' \
-'--help[Print help]' \
-&& ret=0
-;;
-(paste)
-_arguments "${_arguments_options[@]}" : \
-'-h[Print help]' \
-'--help[Print help]' \
-&& ret=0
-;;
-(move)
-_arguments "${_arguments_options[@]}" : \
-'-h[Print help]' \
-'--help[Print help]' \
-&& ret=0
-;;
-(serve)
-_arguments "${_arguments_options[@]}" : \
-'--max-clients=[the maximum number of simultaneous client connections]:MAX_CLIENTS: ' \
-'--max-len-mb=[maximum content length to accept in MiB (0=unlimited)]:MAX_LEN_MB: ' \
-'-t+[connection timeout (in seconds)]:TIMEOUT: ' \
-'--timeout=[connection timeout (in seconds)]:TIMEOUT: ' \
-'-d+[data transmission timeout (in seconds)]:DATA_TIMEOUT: ' \
-'--data-timeout=[data transmission timeout (in seconds)]:DATA_TIMEOUT: ' \
-'-h[Print help]' \
-'--help[Print help]' \
-'-V[Print version]' \
-'--version[Print version]' \
-&& ret=0
-;;
-(genkeys)
-_arguments "${_arguments_options[@]}" : \
-'-p[derive the keys from a password (default=random keys)]' \
-'--password[derive the keys from a password (default=random keys)]' \
-'-h[Print help]' \
-'--help[Print help]' \
-'-V[Print version]' \
-'--version[Print version]' \
-&& ret=0
-;;
-(version)
-_arguments "${_arguments_options[@]}" : \
-'-h[Print help]' \
-'--help[Print help]' \
-&& ret=0
-;;
-(help)
-_arguments "${_arguments_options[@]}" : \
-":: :_klip__help_commands" \
-"*::: :->help" \
-&& ret=0
+      words=($line[1] "${words[@]}")
+      (( CURRENT += 1 ))
+      curcontext="${curcontext%:*:*}:klip-command-$line[1]:"
+      case $line[1] in
+        (copy)
+          _arguments "${_arguments_options[@]}" : \
+            '-h[Print help]' \
+            '--help[Print help]' \
+            && ret=0
+          ;;
+        (paste)
+          _arguments "${_arguments_options[@]}" : \
+            '-h[Print help]' \
+            '--help[Print help]' \
+            && ret=0
+          ;;
+        (move)
+          _arguments "${_arguments_options[@]}" : \
+            '-h[Print help]' \
+            '--help[Print help]' \
+            && ret=0
+          ;;
+        (serve)
+          _arguments "${_arguments_options[@]}" : \
+            '--max-clients=[the maximum number of simultaneous client connections]:MAX_CLIENTS: ' \
+            '--max-len-mb=[maximum content length to accept in MiB (0=unlimited)]:MAX_LEN_MB: ' \
+            '-t+[connection timeout (in seconds)]:TIMEOUT: ' \
+            '--timeout=[connection timeout (in seconds)]:TIMEOUT: ' \
+            '-d+[data transmission timeout (in seconds)]:DATA_TIMEOUT: ' \
+            '--data-timeout=[data transmission timeout (in seconds)]:DATA_TIMEOUT: ' \
+            '-h[Print help]' \
+            '--help[Print help]' \
+            '-V[Print version]' \
+            '--version[Print version]' \
+            && ret=0
+          ;;
+        (genkeys)
+          _arguments "${_arguments_options[@]}" : \
+            '-p[derive the keys from a password (default=random keys)]' \
+            '--password[derive the keys from a password (default=random keys)]' \
+            '-h[Print help]' \
+            '--help[Print help]' \
+            '-V[Print version]' \
+            '--version[Print version]' \
+            && ret=0
+          ;;
+        (version)
+          _arguments "${_arguments_options[@]}" : \
+            '-h[Print help]' \
+            '--help[Print help]' \
+            && ret=0
+          ;;
+        (help)
+          _arguments "${_arguments_options[@]}" : \
+            ":: :_klip__help_commands" \
+            "*::: :->help" \
+          && ret=0
 
-    case $state in
-    (help)
-        words=($line[1] "${words[@]}")
-        (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:klip-help-command-$line[1]:"
-        case $line[1] in
-            (copy)
-_arguments "${_arguments_options[@]}" : \
-&& ret=0
-;;
-(paste)
-_arguments "${_arguments_options[@]}" : \
-&& ret=0
-;;
-(move)
-_arguments "${_arguments_options[@]}" : \
-&& ret=0
-;;
-(serve)
-_arguments "${_arguments_options[@]}" : \
-&& ret=0
-;;
-(genkeys)
-_arguments "${_arguments_options[@]}" : \
-&& ret=0
-;;
-(version)
-_arguments "${_arguments_options[@]}" : \
-&& ret=0
-;;
-(help)
-_arguments "${_arguments_options[@]}" : \
-&& ret=0
-;;
-        esac
-    ;;
-esac
-;;
-        esac
-    ;;
-esac
+          case $state in
+            (help)
+                words=($line[1] "${words[@]}")
+                (( CURRENT += 1 ))
+                curcontext="${curcontext%:*:*}:klip-help-command-$line[1]:"
+                case $line[1] in
+                  (copy)
+                    _arguments "${_arguments_options[@]}" : \
+                      && ret=0
+                    ;;
+                  (paste)
+                    _arguments "${_arguments_options[@]}" : \
+                      && ret=0
+                    ;;
+                  (move)
+                    _arguments "${_arguments_options[@]}" : \
+                      && ret=0
+                  ;;
+                (serve)
+                  _arguments "${_arguments_options[@]}" : \
+                    && ret=0
+                  ;;
+                (genkeys)
+                  _arguments "${_arguments_options[@]}" : \
+                    && ret=0
+                  ;;
+                (version)
+                  _arguments "${_arguments_options[@]}" : \
+                    && ret=0
+                  ;;
+                (help)
+                  _arguments "${_arguments_options[@]}" : \
+                    && ret=0
+                  ;;
+              esac
+              ;;
+          esac
+          ;;
+      esac
+      ;;
+  esac
 }
 
 (( $+functions[_klip_commands] )) ||
 _klip_commands() {
-    local commands; commands=(
-'copy:store content' \
-'paste:retrieve content' \
-'move:retrieve and delete content' \
-'serve:start a server' \
-'genkeys:generate keys' \
-'version:show version information' \
-'help:Print this message or the help of the given subcommand(s)' \
-    )
-    _describe -t commands 'klip commands' commands "$@"
+  local commands; commands=(
+    'copy:store content' \
+    'paste:retrieve content' \
+    'move:retrieve and delete content' \
+    'serve:start a server' \
+    'genkeys:generate keys' \
+    'version:show version information' \
+    'help:Print this message or the help of the given subcommand(s)' \
+  )
+  _describe -t commands 'klip commands' commands "$@"
 }
 (( $+functions[_klip__copy_commands] )) ||
 _klip__copy_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip copy commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip copy commands' commands "$@"
 }
 (( $+functions[_klip__genkeys_commands] )) ||
 _klip__genkeys_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip genkeys commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip genkeys commands' commands "$@"
 }
 (( $+functions[_klip__help_commands] )) ||
 _klip__help_commands() {
-    local commands; commands=(
-'copy:store content' \
-'paste:retrieve content' \
-'move:retrieve and delete content' \
-'serve:start a server' \
-'genkeys:generate keys' \
-'version:show version information' \
-'help:Print this message or the help of the given subcommand(s)' \
-    )
-    _describe -t commands 'klip help commands' commands "$@"
+  local commands; commands=(
+    'copy:store content' \
+    'paste:retrieve content' \
+    'move:retrieve and delete content' \
+    'serve:start a server' \
+    'genkeys:generate keys' \
+    'version:show version information' \
+    'help:Print this message or the help of the given subcommand(s)' \
+  )
+  _describe -t commands 'klip help commands' commands "$@"
 }
 (( $+functions[_klip__help__copy_commands] )) ||
 _klip__help__copy_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip help copy commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip help copy commands' commands "$@"
 }
 (( $+functions[_klip__help__genkeys_commands] )) ||
 _klip__help__genkeys_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip help genkeys commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip help genkeys commands' commands "$@"
 }
 (( $+functions[_klip__help__help_commands] )) ||
 _klip__help__help_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip help help commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip help help commands' commands "$@"
 }
 (( $+functions[_klip__help__move_commands] )) ||
 _klip__help__move_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip help move commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip help move commands' commands "$@"
 }
 (( $+functions[_klip__help__paste_commands] )) ||
 _klip__help__paste_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip help paste commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip help paste commands' commands "$@"
 }
 (( $+functions[_klip__help__serve_commands] )) ||
 _klip__help__serve_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip help serve commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip help serve commands' commands "$@"
 }
 (( $+functions[_klip__help__version_commands] )) ||
 _klip__help__version_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip help version commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip help version commands' commands "$@"
 }
 (( $+functions[_klip__move_commands] )) ||
 _klip__move_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip move commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip move commands' commands "$@"
 }
 (( $+functions[_klip__paste_commands] )) ||
 _klip__paste_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip paste commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip paste commands' commands "$@"
 }
 (( $+functions[_klip__serve_commands] )) ||
 _klip__serve_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip serve commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip serve commands' commands "$@"
 }
 (( $+functions[_klip__version_commands] )) ||
 _klip__version_commands() {
-    local commands; commands=()
-    _describe -t commands 'klip version commands' commands "$@"
+  local commands; commands=()
+  _describe -t commands 'klip version commands' commands "$@"
 }
 
 if [ "$funcstack[1]" = "_klip" ]; then
-    _klip "$@"
+  _klip "$@"
 else
-    compdef _klip klip
+  compdef _klip klip
 fi
