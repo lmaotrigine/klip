@@ -1,14 +1,15 @@
-#[cfg(not(target_vendor = "uwp"))]
-use std::os::windows::ffi::OsStringExt;
 use std::path::PathBuf;
 #[cfg(not(target_vendor = "uwp"))]
+use std::{ffi::OsString, os::windows::ffi::OsStringExt};
+#[cfg(not(target_vendor = "uwp"))]
 use windows_sys::Win32::{
-    Foundation::{MAX_PATH, S_OK},
-    UI::Shell::{SHGetFolderPathW, CSIDL_PROFILE},
+    Foundation::S_OK,
+    System::Com::CoTaskMemFree,
+    UI::Shell::{FOLDERID_Profile, SHGetKnownFolderPath, KF_FLAG_DONT_VERIFY},
 };
 
 #[cfg(not(target_vendor = "uwp"))]
-extern "C" {
+unsafe extern "C" {
     fn wcslen(buf: *const u16) -> usize;
 }
 
@@ -20,29 +21,27 @@ fn home_dir_crt() -> Option<PathBuf> {
     }
     #[cfg(not(target_vendor = "uwp"))]
     {
-        let mut path = Vec::with_capacity(MAX_PATH as _);
-        #[allow(clippy::cast_possible_wrap)] // 40 as i32 doesn't wrap.
+        let mut path = core::ptr::null_mut();
         unsafe {
-            match SHGetFolderPathW(
+            if SHGetKnownFolderPath(
+                &FOLDERID_Profile,
+                KF_FLAG_DONT_VERIFY as _,
                 core::ptr::null_mut(),
-                CSIDL_PROFILE as _,
-                core::ptr::null_mut(),
-                0,
-                path.as_mut_ptr(),
-            ) {
-                S_OK => {
-                    let len = wcslen(path.as_ptr());
-                    path.set_len(len);
-                    let s = std::ffi::OsString::from_wide(&path);
-                    Some(PathBuf::from(s))
-                }
-                _ => None,
+                &mut path,
+            ) == S_OK
+            {
+                let slice = core::slice::from_raw_parts(path, wcslen(path));
+                let s = OsString::from_wide(slice);
+                CoTaskMemFree(path.cast());
+                Some(PathBuf::from(s))
+            } else {
+                CoTaskMemFree(path.cast());
+                None
             }
         }
     }
 }
 
-#[must_use]
 pub fn home_dir() -> Option<PathBuf> {
     std::env::var_os("USERPROFILE")
         .filter(|s| !s.is_empty())
