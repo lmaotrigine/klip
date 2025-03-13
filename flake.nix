@@ -54,10 +54,8 @@
             default = klip;
           };
           devShells.default = pkgs.mkShell {
-            inherit cargoArtifacts;
-            inputsFrom = [ klip ];
+            inherit nativeBuildInputs;
           };
-
         }
       ) // (
       let
