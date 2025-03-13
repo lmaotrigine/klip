@@ -392,7 +392,7 @@ fn process_mod(
                                             Err(error) => return error.into_compile_error(),
                                         };
                                         let feature = feature.value();
-                                        if !spec_features.iter().any(|f| feature == *f) {
+                                        if !spec_features.contains(&feature) {
                                             *item = syn::Item::Verbatim(TokenStream::default());
                                             continue 'next_item;
                                         }

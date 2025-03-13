@@ -7,7 +7,7 @@ type Block = [u8; 64];
 
 pub struct Salsa {
     state: [u32; STATE_WORDS],
-} // SalsaCore<10>
+}
 
 impl Salsa {
     pub const fn from_raw_state(state: [u32; STATE_WORDS]) -> Self {
