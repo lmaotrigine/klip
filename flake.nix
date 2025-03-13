@@ -36,15 +36,17 @@
           klip = craneLib.buildPackage
             (common // {
               inherit cargoArtifacts;
+              nativeBuildInputs = nativeBuildInputs ++ [ pkgs.installShellFiles ];
               preConfigurePhases = [ "set_hash" ];
               set_hash = ''
                 export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
               '';
               postInstall = ''
-                install -Dm644 completions/klip.bash $out/share/bash-completion/completions/klip.bash
-                install -Dm644 completions/klip.fish $out/share/fish/vendor_completions.d/klip.fish
-                install -Dm644 doc/klip.1 $out/share/man/man1/klip.1
-                install -Dm644 completions/_klip $out/share/zsh/site-functions/_klip
+                installShellCompletion \
+                  --bash completions/klip.bash \
+                  --fish completions/klip.fish \
+                  --zsh completions/_klip
+                installManPage doc/klip.1
               '';
             });
         in
