@@ -145,6 +145,7 @@
                 users.groups.klip = { };
                 systemd.services.klip = {
                   description = "klip staging server";
+                  documentation = [ "man:klip(1)" ];
                   after = [ "multi-user.target" "network-online.target" ];
                   wantedBy = [ "multi-user.target" ];
                   wants = [ "network-online.target" ];
@@ -163,6 +164,7 @@
                 systemd.user.services.klip = {
                   Unit = {
                     Description = "klip staging server";
+                    Documentation = [ "man:klip(1)" ];
                     After = [ "network-online.target" ];
                     Wants = [ "network-online.target" ];
                   };
