@@ -90,8 +90,9 @@ async fn shutdown() {
         () = term => (),
     }
 }
-#[tokio::main]
+
 #[allow(clippy::needless_return, clippy::redundant_pub_crate)] // macro generated
+#[tokio::main]
 async fn main() -> Result<(), error::Context> {
     #[cfg(windows)]
     platform::preflight();

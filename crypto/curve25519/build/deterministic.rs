@@ -1,7 +1,7 @@
 use super::{Backend, Bits};
 
 fn warn_default(msg: &str) {
-    println!("cargo:warning=\"defaulting to curve25519_bits=32: {msg}\"");
+    println!("cargo::warning=\"defaulting to curve25519_bits=32: {msg}\"");
 }
 
 pub fn determine_bits() -> Bits {

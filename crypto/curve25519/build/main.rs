@@ -47,9 +47,9 @@ impl std::fmt::Display for Backend {
 }
 
 fn main() {
-    println!("cargo:rerun-if-changed=build/main.rs");
-    println!("cargo:rerun-if-changed=build/deterministic.rs");
-    println!("cargo:rerun-if-env-changed=TARGET");
+    println!("cargo::rerun-if-changed=build/main.rs");
+    println!("cargo::rerun-if-changed=build/deterministic.rs");
+    println!("cargo::rerun-if-env-changed=TARGET");
     let bits = match std::env::var("CARGO_CFG_CURVE25519_BITS").as_deref() {
         Ok("32") => Bits::ThirtyTwo,
         Ok("64") => Bits::SixtyFour,
@@ -58,9 +58,9 @@ fn main() {
     let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
     let nightly = deterministic::is_nightly();
     let backend = deterministic::determine_backend(&target_arch, bits);
-    println!("cargo:rustc-cfg=curve25519_bits={bits}");
-    println!("cargo:rustc-cfg=curve25519_backend={backend}");
+    println!("cargo::rustc-cfg=curve25519_bits={bits}");
+    println!("cargo::rustc-cfg=curve25519_backend={backend}");
     if nightly {
-        println!("cargo:rustc-cfg=nightly");
+        println!("cargo::rustc-cfg=nightly");
     }
 }
