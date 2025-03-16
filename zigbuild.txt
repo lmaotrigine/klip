@@ -1,2 +1,0 @@
-cargo-zigbuild
-ziglang<=0.11
