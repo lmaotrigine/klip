@@ -40,11 +40,11 @@ impl FieldElement2625 {
         z
     }
 
-    fn reduce(mut z: [u64; 10]) -> Self {
+    const fn reduce(mut z: [u64; 10]) -> Self {
         const LOW_25_BITS: u64 = (1 << 25) - 1;
         const LOW_26_BITS: u64 = (1 << 26) - 1;
         #[inline(always)]
-        fn carry(z: &mut [u64; 10], i: usize) {
+        const fn carry(z: &mut [u64; 10], i: usize) {
             debug_assert!(i < 9);
             if i % 2 == 0 {
                 z[i + 1] += z[i] >> 26;
