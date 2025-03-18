@@ -119,7 +119,7 @@ share-generics := if cargo-buildstd != "" {
 
 link-args := if target-os == "windows" {
   " -C target-feature=+crt-static"
-} else if target =~ "-musl" {
+} else if target == "x86_64-unknown-linux-musl" {
   " -C target-feature=+crt-static -C link-self-contained=yes -C link-arg=-fuse-ld=lld -C linker=clang"
 } else if target-os == "macos" {
   " -C linker=clang"
@@ -239,7 +239,7 @@ package: package-prepare
 [windows]
 package: package-prepare
   cd packages/prep && 7z a -mx9 "../klip-{{target}}.zip" {{output-filename}}
-  cd packages/prep && 7z a -mx9 "../kli-{{target}}.full.zip" *
+  cd packages/prep && 7z a -mx9 "../klip-{{target}}.full.zip" *
   cd packages && certutil -hashfile "klip-{{target}}.zip" SHA256 > "klip-{{target}}.zip.sha256"
   cd packages && certutil -hashfile "klip-{{target}}.full.zip" SHA256 > "klip-{{target}}.full.zip.sha256"
 
