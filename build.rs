@@ -43,7 +43,7 @@ fn main() {
     println!("cargo::rerun-if-env-changed=KLIP_BUILD_GIT_HASH");
     set_git_hash();
     println!("cargo::rerun-if-changed=build.rs");
-    println!("cargo::rerun-if-env-changed=TARGET");
+    println!("cargo::rerun-if-env-changed=CARGO_BUILD_TARGET");
     let target_os = std::env::var("CARGO_CFG_TARGET_OS");
     let target_env = std::env::var("CARGO_CFG_TARGET_ENV");
     if !(target_os.as_deref() == Ok("windows") && target_env.as_deref() == Ok("msvc")) {
