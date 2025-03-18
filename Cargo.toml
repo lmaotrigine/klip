@@ -1,0 +1,135 @@
+[workspace]
+resolver = "2"
+members = [
+  ".",
+  "crypto/blake2b",
+  "crypto/common",
+  "crypto/curve25519",
+  "crypto/curve25519/macros",
+  "crypto/ed25519",
+  "crypto/scrypt",
+  "crypto/sha256",
+  "crypto/sha512",
+  "crypto/target_features",
+  "crypto/xchacha20",
+  "lib/platform",
+]
+default-members = ["."]
+
+[package]
+name = "klip"
+description = "Copy/paste anything over the network"
+version = "0.1.0"  #:version
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+readme = "README.md"
+repository.workspace = true
+edition = "2021"
+
+[workspace.package]
+authors = ["Isis Ebsen <isis@5ht2.me>"]
+license = "MPL-2.0"
+publish = false
+repository = "https://github.com/lmaotrigine/klip"
+
+[dependencies]
+blake2b = { version = "0.0.0", path = "crypto/blake2b", default-features = false }
+clap = { version = "4", features = ["wrap_help", "derive"] }
+crypto-common = { version = "0.0.0", path = "crypto/common" }
+ed25519 = { version = "0.0.0", path = "crypto/ed25519" }
+parking_lot = "0.12"
+platform = { version = "0.0.0", path = "lib/platform" }
+rand_core.workspace = true
+scrypt = { version = "0.0.0", path = "crypto/scrypt" }
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+xchacha20 = { version = "0.0.0", path = "crypto/xchacha20" }
+
+[dependencies.tokio]
+version = "1"
+features = [
+  "macros",
+  "rt-multi-thread",
+  "net",
+  "io-util",
+  "signal",
+  "time",
+]
+
+[target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
+jemallocator = "0.5"
+
+[lints]
+workspace = true
+
+[workspace.lints.rust]
+dead_code = "deny"
+deprecated = "deny"
+future_incompatible = "deny"
+missing_copy_implementations = "deny"
+missing_debug_implementations = "deny"
+nonstandard_style = "deny"
+rust_2018_idioms = "deny"
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+unused = "deny"
+
+[workspace.lints.clippy]
+all = "deny"
+pedantic = "deny"
+nursery = "deny"
+cargo = "deny"
+
+[workspace.lints.rust.unexpected_cfgs] # for curve25519 build-time cfgs and tests
+priority = 1
+level = "warn"
+check-cfg = ['cfg(disabled)', 'cfg(feature, values("dummy"))']
+
+[workspace.dependencies]
+libc = "0.2"
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+# our dependency tree is amenable to aggressive optimization without much
+# compile time overhead. it still takes a bit, though.
+[profile.release]
+# on some platforms, opt-level = 3 performs better. i haven't profiled this
+# extensively enough to make a decision.
+opt-level = 2
+debug = false
+strip = true
+debug-assertions = false
+overflow-checks = false
+lto = "fat"
+panic = "abort"
+incremental = false
+codegen-units = 1
+
+[profile.deb]
+inherits = "release"
+debug = false
+
+[package.metadata.deb]
+section = "utils"
+assets = [
+  ["target/release/klip", "usr/bin/", "755"],
+  ["LICENSE", "usr/share/doc/klip/", "644"],
+  ["README.md", "usr/share/doc/klip/README", "644"],
+  ["CHANGELOG.md", "usr/share/doc/klip/CHANGELOG", "644"],
+  ["doc/klip.1", "usr/share/man/man1/klip.1", "644"],
+  ["completions/klip.bash", "usr/share/bash-completion/completions/klip", "644"],
+  ["completions/klip.fish", "usr/share/fish/vendor_completions.d/klip.fish", "644"],
+  ["completions/_klip", "usr/share/zsh/vendor-completions/_klip", "644"],
+  ["completions/klip.elv", "usr/share/elvish/lib/", "644"],
+]
+extended-description = """\
+klip allows you to share arbitrary content between hosts anywhere on the
+internet. It works by transferring the content to an intermediary server, which
+every client with the correct credentials can query.
+"""
+depends = ""  # NOTE: will break unless target is x86_64-unknown-linux-musl
+maintainer-scripts = "pkg/debian"
+
+[package.metadata.deb.systemd-units]
+unit-scripts = "pkg/systemd"
+enable = false
+start = false

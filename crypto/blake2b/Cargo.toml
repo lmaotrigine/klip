@@ -1,0 +1,26 @@
+[package]
+name = "blake2b"
+description = "Pure Rust Blake2b implementation"
+version = "0.0.0"
+edition = "2021"
+publish.workspace = true
+repository.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crypto-common = { version = "0.0.0", path = "../common" }
+
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
+target_features = { version = "0.0.0", path = "../target_features" }
+
+[features]
+default = []
+# there's a lot of #[inline(always)] here. on ARM Cortex-M0 (and probably other
+# small chips), some of that inlining actually hurts performance. this feature
+# disables some inlining, improving the performance of the portable
+# implementation in those specific cases.
+uninline = []
+
+[lints]
+workspace = true

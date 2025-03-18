@@ -1,0 +1,17 @@
+[package]
+name = "sha512"
+version = "0.0.0"
+edition = "2021"
+publish.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crypto-common = { version = "0.0.0", path = "../common" }
+
+[target.'cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "x86"))'.dependencies]
+target_features = { version = "0.0.0", path = "../target_features" }
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ['cfg(sha512_backend, values("riscv-zknh", "riscv-zknh-compact"))']

@@ -1,0 +1,9 @@
+/target
+/result
+.direnv/
+.vscode/
+.idea/
+.DS_Store
+/packages
+.venv/
+venv/

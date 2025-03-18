@@ -1,0 +1,18 @@
+[package]
+name = "crypto-common"
+version = "0.0.0"
+edition = "2021"
+repository.workspace = true
+publish.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[features]
+default = []
+core_hint_black_box = []
+
+[lints]
+workspace = true

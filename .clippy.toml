@@ -1,0 +1,4 @@
+single-char-binding-names-threshold = 10
+allowed-duplicate-crates = [
+  "windows-sys",
+]
