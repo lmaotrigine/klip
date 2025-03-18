@@ -31,7 +31,7 @@ edition = "2021"
 authors = ["Isis Ebsen <isis@5ht2.me>"]
 license = "MPL-2.0"
 publish = false
-repository = "https://git.5ht2.me/lmaotrigine/klip"
+repository = "https://github.com/lmaotrigine/klip"
 
 [dependencies]
 blake2b = { version = "0.0.0", path = "crypto/blake2b", default-features = false }

@@ -2,7 +2,7 @@
 name = "crypto-common"
 version = "0.0.0"
 edition = "2021"
-repository = "https://git.5ht2.me/5ht2/crypto-common"
+repository.workspace = true
 publish.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

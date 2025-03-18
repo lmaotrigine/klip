@@ -1,12 +1,12 @@
 class KlipBin < Formula
   version '0.1.0'
   desc 'Copy/paste anything over the network'
-  homepage 'https://git.5ht2.me/lmaotrigine/klip'
+  homepage 'https://github.com/lmaotrigine/klip'
   if OS.mac?
-    url = "https://git.5ht2.me/lmaotrigine/klip/-/releases/v#{version}/downloads/klip-x86_64-apple-darwin.tar.xz"
+    url = "https://github.com/lmaotrigine/klip/releases/download/v#{version}/klip-x86_64-apple-darwin.tar.xz"
     sha256 "somesha"
   elsif OS.linux?
-    url = "https://git.5ht2.me/lmaotrigine/klip/-/releases/v#{version}/downloads/klip-x86_64-unknown-linux-musl.tar.xz"
+    url = "https://github.com/lmaotrigine/klip/releases/download/v#{version}/klip-x86_64-unknown-linux-musl.tar.xz"
     sha256 "somesha"
   end
   conflicts_with "klip"

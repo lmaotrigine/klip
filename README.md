@@ -50,12 +50,8 @@ Windows.
 
 ### Precompiled binaries
 
-~~Pre-compiled binaries for macOS, Linux, Windows, Dragonfly BSD (x86_64 only),
-NetBSD (x86 and x86_64 only), and OpenBSD (x86 and x86_64 only) can be
-downloaded here: https://git.5ht2.me/lmaotrigine/klip/releases/latest~~ For
-legal reasons, spinning up containers for automated cross builds in CI is
-currently not possible on this GitLab instance. The release process is manual,
-and I will update this section when I actually upload the release archives.
+Pre-compiled binaries for macOS, Linux and Windows can be downloaded here:
+https://github.com/lmaotrigine/klip/releases.
 
 ### Compile the source code
 
@@ -223,10 +219,10 @@ alias klpr='klip paste | tar xJpvf -'
 
 ## klip integration in third-party applications
 
-- The [klip extension for VSCode](https://git.5ht2.me/lmaotrigine/vscode-klip)
+- The [klip extension for VSCode](https://github.com/lmaotrigine/vscode-klip)
   is a first-party extension that allows copying and pasting text between hosts
   running the Visual Studio Code text editor.
-- [`klip.vim`](https://git.5ht2.me/lmaotrigine/klip.vim) is a plugin for Vim/
+- [`klip.vim`](https://github.com/lmaotrigine/klip.vim) is a plugin for Vim/
   Neovim that allows copying and pasting text.
 
 ## Use cases
