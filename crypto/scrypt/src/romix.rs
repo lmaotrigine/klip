@@ -29,7 +29,7 @@ fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
             *b = u32::from_le_bytes(c.try_into().unwrap());
         }
         Salsa::from_raw_state(t2).write_keystream_block(&mut x);
-        let pos = if i % 2 == 0 {
+        let pos = if i.is_multiple_of(2) {
             (i / 2) * 64
         } else {
             (i / 2) * 64 + input.len() / 2

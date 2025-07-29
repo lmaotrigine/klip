@@ -80,7 +80,7 @@ impl Not for Choice {
 #[inline(never)]
 fn black_box(input: u8) -> u8 {
     debug_assert!((input == 0) | (input == 1));
-    unsafe { core::ptr::read_volatile(&input) }
+    unsafe { core::ptr::read_volatile(&raw const input) }
 }
 
 #[cfg(feature = "core_hint_black_box")]

@@ -25,7 +25,7 @@ impl Hidden {
         let term_orig = tcgetattr!();
         term.c_cflag &= !libc::ECHO;
         term.c_cflag |= libc::ECHONL;
-        if unsafe { libc::tcsetattr(fd, libc::TCSANOW, &term) } != 0 {
+        if unsafe { libc::tcsetattr(fd, libc::TCSANOW, &raw const term) } != 0 {
             return Err(std::io::Error::last_os_error());
         }
         Ok(Self {
@@ -37,7 +37,7 @@ impl Hidden {
 
 impl Drop for Hidden {
     fn drop(&mut self) {
-        unsafe { libc::tcsetattr(self.fd, libc::TCSANOW, &self.termios) };
+        unsafe { libc::tcsetattr(self.fd, libc::TCSANOW, &raw const self.termios) };
     }
 }
 

@@ -22,7 +22,7 @@ struct Hidden {
 impl Hidden {
     fn new(handle: HANDLE) -> Result<Self> {
         let mut mode = 0;
-        if unsafe { GetConsoleMode(handle, &mut mode) } == 0 {
+        if unsafe { GetConsoleMode(handle, &raw mut mode) } == 0 {
             return Err(std::io::Error::last_os_error());
         }
         let new_mode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
@@ -54,7 +54,7 @@ pub fn read_password() -> Result<String> {
     if handle == INVALID_HANDLE_VALUE {
         return Err(std::io::Error::last_os_error());
     }
-    let mut stream = BufReader::new(unsafe { File::from_raw_handle(handle as _) });
+    let mut stream = BufReader::new(unsafe { File::from_raw_handle(handle.cast()) });
     let mut password = super::Password::new();
     let hidden = Hidden::new(handle)?;
     let ret = stream.read_line(&mut password.0);
@@ -79,7 +79,7 @@ pub fn print_tty(prompt: &str) -> Result<()> {
     if handle == INVALID_HANDLE_VALUE {
         return Err(std::io::Error::last_os_error());
     }
-    let mut stream = unsafe { File::from_raw_handle(handle as _) };
+    let mut stream = unsafe { File::from_raw_handle(handle.cast()) };
     stream.write_all(prompt.as_bytes())?;
     stream.flush()?;
     Ok(())

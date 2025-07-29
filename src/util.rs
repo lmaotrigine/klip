@@ -136,7 +136,7 @@ pub fn from_hex(s: &str, buf: &mut [u8]) -> Result<(), ()> {
         }
     }
     let bytes = s.as_bytes();
-    if bytes.len() % 2 != 0 {
+    if !bytes.len().is_multiple_of(2) {
         return Err(());
     }
     if bytes.len() != buf.len() * 2 {

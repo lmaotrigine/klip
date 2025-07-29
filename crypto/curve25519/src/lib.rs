@@ -1,13 +1,5 @@
 #![no_std]
 #![allow(unexpected_cfgs)]
-#![cfg_attr(
-    all(
-        curve25519_backend = "simd",
-        nightly,
-        any(target_arch = "x86", target_arch = "x86_64")
-    ),
-    feature(avx512_target_feature, stdarch_x86_avx512)
-)]
 #![deny(
     dead_code,
     deprecated,
@@ -307,7 +299,7 @@ impl EdwardsBasepointTable {
             p = (&p + &tables[i / 2].select(a[i])).as_extended();
         }
         p = p.mul_by_pow_2(4);
-        for i in (0..64).filter(|x| x % 2 == 0) {
+        for i in (0..64usize).filter(|&x| x.is_multiple_of(2)) {
             p = (&p + &tables[i / 2].select(a[i])).as_extended();
         }
         p

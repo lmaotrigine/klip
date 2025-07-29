@@ -88,14 +88,15 @@ macro_rules! __check {
 
 #[cfg(target_vendor = "apple")]
 #[doc(hidden)]
+#[must_use]
 pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
     let mut val = 0;
-    let val_ptr: *mut u32 = &mut val;
+    let val_ptr = &raw mut val;
     let mut size = core::mem::size_of::<u32>();
     let ret = libc::sysctlbyname(
         name.as_ptr().cast(),
         val_ptr.cast(),
-        &mut size,
+        &raw mut size,
         core::ptr::null_mut(),
         0,
     );

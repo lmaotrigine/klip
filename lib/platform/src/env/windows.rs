@@ -27,7 +27,7 @@ fn home_dir_crt() -> Option<PathBuf> {
                 &FOLDERID_Profile,
                 KF_FLAG_DONT_VERIFY as _,
                 core::ptr::null_mut(),
-                &mut path,
+                &raw mut path,
             ) == S_OK
             {
                 let slice = core::slice::from_raw_parts(path, wcslen(path));

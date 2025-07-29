@@ -258,7 +258,7 @@ impl FieldElement2625x4 {
         let low_26_bits = u64x4::splat((1 << 26) - 1);
         let carry = |z: &mut [u64x4; 10], i: usize| {
             debug_assert!(i < 9);
-            if i % 2 == 0 {
+            if i.is_multiple_of(2) {
                 z[i + 1] += z[i].shr::<26>();
                 z[i] &= low_26_bits;
             } else {

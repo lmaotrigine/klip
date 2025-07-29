@@ -13,7 +13,7 @@ pub fn isatty(stderr: bool) -> bool {
             STD_OUTPUT_HANDLE
         });
         let mut out = 0;
-        GetConsoleMode(handle, &mut out) != 0
+        GetConsoleMode(handle, &raw mut out) != 0
     }
 }
 
