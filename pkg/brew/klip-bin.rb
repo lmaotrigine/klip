@@ -7,11 +7,22 @@ class KlipBin < Formula
   homepage "https://github.com/lmaotrigine/klip"
   version "0.1.0"
   if OS.mac?
-    url "https://github.com/lmaotrigine/klip/releases/download/#{version}/klip-x86_64-apple-darwin.full.zip"
-    sha256 "80c4824aad513a2735eb4cb91b42950bf01fa613dcb2ee24b7012660a0523669"
+    on_intel do
+      url "https://github.com/lmaotrigine/klip/releases/download/#{version}/klip-x86_64-apple-darwin.full.zip"
+      sha256 "80c4824aad513a2735eb4cb91b42950bf01fa613dcb2ee24b7012660a0523669"
+    end
+    on_arm do
+      url "https://github.com/lmaotrigine/klip/releases/download/#{version}/klip-aarch64-apple-darwin.full.zip"
+      sha256 "63c8579bb31106dafd421060cdd6de3f1130a397dd8d2566e65bd75382701679"
+    end
   elsif OS.linux?
-    url "https://github.com/lmaotrigine/klip/releases/download/#{version}/klip-x86_64-unknown-linux-musl.full.tar.xz"
-    sha256 "c976f3f33745057318bb6260614e43c70a6f8b8698b069fa0eaa863cc2dbb40e"
+    on_intel do
+      url "https://github.com/lmaotrigine/klip/releases/download/#{version}/klip-x86_64-unknown-linux-musl.full.tar.xz"
+      sha256 "c976f3f33745057318bb6260614e43c70a6f8b8698b069fa0eaa863cc2dbb40e"
+    on_arm do
+      url "https://github.com/lmaotrigine/klip/releases/download/#{version}/klip-aarch64-unknown-linux-musl.full.tar.xz"
+      sha256 "5c577d9000d22fc580dd9aed17837575e6ba05204317f4dbf25fcbc7d5fb5d83"
+    end
   end
   def install
     bin.install "klip"
