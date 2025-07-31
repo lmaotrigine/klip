@@ -48,6 +48,15 @@ Windows.
 
 ## Installation
 
+### Homebrew
+
+klip is available on my [homebrew tap](https://github.com/lmaotrigine/homebrew-tap).
+
+```console
+$ brew tap lmaotrigine/tap
+$ brew install lmaotrigine/tap/klip
+```
+
 ### Precompiled binaries
 
 Pre-compiled binaries for macOS, Linux and Windows can be downloaded here:
