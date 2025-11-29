@@ -154,7 +154,7 @@
       in
       {
         overlays.default = final: prev: {
-          klip = self.packages.default.${prev.system};
+          klip = self.packages.default.${prev.stdenv.hostPlatform.system};
         };
         nixosModules = {
           default = { config, pkgs, ... }:
@@ -170,7 +170,7 @@
                   wantedBy = [ "multi-user.target" ];
                   wants = [ "network-online.target" ];
                   serviceConfig = baseServiceConfig // {
-                    ExecStart = cmdline cfg.configFile pkgs.system;
+                    ExecStart = cmdline cfg.configFile pkgs.stdenv.hostPlatform.system;
                     User = "klip";
                     Group = "klip";
                   };
@@ -189,7 +189,7 @@
                     Wants = [ "network-online.target" ];
                   };
                   Service = baseServiceConfig // {
-                    ExecStart = cmdline cfg.configFile pkgs.system;
+                    ExecStart = cmdline cfg.configFile pkgs.stdenv.hostPlatform.system;
                   };
                   Install = {
                     WantedBy = [ "default.target" ];
@@ -204,7 +204,7 @@
             config = nixpkgs.lib.mkIf cfg.enable {
               launchd.user.agents.klip = {
                 serviceConfig = {
-                  ProgramArguments = cmdline cfg.configFile pkgs.system;
+                  ProgramArguments = cmdline cfg.configFile pkgs.stdenv.hostPlatform.system;
                   RunAtLoad = true;
                   KeepAlive = true;
                 };
