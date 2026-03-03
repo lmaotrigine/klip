@@ -42,7 +42,7 @@ parking_lot = "0.12"
 platform = { version = "0.0.0", path = "lib/platform" }
 rand_core.workspace = true
 scrypt = { version = "0.0.0", path = "crypto/scrypt" }
-toml = { version = "0.8", default-features = false, features = ["parse"] }
+toml = { version = "1", default-features = false, features = ["parse"] }
 xchacha20 = { version = "0.0.0", path = "crypto/xchacha20" }
 
 [dependencies.tokio]
