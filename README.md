@@ -67,12 +67,12 @@ https://github.com/lmaotrigine/klip/releases.
 This project is written in pure Rust, with some inline assembly for SIMD
 accelerated cryptography and minimal FFI to interact with the operating system.
 
-It is known to build on the latest stable compiler (at the time of writing, this
-is 1.87). Enabling SIMD optimizations in the curve25519 implementation requires
-a nightly compiler for historical reasons. This may be relaxed in the future.
-Your mileage with SIMD may vary quite a bit. I have done some extensive
-benchmarking, but if you find a corner case that hinders performance, please let
-me know! Use either of the following incantations:
+It is known to build on the latest stable compiler. Enabling SIMD optimizations
+in the curve25519 implementation requires a nightly compiler for historical
+reasons. This may be relaxed in the future. Your mileage with SIMD may vary
+quite a bit. I have done some extensive benchmarking, but if you find a corner
+case that hinders performance, please let me know! Use either of the following
+incantations:
 
 ```console
 $ cargo build --release --locked
