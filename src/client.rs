@@ -4,7 +4,8 @@ use crate::{
     error::Error,
     util::Stream,
 };
-use crypto_common::constant_time::ConstantTimeEq;
+use chacha20::cipher::{KeyIvInit, StreamCipher};
+use ed25519_dalek::Signer;
 use platform::tty::isatty;
 use rand_core::RngCore;
 use std::{
@@ -12,6 +13,7 @@ use std::{
     net::TcpStream,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+use subtle::ConstantTimeEq;
 
 #[macro_export]
 macro_rules! default_client_version {
@@ -37,8 +39,8 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
         .lock()
         .read_to_end(&mut content_with_encrypt_sk_id_and_nonce)?;
     let opcode = b'S';
-    let mut cipher = xchacha20::XChaCha20::new(
-        &config.encrypt_sk(),
+    let mut cipher = chacha20::XChaCha20::new(
+        &config.encrypt_sk().into(),
         &content_with_encrypt_sk_id_and_nonce[8..32]
             .try_into()
             .expect("8..32 doesn't span 24 bytes. math has died."),
@@ -55,7 +57,7 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     s.set_timeout(config.data_timeout());
     let h2 = auth2store(config.psk(), h1, opcode, &ts, &signature.to_bytes());
     s.write_all(&[opcode]).await?;
-    s.write_all(h2.as_bytes()).await?;
+    s.write_all(&h2).await?;
     let ciphertext_with_encrypt_sk_id_and_nonce_len =
         content_with_encrypt_sk_id_and_nonce.len() as u64;
     s.write_all(&ciphertext_with_encrypt_sk_id_and_nonce_len.to_le_bytes())
@@ -73,8 +75,8 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
         }
     })?;
     let h3 = &rbuf[..32];
-    let wh3 = auth3store(config.psk(), h2.as_bytes());
-    if wh3.as_bytes().ct_eq(h3).to_u8() != 1 {
+    let wh3 = auth3store(config.psk(), &h2);
+    if wh3.ct_eq(h3).unwrap_u8() != 1 {
         return Err(Error::Auth);
     }
     if isatty(true) {
@@ -93,7 +95,7 @@ async fn paste_operation(
     let opcode = if is_move { b'M' } else { b'G' };
     let h2 = auth2get(config.psk(), h1, opcode);
     stream.write_all(&[opcode]).await?;
-    stream.write_all(h2.as_bytes()).await?;
+    stream.write_all(&h2).await?;
     stream.flush().await?;
     let mut rbuf = [0; 112];
     stream.read_exact(&mut rbuf).await.map_err(|e| {
@@ -115,8 +117,8 @@ async fn paste_operation(
     ts.copy_from_slice(&rbuf[40..48]);
     let mut signature = [0; 64];
     signature.copy_from_slice(&rbuf[48..112]);
-    let wh3 = auth3get(config.psk(), h2.as_bytes(), &ts, &signature);
-    if wh3.as_bytes().ct_eq(h3).to_u8() != 1 {
+    let wh3 = auth3get(config.psk(), &h2, &ts, &signature);
+    if wh3.ct_eq(h3).unwrap_u8() != 1 {
         return Err(Error::Auth);
     }
     let elapsed = SystemTime::now()
@@ -147,7 +149,7 @@ async fn paste_operation(
     };
     if encrypt_sk_id
         .ct_eq(&config.encrypt_sk_id().to_le_bytes())
-        .to_u8()
+        .unwrap_u8()
         != 1
     {
         let w_encrypt_sk = config.encrypt_sk_id();
@@ -159,11 +161,11 @@ async fn paste_operation(
     }
     config.sign_pk().verify_strict(
         &ciphertext_with_encrypt_sk_id_and_nonce[..],
-        &ed25519::Signature::from_bytes(&signature)?,
+        &ed25519_dalek::Signature::from_bytes(&signature),
     )?;
     let nonce = &ciphertext_with_encrypt_sk_id_and_nonce[8..32];
-    let mut cipher = xchacha20::XChaCha20::new(
-        &config.encrypt_sk(),
+    let mut cipher = chacha20::XChaCha20::new(
+        &config.encrypt_sk().into(),
         nonce
             .try_into()
             .expect("8..32 doesn't span 24 bytes. math has died."),
@@ -186,7 +188,7 @@ pub async fn run(config: Config, is_copy: bool, is_move: bool) -> Result<(), Err
     let h0 = auth0(psk, DEFAULT_CLIENT_VERSION, &r);
     stream.write_all(&[DEFAULT_CLIENT_VERSION]).await?;
     stream.write_all(&r).await?;
-    stream.write_all(h0.as_bytes()).await?;
+    stream.write_all(&h0).await?;
     stream.flush().await?;
     let mut rbuf = [0; 65];
     stream.read_exact(&mut rbuf).await.map_err(|_| {
@@ -209,8 +211,8 @@ pub async fn run(config: Config, is_copy: bool, is_move: bool) -> Result<(), Err
     }
     let r2 = &rbuf[1..33];
     let h1 = &rbuf[33..65];
-    let wh1 = auth1(psk, DEFAULT_CLIENT_VERSION, h0.as_bytes(), r2);
-    if wh1.as_bytes().ct_eq(h1).to_u8() != 1 {
+    let wh1 = auth1(psk, DEFAULT_CLIENT_VERSION, &h0, r2);
+    if wh1.ct_eq(h1).unwrap_u8() != 1 {
         return Err(Error::Auth);
     }
     if is_copy {

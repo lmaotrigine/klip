@@ -6,8 +6,8 @@ use crate::{
     state::{State, TS},
     util::Stream,
 };
-use crypto_common::constant_time::ConstantTimeEq;
 use rand_core::RngCore;
+use subtle::ConstantTimeEq;
 use tokio::net::TcpListener;
 
 struct Connection<'a> {
@@ -22,7 +22,7 @@ impl Connection<'_> {
         let h2 = rbuf;
         let opcode = if is_move { b'M' } else { b'G' };
         let wh2 = auth2get(self.state.config().psk(), h1, opcode);
-        if wh2.as_bytes().ct_eq(&h2).to_u8() != 1 {
+        if wh2.ct_eq(&h2).unwrap_u8() != 1 {
             return Err(Error::Auth);
         }
         let (ts, signature, ciphertext_with_encrypt_sk_and_nonce) = if is_move {
@@ -55,7 +55,7 @@ impl Connection<'_> {
         };
         self.stream.set_timeout(self.state.config().data_timeout());
         let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), signature);
-        self.stream.write_all(h3.as_bytes()).await?;
+        self.stream.write_all(&h3).await?;
         let ciphertext_with_encrypt_sk_and_nonce_len =
             ciphertext_with_encrypt_sk_and_nonce.len() as u64;
         self.stream
@@ -110,7 +110,7 @@ impl Connection<'_> {
             &ts.to_le_bytes(),
             &signature,
         );
-        if wh2.as_bytes().ct_eq(h2).to_u8() != 1 {
+        if wh2.ct_eq(h2).unwrap_u8() != 1 {
             return Err(Error::Auth);
         }
         let mut ciphertext_with_encrypt_sk_and_nonce =
@@ -121,7 +121,7 @@ impl Connection<'_> {
             .await?;
         self.state.config().sign_pk().verify_strict(
             &ciphertext_with_encrypt_sk_and_nonce[..],
-            &ed25519::Signature::from_bytes(&signature)?,
+            &ed25519_dalek::Signature::from_bytes(&signature),
         )?;
         let h3 = auth3store(self.state.config().psk(), h2);
         {
@@ -131,7 +131,7 @@ impl Connection<'_> {
             content.ciphertext_with_encrypt_sk_and_nonce = ciphertext_with_encrypt_sk_and_nonce;
         }
         self.stream.set_timeout(self.state.config().data_timeout());
-        self.stream.write_all(h3.as_bytes()).await?;
+        self.stream.write_all(&h3).await?;
         self.stream.flush().await?;
         Ok(())
     }
@@ -152,7 +152,7 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     let r = &rbuf[1..33];
     let h0 = &rbuf[33..65];
     let wh0 = auth0(config.psk(), client_version, r);
-    if wh0.as_bytes().ct_eq(h0).to_u8() != 1 {
+    if wh0.ct_eq(h0).unwrap_u8() != 1 {
         return Err(Error::Auth);
     }
     let mut r2 = [0; 32];
@@ -161,7 +161,7 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     let h1 = auth1(config.psk(), client_version, h0, &r2);
     stream.write_all(&[client_version]).await?;
     stream.write_all(&r2).await?;
-    stream.write_all(h1.as_bytes()).await?;
+    stream.write_all(&h1).await?;
     stream.flush().await?;
     state.add_trusted_ip(remote_addr.ip());
     let conn = Connection { stream, state };
@@ -172,9 +172,9 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
         .await
         .map(|_| opcode[0])?;
     match opcode {
-        b'G' => conn.get_operation(h1.as_bytes(), false).await,
-        b'M' => conn.get_operation(h1.as_bytes(), true).await,
-        b'S' => conn.store_operation(h1.as_bytes()).await,
+        b'G' => conn.get_operation(&h1, false).await,
+        b'M' => conn.get_operation(&h1, true).await,
+        b'S' => conn.store_operation(&h1).await,
         _ => Err(Error::UnknownOp),
     }
 }

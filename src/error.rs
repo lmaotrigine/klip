@@ -80,8 +80,8 @@ impl From<toml::de::Error> for Error {
     }
 }
 
-impl From<ed25519::SignatureError> for Error {
-    fn from(_: ed25519::SignatureError) -> Self {
+impl From<ed25519_dalek::SignatureError> for Error {
+    fn from(_: ed25519_dalek::SignatureError) -> Self {
         Self::Signature
     }
 }

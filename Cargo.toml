@@ -2,16 +2,6 @@
 resolver = "2"
 members = [
   ".",
-  "crypto/blake2b",
-  "crypto/common",
-  "crypto/curve25519",
-  "crypto/curve25519/macros",
-  "crypto/ed25519",
-  "crypto/scrypt",
-  "crypto/sha256",
-  "crypto/sha512",
-  "crypto/target_features",
-  "crypto/xchacha20",
   "lib/platform",
 ]
 default-members = ["."]
@@ -34,16 +24,17 @@ publish = false
 repository = "https://github.com/lmaotrigine/klip"
 
 [dependencies]
-blake2b = { version = "0.0.0", path = "crypto/blake2b", default-features = false }
+blake2 = "0.10"
+chacha20 = { version = "0.10", features = ["xchacha"] }
 clap = { version = "4", features = ["wrap_help", "derive"] }
-crypto-common = { version = "0.0.0", path = "crypto/common" }
-ed25519 = { version = "0.0.0", path = "crypto/ed25519" }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
 parking_lot = "0.12"
 platform = { version = "0.0.0", path = "lib/platform" }
 rand_core.workspace = true
-scrypt = { version = "0.0.0", path = "crypto/scrypt" }
+scrypt = "0.12"
+sha2 = "0.11"
+subtle = { version = "2", default-features = false }
 toml = { version = "1", default-features = false, features = ["parse", "serde"] }
-xchacha20 = { version = "0.0.0", path = "crypto/xchacha20" }
 
 [dependencies.tokio]
 version = "1"
@@ -78,12 +69,6 @@ unused = "deny"
 all = "deny"
 pedantic = "deny"
 nursery = "deny"
-cargo = "deny"
-
-[workspace.lints.rust.unexpected_cfgs] # for curve25519 build-time cfgs and tests
-priority = 1
-level = "warn"
-check-cfg = ['cfg(disabled)', 'cfg(feature, values("dummy"))']
 
 [workspace.dependencies]
 libc = "0.2"

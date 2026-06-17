@@ -107,7 +107,7 @@ pub fn generate_keys(config_file_name: impl std::fmt::Display, key: &[u8]) {
     rng.fill_bytes(&mut encrypt_sk);
     let mut encrypt_sk_hex = [0; 64];
     hex(&encrypt_sk, &mut encrypt_sk_hex);
-    let signing_key = ed25519::SigningKey::generate(&mut rng);
+    let signing_key = ed25519_dalek::SigningKey::generate(&mut rng);
     let verifying_key = signing_key.verifying_key();
     let mut signing_key_hex = [0; 64];
     hex(signing_key.as_bytes(), &mut signing_key_hex);

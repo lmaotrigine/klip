@@ -2,7 +2,8 @@ use crate::{
     cli::{Cli, Command},
     error::Error,
 };
-use ed25519::{SigningKey, VerifyingKey};
+use blake2::digest::{typenum::U8, Mac};
+use ed25519_dalek::{SigningKey, VerifyingKey};
 use std::{net::SocketAddr, time::Duration};
 
 #[allow(clippy::module_name_repetitions)]
@@ -48,12 +49,14 @@ impl TomlConfig {
                 .map_err(|()| Error::InvalidField("encrypt_sk_id"))?;
         } else {
             let encrypt_sk = self.encrypt_sk()?;
-            let mut hasher = blake2b::Params::new()
-                .personal(crate::DOMAIN.as_bytes())
-                .hash_length(8)
-                .to_state();
+            let mut hasher = blake2::Blake2bMac::<U8>::new_with_salt_and_personal(
+                &[],
+                &[],
+                crate::DOMAIN.as_bytes(),
+            )
+            .expect("invalid params in blake2b");
             hasher.update(&encrypt_sk);
-            buf.copy_from_slice(hasher.finalize().as_bytes());
+            buf.copy_from_slice(&hasher.finalize().into_bytes());
         }
         Ok(u64::from_le_bytes(buf))
     }

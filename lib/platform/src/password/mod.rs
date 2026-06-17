@@ -1,4 +1,4 @@
-use crypto_common::erase::{Erase, EraseOnDrop};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[cfg_attr(not(any(windows, unix)), path = "fallback.rs")]
 #[cfg_attr(windows, path = "windows.rs")]
@@ -18,18 +18,18 @@ impl Password {
     }
 }
 
-impl Erase for Password {
-    fn erase(&mut self) {
+impl Zeroize for Password {
+    fn zeroize(&mut self) {
         // SAFETY: all bytes are set to 0, which is valid UTF-8.
         for ch in unsafe { self.0.as_bytes_mut() } {
-            ch.erase();
+            ch.zeroize();
         }
         core::sync::atomic::fence(core::sync::atomic::Ordering::SeqCst);
         core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
     }
 }
 
-impl EraseOnDrop for Password {}
+impl ZeroizeOnDrop for Password {}
 
 fn fix_line(mut line: String) -> std::io::Result<String> {
     if !line.ends_with('\n') {
