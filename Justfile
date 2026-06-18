@@ -103,7 +103,11 @@ cargo-features := trim_end_match(
 )
 rustc-icf := if release != "" {
   if target-os == "linux" {
-    " -C link-arg=-Wl,--icf=safe"
+    if use-zigbuild == "" {
+      " -C link-arg=-Wl,--icf=safe"
+    } else {
+      ""
+    }
   } else {
     ""
   }
@@ -129,8 +133,10 @@ link-args := if target-os == "windows" {
   " -C target-feature=+crt-static -C link-self-contained=yes -C link-arg=-fuse-ld=lld -C linker=clang"
 } else if target-os == "macos" {
   " -C linker=clang"
-} else {
+} else if use-zigbuild == "" {
   " -C link-arg=-fuse-ld=lld -C linker=clang"
+} else {
+  ""
 }
 
 glibc-ver-postfix := if glibc-version != "" {
