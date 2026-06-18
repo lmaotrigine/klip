@@ -18,7 +18,7 @@ use subtle::ConstantTimeEq;
 #[macro_export]
 macro_rules! default_client_version {
     () => {
-        1
+        2
     };
 }
 
@@ -180,6 +180,7 @@ async fn paste_operation(
 pub async fn run(config: Config, is_copy: bool, is_move: bool) -> Result<(), Error> {
     let psk = config.psk();
     let conn = TcpStream::connect_timeout(&config.connect(), config.timeout())?;
+    conn.set_nonblocking(true)?;
     let s = tokio::net::TcpStream::from_std(conn)?;
     let mut stream = Stream::new(s);
     let mut r = [0; 32];
