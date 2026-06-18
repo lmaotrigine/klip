@@ -59,9 +59,9 @@ output-path := output-dir / output-filename
 cargo-profile := if release != "" { "release" } else { "dev" }
 is-ci := if ci != "" { "y" } else { "n" }
 cargo-buildstd := if build-std != "" {
-  " -Zbuild-std=std,panic_abort -Zbuild-std-features=panic_immediate_abort"
+  " -Zbuild-std=std,panic_abort"
 } else if target == "x86_64h-apple-darwin" {
-  " -Zbuild-std=std,panic_abort -Zbuild-std-features=panic_immediate_abort"
+  " -Zbuild-std=std,panic_abort"
 } else {
   ""
 }
@@ -117,6 +117,12 @@ share-generics := if cargo-buildstd != "" {
   ""
 }
 
+panic-abort := if cargo-buildstd != "" {
+  " -Zunstable-options -Cpanic=immediate-abort"
+} else {
+  ""
+}
+
 link-args := if target-os == "windows" {
   " -C target-feature=+crt-static"
 } else if target == "x86_64-unknown-linux-musl" {
@@ -139,7 +145,7 @@ glibc-ver-postfix := if glibc-version != "" {
 
 cargo-check-args := (" --target ") + (target) + (glibc-ver-postfix) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" })
 cargo-build-args :=  " --locked " + (if release != "" { "--release" } else { "" }) + (cargo-check-args) + (cargo-no-default-features) + (if cargo-features != "" { " --features " + cargo-features } else { "" }) + (if timings != "" { "--timings" } else { "" })
-export RUSTFLAGS := (rustc-gcclibs) + (rustc-icf) + (link-args) + (share-generics) + " -C symbol-mangling-version=v0 -C force-frame-pointers=yes" + (if ci == "" { " -C target-cpu=native" } else { "" })
+export RUSTFLAGS := (rustc-gcclibs) + (rustc-icf) + (link-args) + (panic-abort) + (share-generics) + " -C symbol-mangling-version=v0 -C force-frame-pointers=yes" + (if ci == "" { " -C target-cpu=native" } else { "" })
 
 toolchain-name := if cargo-buildstd != "" { "nightly" } else { "stable" }
 target-name := if target == "x86_64h-apple-darwin" { "" } else { target }
