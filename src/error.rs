@@ -22,6 +22,7 @@ pub enum Error {
     Signature,
     Toml(toml::de::Error),
     UnknownOp,
+    Future,
 }
 
 impl Display for Error {
@@ -58,6 +59,7 @@ impl Display for Error {
             Self::Signature => f.write_str("signature verification failed"),
             Self::Toml(e) => write!(f, "could not parse TOML config: {e}"),
             Self::UnknownOp => f.write_str("unknown opcode"),
+            Self::Future => f.write_str("clipboard content timestamp is too far in the future"),
         }
     }
 }
