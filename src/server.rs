@@ -70,7 +70,7 @@ impl Connection<'_> {
         if let Some((mut ts_guard, mut content_guard)) = guards {
             *ts_guard = 0;
             content_guard.signature = [0; 64];
-            content_guard.ciphertext_with_encrypt_sk_and_nonce.clear();
+            content_guard.ciphertext_with_encrypt_sk_and_nonce.drain(..);
         }
         Ok(())
     }
