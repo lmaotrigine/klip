@@ -7,8 +7,7 @@ use std::{
         Arc,
     },
 };
-use tokio::net::TcpStream;
-use tokio::sync::RwLock;
+use tokio::{net::TcpStream, sync::RwLock};
 
 // i gave up on borrow checker appeasement and made these global, sue me.
 pub static TS: RwLock<u64> = RwLock::const_new(0);
