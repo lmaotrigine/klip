@@ -26,28 +26,23 @@ impl Connection<'_> {
         if wh2.ct_eq(&h2).unwrap_u8() != 1 {
             return Err(Error::Auth);
         }
-        let (ts, signature, ciphertext_with_encrypt_sk_and_nonce) = if is_move {
-            let mut content = self.state.content.write();
-            let mut ts = TS.write();
-            let ret = (
-                *ts,
-                content.signature,
-                content.ciphertext_with_encrypt_sk_and_nonce.clone(),
-            );
-            *ts = 0;
-            content.signature = [0; 64];
-            content.ciphertext_with_encrypt_sk_and_nonce.drain(..);
-            drop(content);
-            drop(ts);
-            ret
+        let (ts, signature, ciphertext_with_encrypt_sk_and_nonce, guards) = if is_move {
+            let ts_guard = TS.write().await;
+            let content_guard = self.state.content.write().await;
+            (
+                *ts_guard,
+                content_guard.signature,
+                content_guard.ciphertext_with_encrypt_sk_and_nonce.clone(),
+                Some((ts_guard, content_guard)),
+            )
         } else {
-            let content = self.state.content.read();
-            let ts = { *TS.read() };
+            let content = self.state.content.read().await;
+            let ts = { *TS.read().await };
             let signature = content.signature;
             let ciphertext_with_encrypt_sk_and_nonce =
                 content.ciphertext_with_encrypt_sk_and_nonce.clone();
             drop(content);
-            (ts, signature, ciphertext_with_encrypt_sk_and_nonce)
+            (ts, signature, ciphertext_with_encrypt_sk_and_nonce, None)
         };
         let signature = if signature == [0; 64] {
             &[]
@@ -72,6 +67,11 @@ impl Connection<'_> {
             .write_all(&ciphertext_with_encrypt_sk_and_nonce)
             .await?;
         self.stream.flush().await?;
+        if let Some((mut ts_guard, mut content_guard)) = guards {
+            *ts_guard = 0;
+            content_guard.signature = [0; 64];
+            content_guard.ciphertext_with_encrypt_sk_and_nonce.clear();
+        }
         Ok(())
     }
 
@@ -126,8 +126,8 @@ impl Connection<'_> {
         )?;
         let h3 = auth3store(self.state.config().psk(), h2);
         {
-            let mut content = self.state.content.write();
-            *TS.write() = ts;
+            let mut content = self.state.content.write().await;
+            *TS.write().await = ts;
             content.signature = signature;
             content.ciphertext_with_encrypt_sk_and_nonce = ciphertext_with_encrypt_sk_and_nonce;
         }
