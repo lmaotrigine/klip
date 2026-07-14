@@ -3,6 +3,7 @@ use crate::{
     config::Config,
     error::Error,
     util::Stream,
+    MAX_FUTURE_SKEW,
 };
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use ed25519_dalek::Signer;
@@ -121,9 +122,14 @@ async fn paste_operation(
     if wh3.ct_eq(h3).unwrap_u8() != 1 {
         return Err(Error::Auth);
     }
-    let elapsed = SystemTime::now()
-        .duration_since(UNIX_EPOCH + Duration::from_secs(u64::from_le_bytes(ts)))
-        .expect("clock is broken");
+    let ts_val = UNIX_EPOCH + Duration::from_secs(u64::from_le_bytes(ts));
+    let now = SystemTime::now();
+    if ts_val > (now + MAX_FUTURE_SKEW) {
+        return Err(Error::Future);
+    }
+    let elapsed = now
+        .duration_since(ts_val)
+        .unwrap_or_else(|_| Duration::from_secs(0));
     if elapsed >= config.ttl() {
         return Err(Error::Old);
     }

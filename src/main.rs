@@ -34,6 +34,7 @@ const DOMAIN: &str = "KLIP";
 const DEFAULT_LISTEN: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8075);
 const DEFAULT_CONNECT: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8075);
 const DEFAULT_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
+const MAX_FUTURE_SKEW: Duration = Duration::from_hours(1);
 
 mod authentication;
 mod cli;
