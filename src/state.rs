@@ -132,7 +132,7 @@ impl State {
             while signal.recv().await == Some(()) {
                 let name = ARGV0
                     .get_or_init(|| std::env::args().next().unwrap_or_else(|| "klip".to_owned()));
-                let value = *TS.read();
+                let value = *TS.read().await;
                 match value {
                     0 => println!("{name}: the clipboard is empty"),
                     ts => {
