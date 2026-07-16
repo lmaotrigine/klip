@@ -208,6 +208,7 @@ package-dir:
   cp README.md packages/prep
   cp -r completions packages/prep
   cp doc/klip.1 packages/prep/doc
+  cp CHANGELOG.md packages/prep/doc
 
 [macos]
 package-prepare: build package-dir
