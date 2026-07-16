@@ -1,3 +1,0 @@
-This is taken from https://github.com/conradkleinespel/rtoolbox.
-It only includes the parts relevant to rpassword, which require no dependencies,
-thereby reducing lockfile bloat.

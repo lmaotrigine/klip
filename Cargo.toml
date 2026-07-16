@@ -3,7 +3,6 @@ resolver = "3"
 members = [
   ".",
   "lib/platform",
-  "lib/rtoolbox",
 ]
 default-members = ["."]
 
@@ -32,7 +31,7 @@ ed25519-dalek = "3"
 parking_lot = "0.12"
 platform = { version = "0.0.0", path = "lib/platform" }
 rand = { version = "0.10", features = ["std_rng"] }
-rpassword = "7"
+rpassword = { version = "7", git = "https://github.com/lmaotrigine/rpassword" }
 scrypt = "0.12"
 sha2 = "0.11"
 subtle = { version = "2", default-features = false }
@@ -53,9 +52,6 @@ features = [
 
 [target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
 jemallocator = "0.5"
-
-[patch.crates-io]
-rtoolbox = { path = "lib/rtoolbox" }
 
 [lints]
 workspace = true
