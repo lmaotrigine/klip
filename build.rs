@@ -81,7 +81,7 @@ fn main() {
     // this will work on all supported Windows versions but it relies on us
     // using SetDefaultDllDirectories before any libraries are loaded.
     // see also: lib/platform/preflight/windows.rs
-    let delay_load_dlls = ["bcrypt", "api-ms-win-core-synch-l1-2-0"];
+    let delay_load_dlls = ["api-ms-win-core-synch-l1-2-0"];
     for dll in delay_load_dlls {
         println!("cargo::rustc-link-arg-bin=klip=/DELAYLOAD:{dll}.dll");
     }
