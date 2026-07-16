@@ -192,7 +192,7 @@ impl Config {
             data_timeout: if let Command::Serve(args) = c.subcommand {
                 Duration::from_secs(args.data_timeout)
             } else {
-                Duration::from_secs(3600)
+                Duration::from_hours(1)
             },
             ttl: t.ttl(),
             trusted_ip_count: if let Command::Serve(args) = c.subcommand {

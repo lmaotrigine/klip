@@ -1,5 +1,4 @@
 use crate::{config::Config, error::Error, server::handle_connection, util::Stream};
-use parking_lot::RwLock;
 use std::{
     collections::VecDeque,
     net::IpAddr,
@@ -8,10 +7,10 @@ use std::{
         Arc,
     },
 };
-use tokio::net::TcpStream;
+use tokio::{net::TcpStream, sync::RwLock};
 
 // i gave up on borrow checker appeasement and made these global, sue me.
-pub static TS: RwLock<u64> = RwLock::new(0);
+pub static TS: RwLock<u64> = RwLock::const_new(0);
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
@@ -28,7 +27,7 @@ pub struct Content {
 
 pub struct State {
     config: Config,
-    trusted_clients: RwLock<VecDeque<IpAddr>>,
+    trusted_clients: parking_lot::RwLock<VecDeque<IpAddr>>,
     client_count: AtomicUsize,
     pub content: Arc<RwLock<Content>>,
 }
@@ -38,7 +37,7 @@ impl State {
         let cap = config.trusted_ip_count();
         Self {
             config,
-            trusted_clients: RwLock::new(VecDeque::with_capacity(cap)),
+            trusted_clients: parking_lot::RwLock::new(VecDeque::with_capacity(cap)),
             client_count: AtomicUsize::new(0),
             content: Arc::new(RwLock::new(Content {
                 signature: [0; 64],
