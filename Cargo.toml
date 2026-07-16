@@ -16,7 +16,7 @@ license.workspace = true
 publish.workspace = true
 readme = "README.md"
 repository.workspace = true
-edition = "2021"
+edition = "2024"
 
 [workspace.package]
 authors = ["Isis Ebsen <isis@5ht2.me>"]
