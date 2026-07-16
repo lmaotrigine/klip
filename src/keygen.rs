@@ -1,6 +1,5 @@
 use crate::util::hex;
-use rand_core::RngCore;
-use std::num::NonZeroU32;
+use rand::{Rng, TryRng};
 
 struct DeterministicRandom {
     pool: [u8; 96],
@@ -22,13 +21,11 @@ impl DeterministicRandom {
     }
 }
 
-impl rand_core::RngCore for DeterministicRandom {
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
+impl TryRng for DeterministicRandom {
+    type Error = core::convert::Infallible;
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error> {
         let req_len = dest.len();
-        let left = self.pool.len() - self.pos;
-        if left < req_len {
-            return Err(new_nonzero(rand_core::Error::CUSTOM_START + 2).into());
-        }
         dest.copy_from_slice(&self.pool[self.pos..self.pos + req_len]);
         for i in 0..req_len {
             self.pool[i] = 0;
@@ -37,65 +34,52 @@ impl rand_core::RngCore for DeterministicRandom {
         Ok(())
     }
 
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.try_fill_bytes(dest)
-            .expect("the pool should have enough bytes to generate all the keys");
-    }
-
-    fn next_u32(&mut self) -> u32 {
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
         let mut buf = [0; 4];
         self.fill_bytes(&mut buf);
-        u32::from_le_bytes(buf)
+        Ok(u32::from_le_bytes(buf))
     }
 
-    fn next_u64(&mut self) -> u64 {
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
         let mut buf = [0; 8];
         self.fill_bytes(&mut buf);
-        u64::from_le_bytes(buf)
+        Ok(u64::from_le_bytes(buf))
     }
 }
 
-impl rand_core::CryptoRng for DeterministicRandom {}
-
 enum Rand {
-    OsRng(rand_core::OsRng),
+    OsRng(rand::rngs::ThreadRng),
     Deterministic(DeterministicRandom),
 }
 
-impl rand_core::RngCore for Rand {
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        match self {
-            Self::OsRng(rng) => rng.fill_bytes(dest),
-            Self::Deterministic(rng) => rng.fill_bytes(dest),
-        }
-    }
+impl TryRng for Rand {
+    type Error = core::convert::Infallible;
 
-    fn next_u32(&mut self) -> u32 {
-        match self {
-            Self::OsRng(rng) => rng.next_u32(),
-            Self::Deterministic(rng) => rng.next_u32(),
-        }
-    }
-
-    fn next_u64(&mut self) -> u64 {
-        match self {
-            Self::OsRng(rng) => rng.next_u64(),
-            Self::Deterministic(rng) => rng.next_u64(),
-        }
-    }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error> {
         match self {
             Self::OsRng(rng) => rng.try_fill_bytes(dest),
             Self::Deterministic(rng) => rng.try_fill_bytes(dest),
         }
     }
+
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
+        match self {
+            Self::OsRng(rng) => rng.try_next_u32(),
+            Self::Deterministic(rng) => rng.try_next_u32(),
+        }
+    }
+
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        match self {
+            Self::OsRng(rng) => rng.try_next_u64(),
+            Self::Deterministic(rng) => rng.try_next_u64(),
+        }
+    }
 }
 
-impl rand_core::CryptoRng for Rand {}
 pub fn generate_keys(config_file_name: impl std::fmt::Display, key: &[u8]) {
     let mut rng = if key.is_empty() {
-        Rand::OsRng(rand_core::OsRng)
+        Rand::OsRng(rand::rng())
     } else {
         Rand::Deterministic(DeterministicRandom::init(key))
     };
@@ -107,7 +91,9 @@ pub fn generate_keys(config_file_name: impl std::fmt::Display, key: &[u8]) {
     rng.fill_bytes(&mut encrypt_sk);
     let mut encrypt_sk_hex = [0; 64];
     hex(&encrypt_sk, &mut encrypt_sk_hex);
-    let signing_key = ed25519_dalek::SigningKey::generate(&mut rng);
+    let mut signing_key = [0; 32];
+    rng.fill_bytes(&mut signing_key);
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&signing_key);
     let verifying_key = signing_key.verifying_key();
     let mut signing_key_hex = [0; 64];
     hex(signing_key.as_bytes(), &mut signing_key_hex);
@@ -154,10 +140,4 @@ pub fn generate_keys(config_file_name: impl std::fmt::Display, key: &[u8]) {
 #[allow(unsafe_code)]
 const fn from_utf8(b: &[u8]) -> &str {
     unsafe { std::str::from_utf8_unchecked(b) }
-}
-
-#[inline]
-#[allow(unsafe_code)]
-const fn new_nonzero(n: u32) -> NonZeroU32 {
-    unsafe { NonZeroU32::new_unchecked(n) }
 }

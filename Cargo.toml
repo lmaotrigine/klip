@@ -27,10 +27,10 @@ repository = "https://github.com/lmaotrigine/klip"
 blake2 = "0.10"
 chacha20 = { version = "0.10", features = ["xchacha"] }
 clap = { version = "4", features = ["wrap_help", "derive"] }
-ed25519-dalek = { version = "2", features = ["rand_core"] }
+ed25519-dalek = "3"
 parking_lot = "0.12"
 platform = { version = "0.0.0", path = "lib/platform" }
-rand_core.workspace = true
+rand = { version = "0.10", features = ["std_rng"] }
 scrypt = "0.12"
 sha2 = "0.11"
 subtle = { version = "2", default-features = false }
@@ -71,10 +71,6 @@ unused = "deny"
 all = "deny"
 pedantic = "deny"
 nursery = "deny"
-
-[workspace.dependencies]
-libc = "0.2"
-rand_core = { version = "0.6", features = ["getrandom"] }
 
 # our dependency tree is amenable to aggressive optimization without much
 # compile time overhead. it still takes a bit, though.

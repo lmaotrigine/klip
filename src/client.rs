@@ -8,7 +8,7 @@ use crate::{
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use ed25519_dalek::Signer;
 use platform::tty::isatty;
-use rand_core::RngCore;
+use rand::Rng;
 use std::{
     io::{self, Read, Write},
     net::TcpStream,
@@ -34,7 +34,7 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     let mut content_with_encrypt_sk_id_and_nonce = vec![0; 32];
     content_with_encrypt_sk_id_and_nonce[..8]
         .copy_from_slice(&config.encrypt_sk_id().to_le_bytes());
-    let mut rng = rand_core::OsRng;
+    let mut rng = rand::make_rng::<rand::rngs::StdRng>();
     rng.fill_bytes(&mut content_with_encrypt_sk_id_and_nonce[8..32]);
     io::stdin()
         .lock()
@@ -190,7 +190,7 @@ pub async fn run(config: Config, is_copy: bool, is_move: bool) -> Result<(), Err
     let s = tokio::net::TcpStream::from_std(conn)?;
     let mut stream = Stream::new(s);
     let mut r = [0; 32];
-    let mut rng = rand_core::OsRng;
+    let mut rng = rand::make_rng::<rand::rngs::StdRng>();
     rng.fill_bytes(&mut r);
     let h0 = auth0(psk, DEFAULT_CLIENT_VERSION, &r);
     stream.write_all(&[DEFAULT_CLIENT_VERSION]).await?;

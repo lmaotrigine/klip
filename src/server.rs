@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     default_client_version,
@@ -7,7 +5,8 @@ use crate::{
     state::{State, TS},
     util::Stream,
 };
-use rand_core::RngCore;
+use rand::Rng;
+use std::sync::Arc;
 use subtle::ConstantTimeEq;
 use tokio::net::TcpListener;
 
@@ -157,7 +156,7 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
         return Err(Error::Auth);
     }
     let mut r2 = [0; 32];
-    let mut rand = rand_core::OsRng;
+    let mut rand = rand::make_rng::<rand::rngs::StdRng>();
     rand.fill_bytes(&mut r2);
     let h1 = auth1(config.psk(), client_version, h0, &r2);
     stream.write_all(&[client_version]).await?;
