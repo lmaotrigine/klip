@@ -88,7 +88,8 @@ impl Cli {
                 None => Self::default_config_file()?,
             };
             let key = if password {
-                platform::password::get().context("failed to read password interactively")?
+                rpassword::prompt_password("Password: ")
+                    .context("failed to read password interactively")?
             } else {
                 String::new()
             };
