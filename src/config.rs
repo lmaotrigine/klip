@@ -50,7 +50,7 @@ impl TomlConfig {
         } else {
             let encrypt_sk = self.encrypt_sk()?;
             let mut hasher = blake2::Blake2bMac::<U8>::new_with_salt_and_personal(
-                &[],
+                None,
                 &[],
                 crate::DOMAIN.as_bytes(),
             )

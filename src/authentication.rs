@@ -7,7 +7,7 @@ use blake2::{
 type Blake2b = Blake2bMac<U32>;
 
 fn new_blake2b(psk: [u8; 32], salt: u8) -> Blake2b {
-    Blake2b::new_with_salt_and_personal(&psk, &[salt], DOMAIN.as_bytes())
+    Blake2b::new_with_salt_and_personal(Some(&psk), &[salt], DOMAIN.as_bytes())
         .expect("invalid params in blake2b")
 }
 pub fn auth0(psk: [u8; 32], client_version: u8, r: &[u8]) -> [u8; 32] {

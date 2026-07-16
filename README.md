@@ -267,7 +267,7 @@ r: random 256-bit client nonce
 r': random 256-bit server nonce
 ts: Unix timestamp as an unsigned 64-bit little-endian integer
 Sid: Ed25519
-v: 2
+v: 1
 ```
 
 Copy:

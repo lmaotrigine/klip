@@ -19,7 +19,7 @@ use subtle::ConstantTimeEq;
 #[macro_export]
 macro_rules! default_client_version {
     () => {
-        2
+        1
     };
 }
 
