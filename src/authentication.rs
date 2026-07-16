@@ -1,7 +1,7 @@
 use crate::DOMAIN;
 use blake2::{
-    digest::{typenum::U32, Mac},
     Blake2bMac,
+    digest::{Mac, typenum::U32},
 };
 
 type Blake2b = Blake2bMac<U32>;

@@ -3,8 +3,8 @@ use std::{
     collections::VecDeque,
     net::IpAddr,
     sync::{
-        atomic::{AtomicUsize, Ordering},
         Arc,
+        atomic::{AtomicUsize, Ordering},
     },
 };
 use tokio::{net::TcpStream, sync::RwLock};
@@ -127,7 +127,7 @@ impl State {
                 borrow::Cow,
                 time::{Duration, SystemTime, UNIX_EPOCH},
             };
-            use tokio::signal::unix::{signal, SignalKind};
+            use tokio::signal::unix::{SignalKind, signal};
             let mut signal = signal(SignalKind::info())?;
             while signal.recv().await == Some(()) {
                 let name = ARGV0

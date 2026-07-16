@@ -1,5 +1,5 @@
 use windows_sys::Win32::System::LibraryLoader::{
-    SetDefaultDllDirectories, LOAD_LIBRARY_SEARCH_SYSTEM32,
+    LOAD_LIBRARY_SEARCH_SYSTEM32, SetDefaultDllDirectories,
 };
 
 /// Windows preflight security mitigations.

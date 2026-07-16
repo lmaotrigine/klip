@@ -2,7 +2,7 @@ use crate::{
     cli::{Cli, Command},
     error::Error,
 };
-use blake2::digest::{typenum::U8, Mac};
+use blake2::digest::{Mac, typenum::U8};
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use std::{net::SocketAddr, time::Duration};
 

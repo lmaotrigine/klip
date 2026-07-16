@@ -2,7 +2,7 @@ use std::time::Duration;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufStream},
     net::TcpStream,
-    time::{timeout_at, Instant},
+    time::{Instant, timeout_at},
 };
 
 pub struct Stream {

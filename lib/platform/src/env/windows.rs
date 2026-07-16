@@ -5,7 +5,7 @@ use std::{ffi::OsString, os::windows::ffi::OsStringExt};
 use windows_sys::Win32::{
     Foundation::S_OK,
     System::Com::CoTaskMemFree,
-    UI::Shell::{FOLDERID_Profile, SHGetKnownFolderPath, KF_FLAG_DONT_VERIFY},
+    UI::Shell::{FOLDERID_Profile, KF_FLAG_DONT_VERIFY, SHGetKnownFolderPath},
 };
 
 #[cfg(not(target_vendor = "uwp"))]

@@ -1,9 +1,9 @@
 use crate::{
+    MAX_FUTURE_SKEW,
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     config::Config,
     error::Error,
     util::Stream,
-    MAX_FUTURE_SKEW,
 };
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use ed25519_dalek::Signer;
