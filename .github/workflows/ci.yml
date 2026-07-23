@@ -131,6 +131,7 @@ jobs:
           echo "target flag is: ${{ env.TARGET_FLAGS }}"
           echo "target dir is: ${{ env.TARGET_DIR }}"
       - name: Build klip
+        shell: bash
         run: |
           ${{ env.CARGO }} build --verbose --workspace --locked ${{ env.TARGET_FLAGS }}
           if [[ "${{ matrix.os }}" == "windows-*" ]]; then
