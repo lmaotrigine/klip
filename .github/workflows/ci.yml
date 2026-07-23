@@ -1,0 +1,179 @@
+name: ci
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - mistress
+  schedule:
+    - cron: '0 1 * * *'
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    env:
+      CARGO: cargo
+      TARGET_FLAGS:
+      TARGET_DIR: ./target
+      CROSS_VERSION: v0.2.5
+      RUST_BACKTRACE: 1
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build: pinned
+            os: ubuntu-latest
+            rust: 1.96.0
+          - build: stable
+            os: ubuntu-latest
+            rust: stable
+          - build: beta
+            os: ubuntu-latest
+            rust: beta
+          - build: nightly
+            os: ubuntu-latest
+            rust: nightly
+          - build: stable-musl
+            os: ubuntu-latest
+            rust: stable
+            target: x86_64-unknown-linux-musl
+          - build: stable-x86
+            os: ubuntu-latest
+            rust: stable
+            target: i686-unknown-linux-gnu
+            qemu: i386
+          - build: stable-aarch64
+            os: ubuntu-latest
+            rust: stable
+            target: aarch64-unknown-linux-gnu
+            qemu: qemu-aarch64
+          - build: stable-aarch64-musl
+            os: ubuntu-latest
+            rust: stable
+            target: aarch64-unknown-linux-musl
+            qemu: qemu-aarch64
+          - build: stable-arm-gnueabihf
+            os: ubuntu-latest
+            rust: stable
+            target: armv7-unknown-linux-gnueabihf
+            qemu: qemu-arm
+          - build: stable-arm-musleabihf
+            os: ubuntu-latest
+            rust: stable
+            target: armv7-unknown-linux-musleabihf
+            qemu: qemu-arm
+          - build: stable-arm-musleabi
+            os: ubuntu-latest
+            rust: stable
+            target: arm-unknown-linux-musleabi
+            qemu: qemu-arm
+          - build: powerpc64
+            os: ubuntu-latest
+            rust: stable
+            target: powerpc64-unknown-linux-gnu
+            qemu: qemu-ppc64
+          - build: stable-s390x
+            os: ubuntu-latest
+            rust: stable
+            target: s390x-unknown-linux-gnu
+            qemu: qemu-s390x
+          - build: stable-riscv64
+            os: ubuntu-latest
+            rust: stable
+            target: riscv64gc-unknown-linux-gnu
+            qemu: qemu-riscv64
+          - build: macos
+            os: macos-latest
+            rust: nightly
+          - build: win-msvc
+            os: windows-latest
+            rust: nightly
+          - build: win-gnu
+            os: windows-latest
+            rust: nightly-x86_64-gnu
+          - build: winaarch64-msvc
+            os: windows-11-arm
+            rust: nightly
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install packages (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          ci/ubuntu-install-packages
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - name: Use cross
+        if: matrix.os == 'ubuntu-latest' && matrix.target != ''
+        run: |
+          dir="$RUNNER_TEMP/cross-download"
+          mkdir "$dir"
+          echo "$dir" >> $GITHUB_PATH
+          cd "$dir"
+          curl -LO "https://github.com/cross-rs/cross/releases/download/$CROSS_VERSION/cross-x86_64-unknown-linux-musl.tar.gz"
+          tar xf cross-x86_64-unknown-linux-musl.tar.gz
+          echo "CARGO=cross" >> $GITHUB_ENV
+          echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+          echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+      - name: Show command used for cargo
+        run: |
+          echo "cargo command is: ${{ env.CARGO }}"
+          echo "target flag is: ${{ env.TARGET_FLAGS }}"
+          echo "target dir is: ${{ env.TARGET_DIR }}"
+      - name: Build klip
+        run: |
+          ${{ env.CARGO }} build --verbose --workspace --locked ${{ env.TARGET_FLAGS }}
+          if [[ "${{ matrix.os }}" == "windows-*" ]]; then
+            bin="target/${{ matrix.target }}/debug/klip.exe"
+          else
+            bin="target/${{ matrix.target }}/debug/klip"
+          fi
+          echo "KLIP_BIN=$bin" >> $GITHUB_ENV
+      - name: Show build.rs stderr
+        shell: bash
+        run: |
+          set +x
+          stderr="$(find "${{ env.TARGET_DIR }}/debug" -name stderr -print0 | xargs -0 ls -t | head -n 1)"
+          if [ -s "$stderr" ]; then
+            echo "===== $stderr ====="
+            cat "$stderr"
+            echo "====="
+          fi
+          set -x
+      - name: Run tests (cross)
+        if: matrix.qemu != ''
+        shell: bash
+        run: |
+          docker run --rm \
+            -v "$PWD/target:/target:Z" \
+            -v "$PWD/test.sh:/test.sh:Z" \
+            -e "KLIP_BIN=${{ matrix.qemu }} /$KLIP_BIN" \
+            "ghcr.io/cross-rs/${{ matrix.target }}:main" \
+            /test.sh
+      - name: Run tests (native)
+        if: matrix.qemu == ''
+        shell: bash
+        run: |
+          ./test.sh
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rustfmt
+      - name: Check formatting
+        run: cargo fmt --all --check
