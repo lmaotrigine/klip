@@ -1,0 +1,306 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Get release version from tag
+        if: env.VERSION == ''
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+      - name: Show version
+        run: |
+          echo "version is: $VERSION"
+      - name: Check tag version matches Cargo.toml version
+        shell: bash
+        run: |
+          if ! grep -q "version = \"$VERSION\"" Cargo.toml; then
+            echo "version does not match Cargo.toml" >&2
+            exit 1
+          fi
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create $VERSION --draft --verify-tag --title $VERSION
+    outputs:
+      version: ${{ env.VERSION }}
+  build-release:
+    name: build-release
+    needs: [create-release]
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO: cargo
+      TARGET_FLAGS:
+      TARGET_DIR: ./target
+      CROSS_VERSION: v0.2.5
+      RUST_BACKTRACE: 1
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: nightly
+            target: x86_64-unknown-linux-musl
+          - build: stable-x86
+            os: ubuntu-latest
+            rust: stable
+            target: i686-unknown-linux-gnu
+          - build: stable-aarch64
+            os: ubuntu-latest
+            rust: stable
+            target: aarch64-unknown-linux-musl
+          - build: stable-arm
+            os: ubuntu-latest
+            rust: stable
+            target: armv7-unknown-linux-musleabihf
+          - build: freebsd
+            os: ubuntu-latest
+            rust: nightly
+            target: x86_64-unknown-freebsd
+          - build: netbsd
+            os: ubuntu-latest
+            rust: nightly
+            target: x86_64-unknown-netbsd
+          - build: dragonfly
+            os: ubuntu-latest
+            rust: nightly
+            target: x86_64-unknown-dragonfly
+          - build: macos
+            os: macos-latest
+            rust: nightly
+            target: x86_64-apple-darwin
+          - build: macos
+            os: macos-latest
+            rust: nightly
+            target: aarch64-apple-darwin
+          - build: win-msvc
+            os: windows-latest
+            rust: nightly
+            target: x86_64-pc-windows-msvc
+          - build: win-gnu
+            os: windows-latest
+            rust: nightly-x86_64-gnu
+            target: x86_64-pc-windows-gnu
+          - build: winaarch64-msvc
+            os: windows-11-arm
+            rust: nightly
+            target: aarch64-pc-windows-msvc
+          - build: win32-msvc
+            os: windows-latest
+            rust: nightly
+            target: i686-pc-windows-msvc
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install packages (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          ci/ubuntu-install-packages
+      - name: Install Rust
+        if: ${{ !endsWith(matrix.target, 'dragonfly') && !endsWith(matrix.target, 'openbsd') }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          components: rust-src
+      - name: Install Rust (no target)
+        if: ${{ endsWith(matrix.target, 'dragonfly') || endsWith(matrix.target, 'openbsd') }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - name: Use cross
+        if: matrix.os == 'ubuntu-latest' && matrix.target != ''
+        shell: bash
+        run: |
+          dir="$RUNNER_TEMP/cross-download"
+          mkdir "$dir"
+          echo "$dir" >> $GITHUB_PATH
+          cd "$dir"
+          curl -LO "https://github.com/cross-rs/cross/releases/download/$CROSS_VERSION/cross-x86_64-unknown-linux-musl.tar.gz"
+          tar xf cross-x86_64-unknown-linux-musl.tar.gz
+          echo "CARGO=cross" >> $GITHUB_ENV
+      - name: Set target variables
+        shell: bash
+        run: |
+          if [[ "${{ matrix.target }}" == *-musl ]]; then
+            lgcc='-C link-arg=-lgcc'
+          else
+            lgcc=
+          fi
+          if [ "${{ matrix.rust }}" == "nightly" ]; then
+            echo "RUSTFLAGS=-Z unstable-options -C panic=immediate-abort $lgcc" >> $GITHUB_ENV
+            echo "BUILD_FLAGS=-Zbuild-std=std,panic_abort" >> $GITHUB_ENV
+          fi
+          echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+          echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+      - name: Show command used for cargo
+        shell: bash
+        run: |
+          echo "cargo command is: ${{ env.CARGO }}"
+          echo "target flag is: ${{ env.TARGET_FLAGS }}"
+          echo "target dir is: ${{ env.TARGET_DIR }}"
+      - name: Build release binary
+        shell: bash
+        run: |
+          ${{ env.CARGO }} build --release --verbose --locked ${{ env.TARGET_FLAGS }} ${{ env.BUILD_FLAGS }}
+          if [[ "${{ matrix.os }}" == "windows-*" ]]; then
+            bin="target/${{ matrix.target }}/release/klip.exe"
+          else
+            bin="target/${{ matrix.target }}/release/klip"
+          fi
+          echo "BIN=$bin" >> $GITHUB_ENV
+      - name: Determine archive name
+        shell: bash
+        run: |
+          echo "ARCHIVE=klip-${{ matrix.target }}" >> $GITHUB_ENV
+      - name: Create directory for archive
+        shell: bash
+        run: |
+          mkdir -p "$ARCHIVE/doc"
+          cp "$BIN" "$ARCHIVE"/
+          cp {README.md,LICENSE} "$ARCHIVE"/
+          cp CHANGELOG.md "$ARCHIVE"/doc/
+          cp doc/klip.1 "$ARCHIVE"/doc/
+          cp -r completions "$ARCHIVE"/
+      - name: Build archive (windows)
+        shell: bash
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          cd "$ARCHIVE"
+          7z a -mx9 "../$ARCHIVE.zip" *
+          cd ..
+          certutil -hashfile "$ARCHIVE.zip" SHA256 > "$ARCHIVE.zip.sha256"
+          echo "ASSET=$ARCHIVE.zip" >> $GITHUB_ENV
+          echo "ASSET_SUM=$ARCHIVE.zip.sha256" >> $GITHUB_ENV
+      - name: Build archive (Linux/BSD)
+        shell: bash
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          pushd "$ARCHIVE"
+          tar cv * | xz -9 > "../$ARCHIVE.tar.xz"
+          popd
+          shasum -a 256 "$ARCHIVE.tar.xz" > "$ARCHIVE.tar.xz.sha256"
+          echo "ASSET=$ARCHIVE.tar.xz" >> $GITHUB_ENV
+          echo "ASSET_SUM=$ARCHIVE.tar.xz.sha256" >> $GITHUB_ENV
+      - name: Build archive (macos)
+        shell: bash
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          pushd "$ARCHIVE"
+          zip -r -9 "../$ARCHIVE.zip" *
+          popd
+          shasum -a 256 "$ARCHIVE.zip" > "$ARCHIVE.zip.sha256"
+          echo "ASSET=$ARCHIVE.zip" >> $GITHUB_ENV
+          echo "ASSET_SUM=$ARCHIVE.zip.sha256" >> $GITHUB_ENV
+      - name: Upload release archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          version="${{ needs.create-release.outputs.version }}"
+          gh release upload "$version" "$ASSET" "$ASSET_SUM" --clobber
+  build-release-deb:
+    name: build-release-deb
+    needs: [create-release]
+    runs-on: ubuntu-latest
+    env:
+      CARGO: cargo
+      RUST_BACKTRACE: 1
+      CROSS_VERSION: v0.2.5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            target: x86_64-unknown-linux-musl
+          - arch: arm64
+            target: aarch64-unknown-linux-musl
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install packages (Ubuntu)
+        shell: bash
+        run: |
+          ci/ubuntu-install-packages
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          components: rust-src
+      - name: Install cargo-deb
+        shell: bash
+        run: |
+          cargo +nightly install cargo-deb
+      - name: Use cross
+        if: matrix.arch == 'arm64'
+        shell: bash
+        run: |
+          dir="$RUNNER_TEMP/cross-download"
+          mkdir "$dir"
+          echo "$dir" >> $GITHUB_PATH
+          cd "$dir"
+          curl -LO "https://github.com/cross-rs/cross/releases/download/$CROSS_VERSION/cross-x86_64-unknown-linux-musl.tar.gz"
+          tar xf cross-x86_64-unknown-linux-musl.tar.gz
+          echo "CARGO=cross" >> $GITHUB_ENV
+      - name: Build release binary
+        shell: bash
+        run: |
+          ${{ env.CARGO }} +nightly build --profile deb --locked --target ${{ matrix.target }} -Zbuild-std=std,panic_abort
+        env:
+          RUSTFLAGS: -Z unstable-options -C panic=immediate-abort -C link-arg=-lgcc
+      - name: Build deb package
+        shell: bash
+        run: |
+          cargo deb --profile deb --no-build --no-strip --target ${{ matrix.target }}
+          version="${{ needs.create-release.outputs.version }}"
+          echo "DEB_DIR=target/${{ matrix.target }}/debian" >> $GITHUB_ENV
+          echo "DEB_NAME=klip_$version-1_${{ matrix.arch }}.deb" >> $GITHUB_ENV
+      - name: Create sha256 checksum for deb package
+        shell: bash
+        run: |
+          cd "$DEB_DIR"
+          sum="$DEB_NAME.sha256"
+          shasum -a 256 "$DEB_NAME" > "$sum"
+          echo "SUM=$sum" >> $GITHUB_ENV
+      - name: Upload release archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          cd "$DEB_DIR"
+          version="${{ needs.create-release.outputs.version }}"
+          gh release upload "$version" "$DEB_NAME" "$SUM" --clobber
+#  trigger-formula-update:
+#    needs: [build-release]
+#    runs-on: ubuntu-latest
+#    env:
+#      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#    steps:
+#      - name: Trigger workflow dispatch for bump.yml
+#        run: |
+#          curl -XPOST -f \
+#            -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
+#            -H "Accept: application/vnd.github.v3+json" \
+#            -H "X-GitHub-Api-Version: 2022-11-28" \
+#            -d '{
+#              "ref": "mistress",
+#              "inputs": {}
+#            }' \
+#            https://api.github.com/repos/lmaotrigine/homebrew-tap/actions/workflows/bump.yml/dispatches
