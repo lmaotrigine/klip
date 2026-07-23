@@ -69,7 +69,7 @@ impl Connection<'_> {
         if let Some((mut ts_guard, mut content_guard)) = guards {
             *ts_guard = 0;
             content_guard.signature = [0; 64];
-            content_guard.ciphertext_with_encrypt_sk_and_nonce.drain(..);
+            content_guard.ciphertext_with_encrypt_sk_and_nonce.clear();
         }
         Ok(())
     }
@@ -181,6 +181,13 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
 
 pub async fn serve(state: State) -> Result<(), Error> {
     let state = Arc::new(state);
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     tokio::spawn(async move { State::handle_siginfo().await });
     let listener = TcpListener::bind(state.config().listen()).await?;
     loop {

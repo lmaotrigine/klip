@@ -104,63 +104,41 @@ impl State {
         Ok(())
     }
 
-    #[cfg_attr(
-        not(any(
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "macos",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        )),
-        allow(clippy::unnecessary_wraps, clippy::unused_async)
-    )]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "macos",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
     pub async fn handle_siginfo() -> std::io::Result<()> {
-        #[cfg(any(
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "macos",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        ))]
-        {
-            use std::{
-                borrow::Cow,
-                time::{Duration, SystemTime, UNIX_EPOCH},
-            };
-            use tokio::signal::unix::{SignalKind, signal};
-            let mut signal = signal(SignalKind::info())?;
-            while signal.recv().await == Some(()) {
-                let name = ARGV0
-                    .get_or_init(|| std::env::args().next().unwrap_or_else(|| "klip".to_owned()));
-                let value = *TS.read().await;
-                match value {
-                    0 => println!("{name}: the clipboard is empty"),
-                    ts => {
-                        let elapsed = SystemTime::now()
-                            .duration_since(UNIX_EPOCH + Duration::from_secs(ts))
-                            .unwrap_or_default()
-                            .as_secs()
-                            / 60;
-                        let msg = if elapsed <= 1 {
-                            Cow::Borrowed("a few moments ago")
-                        } else {
-                            Cow::Owned(format!("{elapsed} minutes ago"))
-                        };
-                        println!("{name}: the clipboard is not empty (last filled {msg})");
-                    }
+        use std::{
+            borrow::Cow,
+            time::{Duration, SystemTime, UNIX_EPOCH},
+        };
+        use tokio::signal::unix::{SignalKind, signal};
+        let mut signal = signal(SignalKind::info())?;
+        while signal.recv().await == Some(()) {
+            let name =
+                ARGV0.get_or_init(|| std::env::args().next().unwrap_or_else(|| "klip".to_owned()));
+            let value = *TS.read().await;
+            match value {
+                0 => println!("{name}: the clipboard is empty"),
+                ts => {
+                    let elapsed = SystemTime::now()
+                        .duration_since(UNIX_EPOCH + Duration::from_secs(ts))
+                        .unwrap_or_default()
+                        .as_secs()
+                        / 60;
+                    let msg = if elapsed <= 1 {
+                        Cow::Borrowed("a few moments ago")
+                    } else {
+                        Cow::Owned(format!("{elapsed} minutes ago"))
+                    };
+                    println!("{name}: the clipboard is not empty (last filled {msg})");
                 }
             }
-            Ok(())
         }
-        #[cfg(not(any(
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "macos",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        )))]
-        {
-            Ok(())
-        }
+        Ok(())
     }
 }
