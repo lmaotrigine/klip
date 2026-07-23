@@ -103,7 +103,8 @@ assets = [
   ["completions/klip.bash", "usr/share/bash-completion/completions/klip", "644"],
   ["completions/klip.fish", "usr/share/fish/vendor_completions.d/klip.fish", "644"],
   ["completions/_klip", "usr/share/zsh/vendor-completions/_klip", "644"],
-  ["completions/klip.elv", "usr/share/elvish/lib/", "644"],
+  # elvish completions omitted on purpose
+  # see https://github.com/elves/elvish/issues/1564
 ]
 extended-description = """\
 klip allows you to share arbitrary content between hosts anywhere on the
