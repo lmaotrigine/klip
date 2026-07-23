@@ -3,7 +3,7 @@ ENV HOME="/root"
 WORKDIR $HOME
 SHELL [ "/bin/bash", "-euo", "pipefail", "-c" ]
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  git=* build-essential=* curl=* python3-venv=* clang=* lld=*
+  git=* build-essential=* curl=* python3-venv=*
 RUN python3 -m venv $HOME/.venv && .venv/bin/pip install cargo-zigbuild
 ENV PATH="$HOME/.venv/bin:$PATH"
 RUN printf '#!/bin/sh\n/root/.venv/bin/python -m ziglang "$@"\n' > /usr/bin/zig && \

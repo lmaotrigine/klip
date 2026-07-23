@@ -5,6 +5,5 @@
 !Cargo.lock
 !build.rs
 !rust-toolchain.toml
-!crypto
 !lib
 !src
