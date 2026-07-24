@@ -27,6 +27,7 @@ fn set_git_hash() {
         return;
     }
     let args = &["rev-parse", "--short", "HEAD"];
+    println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH=");
     let Ok(output) = Command::new("git").args(args).output() else {
         return;
     };
