@@ -62,8 +62,8 @@ $ brew install lmaotrigine/tap/klip
 
 ### Precompiled binaries
 
-Pre-compiled binaries for macOS, Linux and Windows can be downloaded here:
-https://github.com/lmaotrigine/klip/releases.
+Pre-compiled binaries for macOS, Linux, Windows, DragonFlyBSD, NetBSD, and
+FreeBSD can be downloaded here: https://github.com/lmaotrigine/klip/releases.
 
 ### Compile the source code
 
