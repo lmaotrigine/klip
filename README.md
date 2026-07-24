@@ -1,3 +1,6 @@
+[![Build status](https://github.com/lmaotrigine/klip/workflows/ci/badge.svg)](https://github.com/lmaotrigine/klip/actions)
+[![Release](https://img.shields.io/github/release/lmaotrigine/klip.svg)](https://github.com/lmaotrigine/klip/releases/latest)
+
 # klip
 
 Copy/paste anything over the network.
@@ -64,25 +67,16 @@ https://github.com/lmaotrigine/klip/releases.
 
 ### Compile the source code
 
-This project is written in pure Rust, with some inline assembly for SIMD
-accelerated cryptography and minimal FFI to interact with the operating system.
+This project is written in Rust, so you'll need to grab a
+[Rust installation](https://www.rust-lang.org/) in order to compile it. It is
+known to build on the latest stable compiler.
 
-It is known to build on the latest stable compiler. Enabling SIMD optimizations
-in the curve25519 implementation requires a nightly compiler for historical
-reasons. This may be relaxed in the future. Your mileage with SIMD may vary
-quite a bit. I have done some extensive benchmarking, but if you find a corner
-case that hinders performance, please let me know! Use either of the following
-incantations:
+To build klip:
 
 ```console
+$ git clone https://github.com/lmaotrigine/klip
+$ cd klip
 $ cargo build --release --locked
-```
-
-Only required if you are either developing, or you want AVX512 SIMD acceleration
-for Curve25519 scalar multiplication.
-
-```console
-$ cargo +nightly build --release --locked
 ```
 
 The `klip` executable should then be available in the `target/release` directory.
