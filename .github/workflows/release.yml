@@ -321,20 +321,3 @@ jobs:
           TAG: ${{ steps.short-sha.outputs.tag }}
           RELEASE: ${{ github.ref_name }}
           IMAGE_NAME: ghcr.io/${{ github.repository }}
-#  trigger-formula-update:
-#    needs: [build-release]
-#    runs-on: ubuntu-latest
-#    env:
-#      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#    steps:
-#      - name: Trigger workflow dispatch for bump.yml
-#        run: |
-#          curl -XPOST -f \
-#            -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-#            -H "Accept: application/vnd.github.v3+json" \
-#            -H "X-GitHub-Api-Version: 2022-11-28" \
-#            -d '{
-#              "ref": "mistress",
-#              "inputs": {}
-#            }' \
-#            https://api.github.com/repos/lmaotrigine/homebrew-tap/actions/workflows/bump.yml/dispatches
