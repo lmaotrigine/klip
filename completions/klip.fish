@@ -24,33 +24,25 @@ function __fish_klip_using_subcommand
 	contains -- $cmd[1] $argv
 end
 
-complete -c klip -n "__fish_klip_needs_command" -s c -l config -d 'path to the configuration file (default=$HOME/.klip.toml)' -r -F
+complete -c klip -n "__fish_klip_needs_command" -s c -l config -d 'Path to the configuration file (default=$HOME/.klip.toml)' -r -F
 complete -c klip -n "__fish_klip_needs_command" -s h -l help -d 'Print help'
 complete -c klip -n "__fish_klip_needs_command" -s V -l version -d 'Print version'
-complete -c klip -n "__fish_klip_needs_command" -f -a "copy" -d 'store content'
-complete -c klip -n "__fish_klip_needs_command" -f -a "paste" -d 'retrieve content'
-complete -c klip -n "__fish_klip_needs_command" -f -a "move" -d 'retrieve and delete content'
-complete -c klip -n "__fish_klip_needs_command" -f -a "serve" -d 'start a server'
-complete -c klip -n "__fish_klip_needs_command" -f -a "genkeys" -d 'generate keys'
-complete -c klip -n "__fish_klip_needs_command" -f -a "version" -d 'show version information'
+complete -c klip -n "__fish_klip_needs_command" -f -a "copy" -d 'Store content'
+complete -c klip -n "__fish_klip_needs_command" -f -a "paste" -d 'Retrieve content'
+complete -c klip -n "__fish_klip_needs_command" -f -a "move" -d 'Retrieve and delete content'
+complete -c klip -n "__fish_klip_needs_command" -f -a "serve" -d 'Start a server'
+complete -c klip -n "__fish_klip_needs_command" -f -a "genkeys" -d 'Generate keys'
+complete -c klip -n "__fish_klip_needs_command" -f -a "version" -d 'Print version'
 complete -c klip -n "__fish_klip_needs_command" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
-complete -c klip -n "__fish_klip_using_subcommand copy" -s h -l help -d 'Print help'
-complete -c klip -n "__fish_klip_using_subcommand paste" -s h -l help -d 'Print help'
-complete -c klip -n "__fish_klip_using_subcommand move" -s h -l help -d 'Print help'
-complete -c klip -n "__fish_klip_using_subcommand serve" -l max-clients -d 'the maximum number of simultaneous client connections' -r
-complete -c klip -n "__fish_klip_using_subcommand serve" -l max-len-mb -d 'maximum content length to accept in MiB (0=unlimited)' -r
-complete -c klip -n "__fish_klip_using_subcommand serve" -s t -l timeout -d 'connection timeout (in seconds)' -r
-complete -c klip -n "__fish_klip_using_subcommand serve" -s d -l data-timeout -d 'data transmission timeout (in seconds)' -r
-complete -c klip -n "__fish_klip_using_subcommand serve" -s h -l help -d 'Print help'
-complete -c klip -n "__fish_klip_using_subcommand serve" -s V -l version -d 'Print version'
-complete -c klip -n "__fish_klip_using_subcommand genkeys" -s p -l password -d 'derive the keys from a password (default=random keys)'
-complete -c klip -n "__fish_klip_using_subcommand genkeys" -s h -l help -d 'Print help'
-complete -c klip -n "__fish_klip_using_subcommand genkeys" -s V -l version -d 'Print version'
-complete -c klip -n "__fish_klip_using_subcommand version" -s h -l help -d 'Print help'
-complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "copy" -d 'store content'
-complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "paste" -d 'retrieve content'
-complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "move" -d 'retrieve and delete content'
-complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "serve" -d 'start a server'
-complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "genkeys" -d 'generate keys'
-complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "version" -d 'show version information'
+complete -c klip -n "__fish_klip_using_subcommand serve" -l max-clients -d 'Maximum number of simultaneous client connections' -r
+complete -c klip -n "__fish_klip_using_subcommand serve" -l max-len-mb -d 'Maximum content length to accept in MiB (0=unlimited)' -r
+complete -c klip -n "__fish_klip_using_subcommand serve" -s t -l timeout -d 'Connection timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand serve" -s d -l data-timeout -d 'Data transmission timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand genkeys" -s p -l password -d 'Derive the keys from a password (default=random keys)'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "copy" -d 'Store content'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "paste" -d 'Retrieve content'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "move" -d 'Retrieve and delete content'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "serve" -d 'Start a server'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "genkeys" -d 'Generate keys'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "version" -d 'Print version'
 complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'

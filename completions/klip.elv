@@ -18,63 +18,47 @@ set edit:completion:arg-completer[klip] = {|@words|
     }
     var completions = [
         &'klip'= {
-            cand -c 'path to the configuration file (default=$HOME/.klip.toml)'
-            cand --config 'path to the configuration file (default=$HOME/.klip.toml)'
+            cand -c 'Path to the configuration file (default=$HOME/.klip.toml)'
+            cand --config 'Path to the configuration file (default=$HOME/.klip.toml)'
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
             cand --version 'Print version'
-            cand copy 'store content'
-            cand paste 'retrieve content'
-            cand move 'retrieve and delete content'
-            cand serve 'start a server'
-            cand genkeys 'generate keys'
-            cand version 'show version information'
+            cand copy 'Store content'
+            cand paste 'Retrieve content'
+            cand move 'Retrieve and delete content'
+            cand serve 'Start a server'
+            cand genkeys 'Generate keys'
+            cand version 'Print version'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'klip;copy'= {
-            cand -h 'Print help'
-            cand --help 'Print help'
         }
         &'klip;paste'= {
-            cand -h 'Print help'
-            cand --help 'Print help'
         }
         &'klip;move'= {
-            cand -h 'Print help'
-            cand --help 'Print help'
         }
         &'klip;serve'= {
-            cand --max-clients 'the maximum number of simultaneous client connections'
-            cand --max-len-mb 'maximum content length to accept in MiB (0=unlimited)'
-            cand -t 'connection timeout (in seconds)'
-            cand --timeout 'connection timeout (in seconds)'
-            cand -d 'data transmission timeout (in seconds)'
-            cand --data-timeout 'data transmission timeout (in seconds)'
-            cand -h 'Print help'
-            cand --help 'Print help'
-            cand -V 'Print version'
-            cand --version 'Print version'
+            cand --max-clients 'Maximum number of simultaneous client connections'
+            cand --max-len-mb 'Maximum content length to accept in MiB (0=unlimited)'
+            cand -t 'Connection timeout (in seconds)'
+            cand --timeout 'Connection timeout (in seconds)'
+            cand -d 'Data transmission timeout (in seconds)'
+            cand --data-timeout 'Data transmission timeout (in seconds)'
         }
         &'klip;genkeys'= {
-            cand -p 'derive the keys from a password (default=random keys)'
-            cand --password 'derive the keys from a password (default=random keys)'
-            cand -h 'Print help'
-            cand --help 'Print help'
-            cand -V 'Print version'
-            cand --version 'Print version'
+            cand -p 'Derive the keys from a password (default=random keys)'
+            cand --password 'Derive the keys from a password (default=random keys)'
         }
         &'klip;version'= {
-            cand -h 'Print help'
-            cand --help 'Print help'
         }
         &'klip;help'= {
-            cand copy 'store content'
-            cand paste 'retrieve content'
-            cand move 'retrieve and delete content'
-            cand serve 'start a server'
-            cand genkeys 'generate keys'
-            cand version 'show version information'
+            cand copy 'Store content'
+            cand paste 'Retrieve content'
+            cand move 'Retrieve and delete content'
+            cand serve 'Start a server'
+            cand genkeys 'Generate keys'
+            cand version 'Print version'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'klip;help;copy'= {

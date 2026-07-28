@@ -2,57 +2,61 @@
 _klip() {
   local i cur prev opts cmd
   COMPREPLY=()
-  cur="${COMP_WORDS[COMP_CWORD]}"
-  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
+    cur="$2"
+  else
+    cur="${COMP_WORDS[COMP_CWORD]}"
+  fi
+  prev="$3"
   cmd=""
   opts=""
 
-  for i in "${COMP_WORDS[@]}"; do
+  for i in "${COMP_WORDS[@]:0:COMP_CWORD}"; do
     case "${cmd},${i}" in
       ",$1")
         cmd="klip"
         ;;
       klip,copy)
-        cmd="klip__copy"
+        cmd="klip__subcmd__copy"
         ;;
       klip,genkeys)
-        cmd="klip__genkeys"
+        cmd="klip__subcmd__genkeys"
         ;;
       klip,help)
-        cmd="klip__help"
+        cmd="klip__subcmd__help"
         ;;
       klip,move)
-        cmd="klip__move"
+        cmd="klip__subcmd__move"
         ;;
       klip,paste)
-        cmd="klip__paste"
+        cmd="klip__subcmd__paste"
         ;;
       klip,serve)
-        cmd="klip__serve"
+        cmd="klip__subcmd__serve"
         ;;
       klip,version)
-        cmd="klip__version"
+        cmd="klip__subcmd__version"
         ;;
-      klip__help,copy)
-        cmd="klip__help__copy"
+      klip__subcmd__help,copy)
+        cmd="klip__subcmd__help__subcmd__copy"
         ;;
-      klip__help,genkeys)
-        cmd="klip__help__genkeys"
+      klip__subcmd__help,genkeys)
+        cmd="klip__subcmd__help__subcmd__genkeys"
         ;;
-      klip__help,help)
-        cmd="klip__help__help"
+      klip__subcmd__help,help)
+        cmd="klip__subcmd__help__subcmd__help"
         ;;
-      klip__help,move)
-        cmd="klip__help__move"
+      klip__subcmd__help,move)
+        cmd="klip__subcmd__help__subcmd__move"
         ;;
-      klip__help,paste)
-        cmd="klip__help__paste"
+      klip__subcmd__help,paste)
+        cmd="klip__subcmd__help__subcmd__paste"
         ;;
-      klip__help,serve)
-        cmd="klip__help__serve"
+      klip__subcmd__help,serve)
+        cmd="klip__subcmd__help__subcmd__serve"
         ;;
-      klip__help,version)
-        cmd="klip__help__version"
+      klip__subcmd__help,version)
+        cmd="klip__subcmd__help__subcmd__version"
         ;;
       *)
         ;;
@@ -82,8 +86,8 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__copy)
-      opts="-h --help"
+    klip__subcmd__copy)
+      opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
@@ -96,8 +100,8 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__genkeys)
-      opts="-p -h -V --password --help --version"
+    klip__subcmd__genkeys)
+      opts="-p --password"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
@@ -110,7 +114,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help)
+    klip__subcmd__help)
       opts="copy paste move serve genkeys version help"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -124,7 +128,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help__copy)
+    klip__subcmd__help__subcmd__copy)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -138,7 +142,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help__genkeys)
+    klip__subcmd__help__subcmd__genkeys)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -152,7 +156,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help__help)
+    klip__subcmd__help__subcmd__help)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -166,7 +170,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help__move)
+    klip__subcmd__help__subcmd__move)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -180,7 +184,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help__paste)
+    klip__subcmd__help__subcmd__paste)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -194,7 +198,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help__serve)
+    klip__subcmd__help__subcmd__serve)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -208,7 +212,7 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__help__version)
+    klip__subcmd__help__subcmd__version)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -222,8 +226,8 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__move)
-      opts="-h --help"
+    klip__subcmd__move)
+      opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
           COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
           return 0
@@ -236,8 +240,8 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__paste)
-      opts="-h --help"
+    klip__subcmd__paste)
+      opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
@@ -250,8 +254,8 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__serve)
-      opts="-t -d -h -V --max-clients --max-len-mb --timeout --data-timeout --help --version"
+    klip__subcmd__serve)
+      opts="-t -d --max-clients --max-len-mb --timeout --data-timeout"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
           COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
           return 0
@@ -288,8 +292,8 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
-    klip__version)
-      opts="-h --help"
+    klip__subcmd__version)
+      opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
