@@ -21,15 +21,6 @@ use std::{
     time::Duration,
 };
 
-const EXPANDED_VERSION: &str = concat!(
-    "v",
-    env!("CARGO_PKG_VERSION"),
-    env!("KLIP_BUILD_GIT_HASH"),
-    " (protocol version ",
-    default_client_version!(),
-    ")"
-);
-
 const DOMAIN: &str = "KLIP";
 const DEFAULT_LISTEN: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8075);
 const DEFAULT_CONNECT: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8075);

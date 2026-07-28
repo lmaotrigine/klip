@@ -16,14 +16,7 @@ use std::{
 };
 use subtle::ConstantTimeEq;
 
-#[macro_export]
-macro_rules! default_client_version {
-    () => {
-        1
-    };
-}
-
-const DEFAULT_CLIENT_VERSION: u8 = crate::default_client_version!();
+pub const DEFAULT_CLIENT_VERSION: u8 = 1;
 
 async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<(), Error> {
     let ts = SystemTime::now()

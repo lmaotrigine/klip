@@ -2,6 +2,14 @@ TBD
 ===
 Unreleased changes. Release notes have not yet been written.
 
+Feature enhancements:
+
+* Tab completion does not include --help and --version if a subcommand has been entered.
+
+Miscellaneous:
+
+* Man page mentions that failure to parse CLI arguments results in exit code 2.
+
 0.2.0
 =====
 Platform support:

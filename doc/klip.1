@@ -155,7 +155,8 @@ airgapped systems.
 .
 .SH EXIT STATUS
 After successful execution, the exit status of the program is \fB0\fP. If an
-error occurred, the exit status is \fB1\fP.
+error occurred, the exit status is \fB1\fP. If invalid command-line arguments
+were provided, the exit status is \fB2\fP.
 .sp
 .IP \(bu 3n
 \fB0\fP exit status indicates that the command was successful.
@@ -163,6 +164,9 @@ error occurred, the exit status is \fB1\fP.
 .IP \(bu 3n
 \fB1\fP exit status indicates that an error occurred. This is true for both
 catastrophic errors and for soft errors.
+.
+.IP \(bu 3n
+\fB2\fP exit status indicates that the command-line arguments were invalid.
 .
 .
 .SH CONFIGURATION FILES
