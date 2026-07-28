@@ -19,15 +19,10 @@
 fn set_git_hash() {
     use std::process::Command;
     if let Ok(hash) = std::env::var("KLIP_BUILD_GIT_HASH") {
-        if hash == "skip" {
-            println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH=");
-        } else {
-            println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH= (rev {hash})");
-        }
+        println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH={hash}");
         return;
     }
     let args = &["rev-parse", "--short", "HEAD"];
-    println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH=");
     let Ok(output) = Command::new("git").args(args).output() else {
         return;
     };
@@ -35,7 +30,7 @@ fn set_git_hash() {
     if hash.is_empty() {
         return;
     }
-    println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH= (rev {hash})");
+    println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH={hash}");
 }
 
 fn main() {

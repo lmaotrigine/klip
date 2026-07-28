@@ -1,6 +1,6 @@
 use crate::{
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
-    default_client_version,
+    client::DEFAULT_CLIENT_VERSION,
     error::Error,
     state::{State, TS},
     util::Stream,
@@ -143,10 +143,10 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     let remote_addr = stream.peer_addr()?;
     stream.read_exact(&mut rbuf).await?;
     let client_version = rbuf[0];
-    if client_version != default_client_version!() {
+    if client_version != DEFAULT_CLIENT_VERSION {
         return Err(Error::IncompatibleVersions {
             client: client_version,
-            server: default_client_version!(),
+            server: DEFAULT_CLIENT_VERSION,
         });
     }
     let r = &rbuf[1..33];

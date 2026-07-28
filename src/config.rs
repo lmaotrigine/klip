@@ -1,5 +1,5 @@
 use crate::{
-    cli::{Cli, Command},
+    cli::{Cli, Subcommand},
     error::Error,
 };
 use blake2::digest::{Mac, typenum::U8};
@@ -157,45 +157,45 @@ impl Config {
         Ok(Self {
             connect: t.connect(),
             listen: t.listen(),
-            max_len: if let Command::Serve(args) = c.subcommand {
+            max_len: if let Subcommand::Serve(args) = c.subcommand {
                 args.max_len_mb * 1024 * 1024
             } else {
                 1
             },
-            max_clients: if let Command::Serve(args) = c.subcommand {
+            max_clients: if let Subcommand::Serve(args) = c.subcommand {
                 args.max_clients.get()
             } else {
                 1
             },
-            encrypt_sk: if let Command::Serve(_) = c.subcommand {
+            encrypt_sk: if let Subcommand::Serve(_) = c.subcommand {
                 [0; 32]
             } else {
                 t.encrypt_sk()?
             },
-            encrypt_sk_id: if let Command::Serve(_) = c.subcommand {
+            encrypt_sk_id: if let Subcommand::Serve(_) = c.subcommand {
                 0
             } else {
                 t.encrypt_sk_id()?
             },
             psk: t.psk()?,
             sign_pk: t.sign_pk()?,
-            sign_sk: if let Command::Serve(_) = c.subcommand {
+            sign_sk: if let Subcommand::Serve(_) = c.subcommand {
                 SigningKey::from_bytes(&[0; 32])
             } else {
                 t.sign_sk()?
             },
-            timeout: if let Command::Serve(args) = c.subcommand {
+            timeout: if let Subcommand::Serve(args) = c.subcommand {
                 Duration::from_secs(args.timeout)
             } else {
                 Duration::from_secs(10)
             },
-            data_timeout: if let Command::Serve(args) = c.subcommand {
+            data_timeout: if let Subcommand::Serve(args) = c.subcommand {
                 Duration::from_secs(args.data_timeout)
             } else {
                 Duration::from_hours(1)
             },
             ttl: t.ttl(),
-            trusted_ip_count: if let Command::Serve(args) = c.subcommand {
+            trusted_ip_count: if let Subcommand::Serve(args) = c.subcommand {
                 match args.max_clients.get() / 10 {
                     0 => 1,
                     n => n,
