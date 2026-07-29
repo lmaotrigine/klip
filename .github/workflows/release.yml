@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Get release version from tag
         if: env.VERSION == ''
-        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
       - name: Show version
         run: |
           echo "version is: $VERSION"
