@@ -324,7 +324,6 @@ dependencies = [
  "clap",
  "ed25519-dalek",
  "parking_lot",
- "platform",
  "rand",
  "rpassword",
  "scrypt",
@@ -332,6 +331,7 @@ dependencies = [
  "tikv-jemallocator",
  "tokio",
  "toml",
+ "windows-sys",
 ]
 
 [[package]]
@@ -410,14 +410,6 @@ name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
-
-[[package]]
-name = "platform"
-version = "0.0.0"
-dependencies = [
- "libc",
- "windows-sys",
-]
 
 [[package]]
 name = "proc-macro2"

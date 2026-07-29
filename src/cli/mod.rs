@@ -3,8 +3,7 @@ use crate::{
     error::{Context, Error, ResultExt},
     state::State,
 };
-use platform::env::home_dir;
-use std::{num::NonZeroUsize, path::PathBuf};
+use std::{env::home_dir, num::NonZeroUsize, path::PathBuf};
 
 mod commands;
 

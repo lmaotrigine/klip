@@ -7,10 +7,9 @@ use crate::{
 };
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use ed25519_dalek::Signer;
-use platform::tty::isatty;
 use rand::Rng;
 use std::{
-    io::{self, Read, Write},
+    io::{self, IsTerminal, Read, Write},
     net::TcpStream,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -65,7 +64,7 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     if wh3.ct_eq(h3).unwrap_u8() != 1 {
         return Err(Error::Auth);
     }
-    if isatty(true) {
+    if io::stderr().is_terminal() {
         eprintln!("Sent");
     }
     Ok(())
