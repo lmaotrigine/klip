@@ -51,19 +51,78 @@ Windows.
 
 ## Installation
 
+### Precompiled binaries
+
+**[Archives of precompiled binaries are available for macOS, Linux, Windows,
+DragonFlyBSD, NetBSD, and FreeBSD.](https://github.com/lmaotrigine/klip/releases)**
+Linux and Windows binaries are static executables. Users of platforms not
+explicitly mentioned below are advised to download one of these archives.
+
 ### Homebrew
 
-klip is available on my [homebrew tap](https://github.com/lmaotrigine/homebrew-tap).
+klip is available on my [Homebrew tap](https://github.com/lmaotrigine/homebrew-tap).
 
 ```console
 $ brew tap lmaotrigine/tap
 $ brew install lmaotrigine/tap/klip
 ```
 
-### Precompiled binaries
+### Nix
 
-Pre-compiled binaries for macOS, Linux, Windows, DragonFlyBSD, NetBSD, and
-FreeBSD can be downloaded here: https://github.com/lmaotrigine/klip/releases.
+klip can be installed from the flake in this repository.
+
+```console
+$ nix profile install github:lmaotrigine/klip
+```
+
+A `default.nix` is also provided for non-flake users.
+
+The flake also contains a NixOS overlay that you can apply to your own
+configuration:
+
+```nix
+# start the staging server
+services.klip = {
+  enable = true;
+  configFile = "/etc/klip.toml"
+};
+```
+
+### Ubuntu/Debian
+
+klip can be installed using a `.deb` file provided in each
+[klip release](https://github.com/lmaotrigine/klip/releases). These will also
+install a systemd service for the staging server. It is not enabled or started
+automatically.
+
+```console
+$ curl -fsSLO https://github.com/lmaotrigine/klip/releases/download/0.2.0/klip_0.2.0-1_amd64.deb
+$ sudo dpkg -i klip_0.2.0-1_amd64.deb
+```
+
+A `.deb` for arm64 is also available.
+
+### Cargo
+
+If you are a Rust programmer, klip can be installed with `cargo`. Since klip is
+not on crates.io, you will have to install from git.
+
+Note that klip tracks the latest stable release of the Rust compiler, although
+it may work with older versions. See the pinned version in
+[the CI workflow](./.github/workflows/ci.yml) for the minimum version currently
+tested.
+
+```console
+$ cargo install --git https://github.com/lmaotrigine/klip
+```
+
+Alternatively, one can use
+[`cargo binstall`](https://github.com/cargo-bins/cargo-binstall) to install a
+klip binary directly from GitHub:
+
+```console
+$ cargo binstall --git https://github.com/lmaotrigine/klip
+```
 
 ### Compile the source code
 
@@ -117,7 +176,7 @@ configuration file. This is useful for example if you don't want to use dot
 files on Windows since they are not very common.
 
 ```console
-PS> echo "GNU Terry Pratchett" | klc --config C:\Users\isis\klip.toml
+PS> echo "GNU Terry Pratchett" | klip --config C:\Users\isis\klip.toml copy
 ```
 
 Sample configuration file for a staging server:
@@ -298,7 +357,3 @@ h2 := Hk,2(h1 || opcode)
 <- Hk,3(h2 || ts || s) || Len(ekid || n || ct) || ts || s || ekid || n || ct
 s := Sig(ekid || n || ct)
 ```
-
-## Future work
-
-- [ ] remove dependency on clap due to frequent major version bumps
