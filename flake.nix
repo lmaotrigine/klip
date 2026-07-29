@@ -28,7 +28,7 @@
             builtins.foldl' op attrs (builtins.attrNames ret);
         in
         builtins.foldl' op { } systems;
-      eachDefaultSystem = eachSystem [ "aarch64-linux" "aarch64-darwin" "x86_64-linux" "x86_64-darwin" ];
+      eachDefaultSystem = eachSystem [ "aarch64-linux" "aarch64-darwin" "x86_64-linux" ];
     in
     eachDefaultSystem
       (system:
@@ -38,7 +38,9 @@
             inherit system overlays;
           };
           rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-          nativeBuildInputs = [ rustToolchain pkgs.llvmPackages.bintools pkgs.clang pkgs.git ];
+          devToolchain = rustToolchain.override {
+            extensions = [ "clippy" "rustfmt" "rust-src" ];
+          };
           craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
           src = pkgs.lib.fileset.toSource {
             root = ./.;
@@ -49,17 +51,21 @@
             ];
           };
           common = {
-            inherit src nativeBuildInputs;
+            inherit src;
+            nativeBuildInputs = [ rustToolchain ];
             doCheck = false;
           };
           cargoArtifacts = craneLib.buildDepsOnly common;
+          package = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
           klip = craneLib.buildPackage
             (common // {
               inherit cargoArtifacts;
-              nativeBuildInputs = nativeBuildInputs ++ [ pkgs.installShellFiles ];
+              pname = package.name;
+              version = package.version;
+              nativeBuildInputs = [ rustToolchain pkgs.installShellFiles ];
               preConfigurePhases = [ "set_hash" ];
               set_hash = ''
-                export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "skip")}
+                export KLIP_BUILD_GIT_HASH=${builtins.substring 0 7 (if self ? rev then self.rev else "")}
               '';
               postInstall = ''
                 installShellCompletion \
@@ -68,6 +74,13 @@
                   --zsh completions/_klip
                 installManPage doc/klip.1
               '';
+              meta = {
+                description = package.description;
+                homepage = package.repository;
+                changelog = "${package.repository}/blob/mistress/CHANGELOG.md";
+                license = pkgs.lib.licenses.mpl20;
+                mainProgram = "klip";
+              };
             });
         in
         {
@@ -76,7 +89,15 @@
             default = klip;
           };
           devShells.default = pkgs.mkShell {
-            inherit nativeBuildInputs;
+            packages = [
+              devToolchain
+              pkgs.just
+              pkgs.ripgrep
+              pkgs.fd
+              pkgs.cargo-zigbuild
+              pkgs.cargo-outdated
+              pkgs.shellcheck
+            ];
           };
         }
       ) // (
