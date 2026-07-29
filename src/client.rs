@@ -6,6 +6,7 @@ use crate::{
     util::Stream,
 };
 use chacha20::cipher::{KeyIvInit, StreamCipher};
+use ctutils::{CtEq, CtEqSlice};
 use ed25519_dalek::Signer;
 use rand::Rng;
 use std::{
@@ -13,7 +14,6 @@ use std::{
     net::TcpStream,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use subtle::ConstantTimeEq;
 
 pub const DEFAULT_CLIENT_VERSION: u8 = 1;
 
@@ -61,7 +61,8 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     })?;
     let h3 = &rbuf[..32];
     let wh3 = auth3store(config.psk(), &h2);
-    if wh3.ct_eq(h3).unwrap_u8() != 1 {
+    let choice = u8::ct_ne_slice(&wh3, h3);
+    if choice.into() {
         return Err(Error::Auth);
     }
     if io::stderr().is_terminal() {
@@ -103,7 +104,8 @@ async fn paste_operation(
     let mut signature = [0; 64];
     signature.copy_from_slice(&rbuf[48..112]);
     let wh3 = auth3get(config.psk(), &h2, &ts, &signature);
-    if wh3.ct_eq(h3).unwrap_u8() != 1 {
+    let choice = u8::ct_ne_slice(&wh3, h3);
+    if choice.into() {
         return Err(Error::Auth);
     }
     let ts_val = UNIX_EPOCH + Duration::from_secs(u64::from_le_bytes(ts));
@@ -132,7 +134,8 @@ async fn paste_operation(
         let c = &ciphertext_with_encrypt_sk_id_and_nonce[..8];
         [c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]]
     };
-    if encrypt_sk_id.ct_eq(&config.encrypt_sk_id().to_le_bytes()).unwrap_u8() != 1 {
+    let choice = encrypt_sk_id.ct_ne(&config.encrypt_sk_id().to_le_bytes());
+    if choice.into() {
         let w_encrypt_sk = config.encrypt_sk_id();
         let encrypt_sk = u64::from_le_bytes(encrypt_sk_id);
         return Err(Error::SecretKeyIDMismatch { expected: w_encrypt_sk, actual: encrypt_sk });
@@ -189,7 +192,8 @@ pub async fn run(config: Config, is_copy: bool, is_move: bool) -> Result<(), Err
     let r2 = &rbuf[1..33];
     let h1 = &rbuf[33..65];
     let wh1 = auth1(psk, DEFAULT_CLIENT_VERSION, &h0, r2);
-    if wh1.ct_eq(h1).unwrap_u8() != 1 {
+    let choice = u8::ct_ne_slice(&wh1, h1);
+    if choice.into() {
         return Err(Error::Auth);
     }
     if is_copy {

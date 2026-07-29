@@ -5,9 +5,9 @@ use crate::{
     state::{State, TS},
     util::Stream,
 };
+use ctutils::{CtEq, CtEqSlice};
 use rand::Rng;
 use std::sync::Arc;
-use subtle::ConstantTimeEq;
 use tokio::net::TcpListener;
 
 struct Connection<'a> {
@@ -22,7 +22,8 @@ impl Connection<'_> {
         let h2 = rbuf;
         let opcode = if is_move { b'M' } else { b'G' };
         let wh2 = auth2get(self.state.config().psk(), h1, opcode);
-        if wh2.ct_eq(&h2).unwrap_u8() != 1 {
+        let choice = wh2.ct_ne(&h2);
+        if choice.into() {
             return Err(Error::Auth);
         }
         let (ts, signature, ciphertext_with_encrypt_sk_and_nonce, guards) = if is_move {
@@ -93,7 +94,8 @@ impl Connection<'_> {
         signature.copy_from_slice(&rbuf[48..112]);
         let opcode = b'S';
         let wh2 = auth2store(self.state.config().psk(), h1, opcode, &ts.to_le_bytes(), &signature);
-        if wh2.ct_eq(h2).unwrap_u8() != 1 {
+        let choice = u8::ct_ne_slice(&wh2, h2);
+        if choice.into() {
             return Err(Error::Auth);
         }
         let mut ciphertext_with_encrypt_sk_and_nonce =
@@ -133,7 +135,8 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     let r = &rbuf[1..33];
     let h0 = &rbuf[33..65];
     let wh0 = auth0(config.psk(), client_version, r);
-    if wh0.ct_eq(h0).unwrap_u8() != 1 {
+    let choice = u8::ct_ne_slice(&wh0, h0);
+    if choice.into() {
         return Err(Error::Auth);
     }
     let mut r2 = [0; 32];
