@@ -29,9 +29,7 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
         .copy_from_slice(&config.encrypt_sk_id().to_le_bytes());
     let mut rng = rand::make_rng::<rand::rngs::StdRng>();
     rng.fill_bytes(&mut content_with_encrypt_sk_id_and_nonce[8..32]);
-    io::stdin()
-        .lock()
-        .read_to_end(&mut content_with_encrypt_sk_id_and_nonce)?;
+    io::stdin().lock().read_to_end(&mut content_with_encrypt_sk_id_and_nonce)?;
     let opcode = b'S';
     let mut cipher = chacha20::XChaCha20::new(
         &config.encrypt_sk().into(),
@@ -41,21 +39,15 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     );
     let ct = &mut content_with_encrypt_sk_id_and_nonce[32..];
     cipher.apply_keystream(ct);
-    assert_eq!(
-        &content_with_encrypt_sk_id_and_nonce[0..8],
-        &config.encrypt_sk_id().to_le_bytes()
-    );
-    let signature = config
-        .sign_sk()
-        .sign(content_with_encrypt_sk_id_and_nonce.as_slice());
+    assert_eq!(&content_with_encrypt_sk_id_and_nonce[0..8], &config.encrypt_sk_id().to_le_bytes());
+    let signature = config.sign_sk().sign(content_with_encrypt_sk_id_and_nonce.as_slice());
     s.set_timeout(config.data_timeout());
     let h2 = auth2store(config.psk(), h1, opcode, &ts, &signature.to_bytes());
     s.write_all(&[opcode]).await?;
     s.write_all(&h2).await?;
     let ciphertext_with_encrypt_sk_id_and_nonce_len =
         content_with_encrypt_sk_id_and_nonce.len() as u64;
-    s.write_all(&ciphertext_with_encrypt_sk_id_and_nonce_len.to_le_bytes())
-        .await?;
+    s.write_all(&ciphertext_with_encrypt_sk_id_and_nonce_len.to_le_bytes()).await?;
     s.write_all(&ts).await?;
     s.write_all(&signature.to_bytes()).await?;
     s.write_all(&content_with_encrypt_sk_id_and_nonce).await?;
@@ -120,9 +112,7 @@ async fn paste_operation(
     if ts_val > (now + MAX_FUTURE_SKEW) {
         return Err(Error::Future);
     }
-    let elapsed = now
-        .duration_since(ts_val)
-        .unwrap_or_else(|_| Duration::from_secs(0));
+    let elapsed = now.duration_since(ts_val).unwrap_or_else(|_| Duration::from_secs(0));
     if elapsed >= config.ttl() {
         return Err(Error::Old);
     }
@@ -132,31 +122,21 @@ async fn paste_operation(
     let mut ciphertext_with_encrypt_sk_id_and_nonce =
         Vec::with_capacity(ciphertext_with_encrypt_sk_id_and_nonce_len as usize);
     stream.set_timeout(config.data_timeout());
-    stream
-        .read_to_end(&mut ciphertext_with_encrypt_sk_id_and_nonce)
-        .await
-        .map_err(|e| {
-            if e.kind() == io::ErrorKind::UnexpectedEof {
-                Error::MaybeIncompatibleVersion
-            } else {
-                e.into()
-            }
-        })?;
+    stream.read_to_end(&mut ciphertext_with_encrypt_sk_id_and_nonce).await.map_err(|e| {
+        if e.kind() == io::ErrorKind::UnexpectedEof {
+            Error::MaybeIncompatibleVersion
+        } else {
+            e.into()
+        }
+    })?;
     let encrypt_sk_id = {
         let c = &ciphertext_with_encrypt_sk_id_and_nonce[..8];
         [c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]]
     };
-    if encrypt_sk_id
-        .ct_eq(&config.encrypt_sk_id().to_le_bytes())
-        .unwrap_u8()
-        != 1
-    {
+    if encrypt_sk_id.ct_eq(&config.encrypt_sk_id().to_le_bytes()).unwrap_u8() != 1 {
         let w_encrypt_sk = config.encrypt_sk_id();
         let encrypt_sk = u64::from_le_bytes(encrypt_sk_id);
-        return Err(Error::SecretKeyIDMismatch {
-            expected: w_encrypt_sk,
-            actual: encrypt_sk,
-        });
+        return Err(Error::SecretKeyIDMismatch { expected: w_encrypt_sk, actual: encrypt_sk });
     }
     config.sign_pk().verify_strict(
         &ciphertext_with_encrypt_sk_id_and_nonce[..],
@@ -165,9 +145,7 @@ async fn paste_operation(
     let nonce = &ciphertext_with_encrypt_sk_id_and_nonce[8..32];
     let mut cipher = chacha20::XChaCha20::new(
         &config.encrypt_sk().into(),
-        nonce
-            .try_into()
-            .expect("8..32 doesn't span 24 bytes. math has died."),
+        nonce.try_into().expect("8..32 doesn't span 24 bytes. math has died."),
     );
     let content = &mut ciphertext_with_encrypt_sk_id_and_nonce[32..];
     cipher.apply_keystream(&mut content[..]);

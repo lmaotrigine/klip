@@ -57,16 +57,10 @@ fn main() {
         return;
     }
     // embed the Windows application manifest file
-    let Ok(mut manifest) = std::env::current_dir() else {
-        return;
-    };
+    let Ok(mut manifest) = std::env::current_dir() else { return };
     manifest.push(MANIFEST);
-    let Ok(_) = manifest.canonicalize() else {
-        return;
-    };
-    let Some(manifest) = manifest.to_str() else {
-        return;
-    };
+    let Ok(_) = manifest.canonicalize() else { return };
+    let Some(manifest) = manifest.to_str() else { return };
     println!("cargo::rustc-link-arg-bin=klip=/MANIFEST:EMBED");
     println!("cargo::rustc-link-arg-bin=klip=/MANIFESTINPUT:{manifest}");
     // only search system32 for DLLs

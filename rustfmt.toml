@@ -2,6 +2,7 @@ max_width = 100
 newline_style = "Unix"
 use_field_init_shorthand = true
 use_try_shorthand = true
+use_small_heuristics = "Max"
 
 # unstable options that help catching mistakes in formatting that we want to enable
 # when they become stable.

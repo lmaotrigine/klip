@@ -94,11 +94,7 @@ impl TomlConfig {
     #[allow(clippy::cast_sign_loss)]
     pub fn ttl(&self) -> Duration {
         if let Some(toml::Value::Integer(v)) = self.table.get("ttl") {
-            if *v > 0 {
-                Duration::from_secs(*v as u64)
-            } else {
-                crate::DEFAULT_TTL
-            }
+            if *v > 0 { Duration::from_secs(*v as u64) } else { crate::DEFAULT_TTL }
         } else {
             crate::DEFAULT_TTL
         }
@@ -138,10 +134,7 @@ impl std::fmt::Debug for Config {
             let mut out = [0; 16];
             let inp = self.encrypt_sk_id.to_le_bytes();
             crate::util::hex(&inp, &mut out);
-            s.field(
-                "encrypt_sk_id",
-                &std::str::from_utf8(&out).expect("hex should be valid utf8"),
-            );
+            s.field("encrypt_sk_id", &std::str::from_utf8(&out).expect("hex should be valid utf8"));
             s.field("psk", &self.psk);
             s.field("sign_pk", &self.sign_pk);
             s.field("sign_sk", &self.sign_sk);

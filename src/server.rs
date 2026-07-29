@@ -43,28 +43,20 @@ impl Connection<'_> {
             drop(content);
             (ts, signature, ciphertext_with_encrypt_sk_and_nonce, None)
         };
-        let signature = if signature == [0; 64] {
-            &[]
-        } else {
-            &signature[..]
-        };
+        let signature = if signature == [0; 64] { &[] } else { &signature[..] };
         self.stream.set_timeout(self.state.config().data_timeout());
         let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), signature);
         self.stream.write_all(&h3).await?;
         let ciphertext_with_encrypt_sk_and_nonce_len =
             ciphertext_with_encrypt_sk_and_nonce.len() as u64;
-        self.stream
-            .write_all(&ciphertext_with_encrypt_sk_and_nonce_len.to_le_bytes())
-            .await?;
+        self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce_len.to_le_bytes()).await?;
         if ts == 0 {
             self.stream.flush().await?;
             return Ok(());
         }
         self.stream.write_all(&ts.to_le_bytes()).await?;
         self.stream.write_all(signature).await?;
-        self.stream
-            .write_all(&ciphertext_with_encrypt_sk_and_nonce)
-            .await?;
+        self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce).await?;
         self.stream.flush().await?;
         if let Some((mut ts_guard, mut content_guard)) = guards {
             *ts_guard = 0;
@@ -79,15 +71,12 @@ impl Connection<'_> {
         let mut rbuf = [0; 112];
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = &rbuf[..32];
-        let len_buf: [u8; 8] = [
-            rbuf[32], rbuf[33], rbuf[34], rbuf[35], rbuf[36], rbuf[37], rbuf[38], rbuf[39],
-        ];
+        let len_buf: [u8; 8] =
+            [rbuf[32], rbuf[33], rbuf[34], rbuf[35], rbuf[36], rbuf[37], rbuf[38], rbuf[39]];
 
         let ciphertext_with_encrypt_sk_and_nonce_len = u64::from_le_bytes(len_buf);
         if ciphertext_with_encrypt_sk_and_nonce_len < 32 {
-            return Err(Error::ShortCiphertext(
-                ciphertext_with_encrypt_sk_and_nonce_len,
-            ));
+            return Err(Error::ShortCiphertext(ciphertext_with_encrypt_sk_and_nonce_len));
         }
         if self.state.config().max_len() > 0
             && ciphertext_with_encrypt_sk_and_nonce_len > self.state.config().max_len()
@@ -103,22 +92,14 @@ impl Connection<'_> {
         let mut signature = [0; 64];
         signature.copy_from_slice(&rbuf[48..112]);
         let opcode = b'S';
-        let wh2 = auth2store(
-            self.state.config().psk(),
-            h1,
-            opcode,
-            &ts.to_le_bytes(),
-            &signature,
-        );
+        let wh2 = auth2store(self.state.config().psk(), h1, opcode, &ts.to_le_bytes(), &signature);
         if wh2.ct_eq(h2).unwrap_u8() != 1 {
             return Err(Error::Auth);
         }
         let mut ciphertext_with_encrypt_sk_and_nonce =
             vec![0; ciphertext_with_encrypt_sk_and_nonce_len as usize];
         self.stream.set_timeout(self.state.config().data_timeout());
-        self.stream
-            .read_exact(&mut ciphertext_with_encrypt_sk_and_nonce)
-            .await?;
+        self.stream.read_exact(&mut ciphertext_with_encrypt_sk_and_nonce).await?;
         self.state.config().sign_pk().verify_strict(
             &ciphertext_with_encrypt_sk_and_nonce[..],
             &ed25519_dalek::Signature::from_bytes(&signature),
@@ -166,11 +147,7 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     state.add_trusted_ip(remote_addr.ip());
     let conn = Connection { stream, state };
     let mut opcode = [0];
-    let opcode = conn
-        .stream
-        .read_exact(&mut opcode)
-        .await
-        .map(|_| opcode[0])?;
+    let opcode = conn.stream.read_exact(&mut opcode).await.map(|_| opcode[0])?;
     match opcode {
         b'G' => conn.get_operation(&h1, false).await,
         b'M' => conn.get_operation(&h1, true).await,
