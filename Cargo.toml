@@ -33,7 +33,6 @@ platform = { version = "0.0.0", path = "lib/platform" }
 rand = { version = "0.10", features = ["std_rng"] }
 rpassword = { version = "7", git = "https://github.com/lmaotrigine/rpassword" }
 scrypt = "0.12"
-sha2 = "0.11"
 subtle = { version = "2", default-features = false }
 toml = { version = "1", default-features = false, features = ["parse", "serde"] }
 
