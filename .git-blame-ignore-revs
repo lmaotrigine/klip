@@ -1,2 +1,5 @@
 # re-indent shell completions
 40c2e35e25decbfb15f2b35fd774084610825cdc
+
+# reformat project with use_small_heuristics = "Max"
+be58e677768a50568bbbec71a8025c0aa855f649
