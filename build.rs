@@ -23,14 +23,25 @@ fn set_git_hash() {
         return;
     }
     let args = &["rev-parse", "--short", "HEAD"];
-    let Ok(output) = Command::new("git").args(args).output() else {
-        return;
-    };
-    let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if hash.is_empty() {
-        return;
+    match Command::new("git").args(args).output() {
+        Ok(output) => {
+            let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if hash.is_empty() {
+                println!(
+                    "cargo::warning=output from `git rev-parse` is empty, so skipping embedding \
+                     of commit hash"
+                );
+                return;
+            }
+            println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH={hash}");
+        }
+        Err(e) => {
+            println!(
+                "cargo::warning=failed to run `git rev-parse`, so skipping embedding of commit \
+                 hash: {e}"
+            );
+        }
     }
-    println!("cargo::rustc-env=KLIP_BUILD_GIT_HASH={hash}");
 }
 
 fn main() {
