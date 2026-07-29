@@ -61,12 +61,9 @@ use cli::Cli;
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-#[allow(clippy::redundant_pub_crate)] // macro generated
 async fn shutdown() {
     let ctrlc = async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("failed to install ^C handler");
+        tokio::signal::ctrl_c().await.expect("failed to install ^C handler");
     };
     #[cfg(unix)]
     let term = async {
@@ -83,7 +80,6 @@ async fn shutdown() {
     }
 }
 
-#[allow(clippy::needless_return, clippy::redundant_pub_crate)] // macro generated
 #[tokio::main]
 async fn main() -> Result<(), error::Context> {
     #[cfg(windows)]

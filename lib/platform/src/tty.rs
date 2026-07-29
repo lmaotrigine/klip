@@ -7,11 +7,7 @@ pub fn isatty(stderr: bool) -> bool {
     };
 
     unsafe {
-        let handle = GetStdHandle(if stderr {
-            STD_ERROR_HANDLE
-        } else {
-            STD_OUTPUT_HANDLE
-        });
+        let handle = GetStdHandle(if stderr { STD_ERROR_HANDLE } else { STD_OUTPUT_HANDLE });
         let mut out = 0;
         GetConsoleMode(handle, &raw mut out) != 0
     }
@@ -21,13 +17,7 @@ pub fn isatty(stderr: bool) -> bool {
 #[inline]
 #[must_use]
 pub fn isatty(stderr: bool) -> bool {
-    unsafe {
-        libc::isatty(if stderr {
-            libc::STDERR_FILENO
-        } else {
-            libc::STDOUT_FILENO
-        }) != 0
-    }
+    unsafe { libc::isatty(if stderr { libc::STDERR_FILENO } else { libc::STDOUT_FILENO }) != 0 }
 }
 
 #[cfg(not(any(windows, unix)))]

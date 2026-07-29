@@ -31,10 +31,9 @@ impl Display for Error {
             Self::Auth => f.write_str("authentication failed"),
             Self::CapacityReached => f.write_str("cannot accept any more clients"),
             Self::Empty => f.write_str("the clipboard may be empty"),
-            Self::IncompatibleVersions { client, server } => write!(
-                f,
-                "incompatible server version (client: {client}, server: {server})"
-            ),
+            Self::IncompatibleVersions { client, server } => {
+                write!(f, "incompatible server version (client: {client}, server: {server})")
+            }
             Self::InvalidField(field) => write!(f, "invalid value for config field `{field}`"),
             Self::Io(e) => Display::fmt(e, f),
             Self::Large { max, got } => write!(
@@ -111,10 +110,7 @@ impl Debug for Context {
 
 impl From<Error> for Context {
     fn from(error: Error) -> Self {
-        Self {
-            error,
-            context: None,
-        }
+        Self { error, context: None }
     }
 }
 
@@ -124,9 +120,6 @@ pub trait ResultExt<T> {
 
 impl<T, E: Into<Error>> ResultExt<T> for Result<T, E> {
     fn context<C: Into<Cow<'static, str>>>(self, context: C) -> Result<T, Context> {
-        self.map_err(|e| Context {
-            error: e.into(),
-            context: Some(context.into()),
-        })
+        self.map_err(|e| Context { error: e.into(), context: Some(context.into()) })
     }
 }

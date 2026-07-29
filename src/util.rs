@@ -18,10 +18,7 @@ macro_rules! timed_out {
 
 impl Stream {
     pub fn new(stream: TcpStream) -> Self {
-        Self {
-            inner: BufStream::new(stream),
-            timeout: None,
-        }
+        Self { inner: BufStream::new(stream), timeout: None }
     }
 
     pub fn set_timeout(&mut self, dur: Duration) {
@@ -30,9 +27,7 @@ impl Stream {
 
     pub async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.read_exact(buf))
-                .await
-                .map_err(|_| timed_out!())?
+            timeout_at(timeout, self.inner.read_exact(buf)).await.map_err(|_| timed_out!())?
         } else {
             self.inner.read_exact(buf).await
         }
@@ -40,9 +35,7 @@ impl Stream {
 
     pub async fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize> {
         if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.read_to_end(buf))
-                .await
-                .map_err(|_| timed_out!())?
+            timeout_at(timeout, self.inner.read_to_end(buf)).await.map_err(|_| timed_out!())?
         } else {
             self.inner.read_to_end(buf).await
         }
@@ -50,9 +43,7 @@ impl Stream {
 
     pub async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
         if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.write_all(buf))
-                .await
-                .map_err(|_| timed_out!())?
+            timeout_at(timeout, self.inner.write_all(buf)).await.map_err(|_| timed_out!())?
         } else {
             self.inner.write_all(buf).await
         }
@@ -60,9 +51,7 @@ impl Stream {
 
     pub async fn flush(&mut self) -> std::io::Result<()> {
         if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.flush())
-                .await
-                .map_err(|_| timed_out!())?
+            timeout_at(timeout, self.inner.flush()).await.map_err(|_| timed_out!())?
         } else {
             self.inner.flush().await
         }
@@ -117,10 +106,7 @@ impl core::iter::ExactSizeIterator for Hex<'_> {
 }
 
 pub fn hex(inp: &[u8], out: &mut [u8]) {
-    let iter = Hex {
-        inner: inp.iter(),
-        next: None,
-    };
+    let iter = Hex { inner: inp.iter(), next: None };
     for (i, j) in iter.zip(out.iter_mut()) {
         *j = i;
     }

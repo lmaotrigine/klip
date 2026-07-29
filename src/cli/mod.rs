@@ -69,12 +69,8 @@ impl Subcommand {
                 "copy" => Ok(Self::Copy),
                 "paste" => Ok(Self::Paste),
                 "move" => Ok(Self::Move),
-                "serve" => Ok(Self::Serve(ServerArgs::from_arg_matches_mut(
-                    &mut sub_matches,
-                )?)),
-                "genkeys" => Ok(Self::Keygen(
-                    sub_matches.remove_one("password").unwrap_or(false),
-                )),
+                "serve" => Ok(Self::Serve(ServerArgs::from_arg_matches_mut(&mut sub_matches)?)),
+                "genkeys" => Ok(Self::Keygen(sub_matches.remove_one("password").unwrap_or(false))),
                 "version" => Ok(Self::Version),
                 _ => Err(clap::Error::raw(
                     clap::error::ErrorKind::InvalidSubcommand,
@@ -133,10 +129,7 @@ impl Cli {
                 "failed to canonicalize config file path '{}'",
                 config_file.display()
             ))?)
-            .context(format!(
-                "while reading config file at '{}'",
-                config_file.display()
-            ))?,
+            .context(format!("while reading config file at '{}'", config_file.display()))?,
         )
         .context("while parsing config file")?;
         let toml_config = TomlConfig::new(config);
@@ -156,9 +149,6 @@ impl Cli {
     }
 
     fn default_config_file() -> Result<PathBuf, Error> {
-        Ok(home_dir()
-            .ok_or(Error::NoHome)?
-            .canonicalize()?
-            .join(".klip.toml"))
+        Ok(home_dir().ok_or(Error::NoHome)?.canonicalize()?.join(".klip.toml"))
     }
 }

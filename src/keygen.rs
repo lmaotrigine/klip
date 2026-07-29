@@ -104,32 +104,20 @@ pub fn generate_keys(config_file_name: impl std::fmt::Display, key: &[u8]) {
          configuration ---\n\n"
     );
     println!("# Configuration for a client\n");
-    println!(
-        "connect    = \"{}\"\t# edit appropriately",
-        crate::DEFAULT_CONNECT
-    );
+    println!("connect    = \"{}\"\t# edit appropriately", crate::DEFAULT_CONNECT);
     println!("psk        = \"{}\"", from_utf8(&psk_hex));
     println!("sign_pk    = \"{}\"", from_utf8(&verifying_key_hex));
     println!("sign_sk    = \"{}\"", from_utf8(&signing_key_hex));
     println!("encrypt_sk = \"{}\"", from_utf8(&encrypt_sk_hex));
     println!();
     println!("# Configuration for a server\n");
-    println!(
-        "listen     = \"{}\"\t# edit appropriately",
-        crate::DEFAULT_LISTEN
-    );
+    println!("listen     = \"{}\"\t# edit appropriately", crate::DEFAULT_LISTEN);
     println!("psk        = \"{}\"", from_utf8(&psk_hex));
     println!("sign_pk    = \"{}\"", from_utf8(&verifying_key_hex));
     println!();
     println!("# Hybrid configuration\n");
-    println!(
-        "connect    = \"{}\"\t# edit appropriately",
-        crate::DEFAULT_CONNECT
-    );
-    println!(
-        "listen     = \"{}\"\t# edit appropriately",
-        crate::DEFAULT_LISTEN
-    );
+    println!("connect    = \"{}\"\t# edit appropriately", crate::DEFAULT_CONNECT);
+    println!("listen     = \"{}\"\t# edit appropriately", crate::DEFAULT_LISTEN);
     println!("psk        = \"{}\"", from_utf8(&psk_hex));
     println!("sign_pk    = \"{}\"", from_utf8(&verifying_key_hex));
     println!("sign_sk    = \"{}\"", from_utf8(&signing_key_hex));
