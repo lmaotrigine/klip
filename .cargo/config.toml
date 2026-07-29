@@ -1,22 +1,16 @@
-[registries.alphamethyl]
-index = "sparse+https://code.5ht2.me/api/packages/lmaotrigine/cargo/"
-
-# other targets are not guaranteed to build, but just in case, we don't want to
-# mess with their defaults.
 [target.'cfg(any(unix, windows))']
 rustflags = [
-  # this should be preferred, but for mostly portability reasons, it's kept
-  # opt-in. the Justfile enables it by default if not in CI.
-  #"-C", "target-cpu=native",
   "-C", "symbol-mangling-version=v0",
   "-C", "force-frame-pointers=yes",
 ]
 
 # eliminate runtime dependency on vcruntime.dll
-[target.'cfg(windows)']
-rustflags = [
-  "-C", "target-feature=+crt-static",
-]
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+[target.i686-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
 
 # although static CRT is currently the default for musl targets, this is likely
 # to change in the future.
@@ -25,14 +19,17 @@ rustflags = [
   "-C", "target-feature=+crt-static",
   "-C", "link-self-contained=yes",
 ]
-
 [target.aarch64-unknown-linux-musl]
 rustflags = [
   "-C", "target-feature=+crt-static",
   "-C", "link-self-contained=yes",
 ]
-
 [target.armv7-unknown-linux-musleabihf]
+rustflags = [
+  "-C", "target-feature=+crt-static",
+  "-C", "link-self-contained=yes",
+]
+[target.arm-unknown-linux-musleabi]
 rustflags = [
   "-C", "target-feature=+crt-static",
   "-C", "link-self-contained=yes",

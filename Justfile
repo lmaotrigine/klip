@@ -1,269 +1,80 @@
 #!/usr/bin/env -S just --justfile
 
-# vim: ft=make ts=2 sts=2 et
+set lazy
 
-ci := env_var_or_default("CI", "")
-release := env_var_or_default("RELEASE", "")
-use-cross := env_var_or_default("USE_CROSS", "")
-use-zigbuild := env_var_or_default("USE_ZIGBUILD", "")
-extra-build-args := env_var_or_default("EXTRA_BUILD_ARGS", "")
-extra-features := env_var_or_default("EXTRA_FEATURES", "")
-default-features := env_var_or_default("DEFAULT_FEATURES", "")
-override-features := env_var_or_default("OVERRIDE_FEATURES", "")
-glibc-version := env_var_or_default("GLIBC_VERSION", "")
-timings := env_var_or_default("TIMINGS", "")
-build-std := env_var_or_default("BUILD_STD", "")
-
-cargo := if use-cross != "" { "cross" } else if use-zigbuild != "" { "cargo-zigbuild" } else { "cargo" }
-export CARGO := cargo
-
-host := `rustc -vV | grep host: | cut -d ' ' -f2`
-target := env_var_or_default("CARGO_BUILD_TARGET", host)
-target-os := if target =~ "-windows-" {
-  "windows"
-} else if target =~ "-darwin" {
-  "macos"
-} else if target =~ "-linux-" {
-  "linux"
-} else if target =~ "bsd" {
-  "bsd"
-} else if target =~ "dragonfly" {
-  "bsd"
+toolchain := `rustc -vV | head -n 1 | cut -d ' ' -f 2`
+rustflags := if toolchain =~ "-nightly" {
+  "-C target-cpu=native -Z unstable-options -C panic=immediate-abort"
 } else {
-  "unknown"
+  "-C target-cpu=native"
 }
-target-arch := if target =~ "x86_64" {
-  "x64"
-} else if target =~ "i[56]86" {
-  "x86"
-} else if target =~ "aarch64" {
-  "arm64"
-} else if target =~ "armv7" {
-  "arm32"
-} else {
-  "unknown"
-}
-target-libc := if target =~ "-gnu" {
-  "gnu"
-} else if target =~ "-musl" {
-  "musl"
-} else {
-  "unknown"
-}
-output-ext := if target-os == "windows" { ".exe" } else { "" }
-output-filename := "klip" + output-ext
-output-profile-dir := if release != "" { "release" } else { "debug" }
-output-dir := "target" / target / output-profile-dir
-output-path := output-dir / output-filename
-
-cargo-profile := if release != "" { "release" } else { "dev" }
-is-ci := if ci != "" { "y" } else { "n" }
-cargo-buildstd := if build-std != "" {
-  " -Zbuild-std=std,panic_abort"
-} else if target == "x86_64h-apple-darwin" {
-  " -Zbuild-std=std,panic_abort"
+buildflags := if toolchain =~ "-nightly" {
+  "-Zbuild-std=std,panic_abort"
 } else {
   ""
 }
-rustc-gcclibs := if (cargo-profile / is-ci / target-libc) == "release/y/musl" {
-  " -C link-arg=-lgcc -C link-arg=-static-libgcc"
-} else {
-  ""
-}
-cargo-no-default-features := if default-features == "false" {
-  " --no-default-features"
-} else if default-features == "true" {
-  ""
-} else if (cargo-profile / is-ci) == "dev/y" {
-  " --no-default-features"
-} else {
-  ""
-}
-
-default-cargo-features := if cargo-buildstd != "" {
-  ""
-} else {
-  ""
-}
-
-cargo-features := trim_end_match(
-  default-cargo-features +
-  if override-features != "" {
-    override-features
-  } else if (cargo-profile / is-ci) == "dev/y" {
-    ""
-  } else if (cargo-profile / is-ci) == "release/y" {
-    ""
-  } else if extra-features != "" {
-    extra-features
-  } else {
-    ""
-  },
-  ","
-)
-rustc-icf := if release != "" {
-  if target-os == "linux" {
-    if use-zigbuild == "" {
-      " -C link-arg=-Wl,--icf=safe"
-    } else {
-      ""
-    }
-  } else {
-    ""
-  }
-} else {
-  ""
-}
-
-share-generics := if cargo-buildstd != "" {
-  " -Zshare-generics=y"
-} else {
-  ""
-}
-
-panic-abort := if cargo-buildstd != "" {
-  " -Zunstable-options -Cpanic=immediate-abort"
-} else {
-  ""
-}
-
-link-args := if target-os == "windows" {
-  " -C target-feature=+crt-static"
-} else if target == "x86_64-unknown-linux-musl" {
-  " -C target-feature=+crt-static -C link-self-contained=yes -C link-arg=-fuse-ld=lld -C linker=clang"
-} else if target-os == "macos" {
-  " -C linker=clang"
-} else if use-zigbuild == "" {
-  " -C link-arg=-fuse-ld=lld -C linker=clang"
-} else {
-  ""
-}
-
-glibc-ver-postfix := if glibc-version != "" {
-  if use-zigbuild != "" {
-    "." + glibc-version
-  } else {
-    ""
-  }
-} else {
-  ""
-}
-
-cargo-check-args := (" --target ") + (target) + (glibc-ver-postfix) + (cargo-buildstd) + (if extra-build-args != "" { " " + extra-build-args } else { "" })
-cargo-build-args :=  " --locked " + (if release != "" { "--release" } else { "" }) + (cargo-check-args) + (cargo-no-default-features) + (if cargo-features != "" { " --features " + cargo-features } else { "" }) + (if timings != "" { "--timings" } else { "" })
-export RUSTFLAGS := (rustc-gcclibs) + (rustc-icf) + (link-args) + (panic-abort) + (share-generics) + " -C symbol-mangling-version=v0 -C force-frame-pointers=yes" + (if ci == "" { " -C target-cpu=native" } else { "" })
-
-toolchain-name := if cargo-buildstd != "" { "nightly" } else { "stable" }
-target-name := if target == "x86_64h-apple-darwin" { "" } else { target }
-default-components := if cargo-buildstd != "" { "rust-src" } else { "" }
 
 _default:
   @just --list
 
-toolchain components=default-components:
-  rustup toolchain install {{toolchain-name}} {{ if components != "" { "--component " + components } else { "" } }} --no-self-update --profile minimal {{ if target-name != "" { "--target " + target-name } else { "" } }}
-  rustup override set {{toolchain-name}}
+alias c := check
 
-print-env:
-  @echo "env RUSTFLAGS='$RUSTFLAGS', CARGO='$CARGO'"
+tag := `git rev-parse --short HEAD`
+image := "ghcr.io/lmaotrigine/klip"
+release := `git describe --tags --exact-match 2>/dev/null || true`
 
-print-rustflags:
-  @echo "$RUSTFLAGS"
+# run clippy
+[group('lint')]
+[env('RUSTFLAGS', '-Wunused-crate-dependencies')]
+check:
+  cargo clippy --workspace --all-targets
 
-build: print-env
-  {{cargo}} build {{cargo-build-args}}
+# run cargo fmt
+[group('lint')]
+fmt *args="":
+  cargo fmt {{args}}
 
-deb: print-env
-  cargo deb --profile deb --locked --target {{target}}
+# check for trailing whitespace and carriage returns
+[group('lint')]
+ws:
+  ! rg '\s+$'
+  ! rg '\r'
 
-check: print-env
-  {{cargo}} check {{cargo-build-args}}
-  cargo hack check --feature-powerset {{cargo-check-args}}
+# perform all linting tasks
+[group('lint')]
+lint: check (fmt "--all --check") shellcheck ws
 
-get-output file outdir=".":
-  test -d "{{outdir}}" || mkdir -p {{outdir}}
-  cp -r {{ output-dir / file }} {{outdir}}/{{ file_name(file) }}
-  -ls -l {{outdir}}/{{ file_name(file) }}
+# jemalloc uses some intrinsics that are not implemented natively by rust yet.
+# so we use zigbuild here because we build the stdlib.
+# this reduces the binary size by ~200KiB compared to linking against GCC.
+# see: https://github.com/rust-lang/rust/issues/46651#issuecomment-1847872105
 
-get-binary outdir=".": (get-output output-filename outdir)
-  -chmod +x {{ outdir / output-filename }}
+# build a non-portable release binary with host CPU features.
+[group('build')]
+build-release-native target="x86_64-unknown-linux-musl":
+  RUSTFLAGS="{{rustflags}}" cargo zigbuild {{buildflags}} --release --target {{target}}
 
-unit-tests: print-env
-  {{cargo}} test {{cargo-build-args}}
+# build a docker image from the current source tree.
+[group('build')]
+docker *args="":
+  TAG="{{tag}}" IMAGE_NAME="{{image}}" RELEASE="{{release}}" docker buildx bake {{args}}
 
-clippy: print-env
-  cargo hack --feature-powerset clippy -- -D warnings
+_assert_tag_at_head:
+  @git describe --tags --exact-match HEAD 2>&1 > /dev/null
 
-fmt check="": print-env
-  cargo fmt --all -- {{check}}
+# update the man page with current release version and date.
+[group('release')]
+update-man: _assert_tag_at_head
+  perl -i -pe 's/[0-9]\+\.[0-9]\+\.[0-9]\+/{{release}}/g' doc/klip.1
+  perl -i -pe "s/[0-9]{4}-[0-9]{2}-[0-9]{2}/$(date -u +%Y-%m-%d)/g" doc/klip.1
 
-fmt-check: (fmt "--check")
+# run shellcheck on all shell scripts
+[group('lint')]
+shellcheck:
+  shellcheck ci/* scripts/* pkg/debian/*
+  fd -e sh -tf -x shellcheck
 
-lint: clippy fmt-check
-
-package-dir:
-  rm -rf packages/prep
-  mkdir -p packages/prep/doc
-  cp LICENSE packages/prep
-  cp README.md packages/prep
-  cp -r completions packages/prep
-  cp doc/klip.1 packages/prep/doc
-  cp CHANGELOG.md packages/prep/doc
-
-[macos]
-package-prepare: build package-dir
-  just get-binary packages/prep
-
-[linux]
-package-prepare: build package-dir
-  just get-binary packages/prep
-
-[windows]
-package-prepare: build package-dir
-  just get-binary packages/prep
-
-[macos]
-lipo-prepare: package-dir
-  just target=aarch64-apple-darwin build get-binary packages/prep/arm64
-  just target=x86_64-apple-darwin build get-binary packages/prep/x64
-  just target=x86_64h-apple-darwin build get-binary packages/prep/x64h
-
-  just target=aarch64-apple-darwin get-binary packages/prep/arm64
-  just target=x86_64-apple-darwin get-binary packages/prep/x64
-  just target=x86_64h-apple-darwin get-binary packages/prep/x64h
-  lipo -create -output packages/prep/{{output-filename}} packages/prep/{arm64,x64,x64h}/{{output-filename}}
-
-  rm -rf packages/prep/{arm64,x64,x64h}
-
-[linux]
-package: package-prepare
-  cd packages/prep && tar cv * | xz -9 > "../klip-{{target}}.tar.xz"
-  cd packages && shasum -a 256 "klip-{{target}}.tar.xz" > "klip-{{target}}.tar.xz.sha256"
-
-[macos]
-package: package-prepare
-  cd packages/prep && zip -r -9 "../klip-{{target}}.zip" *
-  cd packages && shasum -a 256 "klip-{{target}}.zip" > "klip-{{target}}.zip.sha256"
-
-[windows]
-package: package-prepare
-  cd packages/prep && 7z a -mx9 "../klip-{{target}}.zip" *
-  cd packages && certutil -hashfile "klip-{{target}}.zip" SHA256 > "klip-{{target}}.zip.sha256"
-
-[macos]
-package-lipo: lipo-prepare
-  cd packages/prep && zip -r -9 "../klip-universal-apple-darwin.zip" *
-  cd packages && shasum -a 256 "klip-universal-apple-darwin.zip" > "klip-universal-apple-darwin.zip.sha256"
-
-[macos]
-repackage-lipo: package-dir
-  set -euxo pipefail
-  mkdir -p packages/prep/{arm64,x64,x64h}
-  cd packages/prep/x64 && unzip -o "../../klip-x86_64-apple-darwin.zip"
-  cd packages/prep/x64h && unzip -o "../../klip-x86_64h-apple-darwin.zip"
-  cd packages/prep/arm64 && unzip -o "../../klip-aarch64-apple-darwin.zip"
-  lipo -create -output packages/prep/{{output-filename}} packages/prep/{arm64,x64,x64h}/{{output-file}}
-  ./packages/prep/{{output-filename}} --version
-  rm -rf packages/prep/{arm64,x64,x64h}
-  cd packages/prep && zip -r -9 "../klip-universal-apple-darwin.zip" *
-  cd packages && shasum -a 256 "klip-universal-apple-darwin.zip" > "klip-universal-apple-darwin.zip.sha256"
+# bump package version and create a new git tag.
+[group('release')]
+bump version="":
+  scripts/bump {{version}}

@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -e
+
+update_version() {
+  manifest="$1"
+  semver="$2"
+  perl -i -pe 's/^version.*#:version$/version = "'"$semver"'"  #:version/g' "$manifest"
+}
+
+current_version() {
+  manifest="$1"
+  grep '^version.*#:version$' "$manifest" | perl -pe 's/.*"([0-9]+\.[0-9]+\.[0-9]+)".*/$1/g'
+}
+
+next_version() {
+  cur="$1"
+  nopatch=${cur%.*}
+  patch=${cur##*.}
+  patchplus=$((patch + 1))
+  printf '%s.%s\n' "$nopatch" $patchplus
+}
+
+pkg_name() {
+  manifest="$1"
+  grep -E '^name = "[^"]+"$' "$manifest" | head -n1 | grep -Po '(?<=name = ")[^"]+'
+}
+
+case $# in
+  0)
+    semver=$(next_version "$(current_version "$manifest")")
+    ;;
+  1)
+    semver="$1"
+    ;;
+  *)
+    echo "Usage: $(basename "$0") [ semver ]" >&2
+    exit 1
+    ;;
+esac
+
+if [ -n "$(git status --untracked-files=no --porcelain)" ]; then
+  echo "Git working directory is not clean." >&2
+  exit 1
+fi
+if ! grep -q '#:version' "$manifest"; then
+  echo "Could not find '#:version' tag in $manifest" >&2
+  exit 1
+fi
+
+manifest=Cargo.toml
+
+update_version "$manifest" "$semver"
+pkg="$(pkg_name "$manifest")"
+cargo update -p "$pkg"
+git commit -am "$semver"
+git tag -sa "$semver" -m "$semver"
