@@ -27,7 +27,7 @@ release := `git describe --tags --exact-match 2>/dev/null || true`
 [group('lint')]
 [env('RUSTFLAGS', '-Wunused-crate-dependencies')]
 check:
-  cargo clippy --workspace --all-targets
+  cargo clippy --all-targets
 
 # run cargo fmt
 [group('lint')]
@@ -42,7 +42,7 @@ ws:
 
 # perform all linting tasks
 [group('lint')]
-lint: check (fmt "--all --check") shellcheck ws
+lint: check (fmt "--check") shellcheck ws
 
 # jemalloc uses some intrinsics that are not implemented natively by rust yet.
 # so we use zigbuild here because we build the stdlib.

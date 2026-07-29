@@ -133,7 +133,7 @@ jobs:
       - name: Build klip
         shell: bash
         run: |
-          ${{ env.CARGO }} build --verbose --workspace --locked ${{ env.TARGET_FLAGS }}
+          ${{ env.CARGO }} build --verbose --locked ${{ env.TARGET_FLAGS }}
           if [[ "${{ matrix.os }}" == "windows-*" ]]; then
             bin="target/${{ matrix.target }}/debug/klip.exe"
           else
@@ -177,4 +177,4 @@ jobs:
           toolchain: stable
           components: rustfmt
       - name: Check formatting
-        run: cargo fmt --all --check
+        run: cargo fmt --check

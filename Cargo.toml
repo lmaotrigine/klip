@@ -1,27 +1,13 @@
-[workspace]
-resolver = "3"
-members = [
-  ".",
-  "lib/platform",
-]
-default-members = ["."]
-
 [package]
 name = "klip"
 description = "Copy/paste anything over the network"
 version = "0.2.0"  #:version
-authors.workspace = true
-license.workspace = true
-publish.workspace = true
-readme = "README.md"
-repository.workspace = true
-edition = "2024"
-
-[workspace.package]
 authors = ["Isis Ebsen <isis@5ht2.me>"]
 license = "MPL-2.0"
 publish = false
+readme = "README.md"
 repository = "https://github.com/lmaotrigine/klip"
+edition = "2024"
 
 [dependencies]
 blake2 = "0.11.0-rc.6"
@@ -29,7 +15,6 @@ chacha20 = { version = "0.10", features = ["xchacha"] }
 clap = { version = "4", features = ["wrap_help"] }
 ed25519-dalek = "3"
 parking_lot = "0.12"
-platform = { version = "0.0.0", path = "lib/platform" }
 rand = { version = "0.10", features = ["std_rng"] }
 rpassword = { version = "7", git = "https://github.com/lmaotrigine/rpassword" }
 scrypt = "0.12"
@@ -52,10 +37,11 @@ features = [
 [target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
 tikv-jemallocator = "0.7"
 
-[lints]
-workspace = true
+[target.'cfg(windows)'.dependencies.windows-sys]
+version = "0.61"
+features = ["Win32_System_LibraryLoader"]
 
-[workspace.lints.rust]
+[lints.rust]
 dead_code = "deny"
 deprecated = "deny"
 future_incompatible = "deny"
@@ -67,7 +53,7 @@ trivial_casts = "deny"
 trivial_numeric_casts = "deny"
 unused = "deny"
 
-[workspace.lints.clippy]
+[lints.clippy]
 all = "deny"
 pedantic = "deny"
 nursery = "deny"
