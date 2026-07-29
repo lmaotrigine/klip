@@ -29,8 +29,8 @@ The server does not know much about the data it is handling, and can therefore
 be exposed to the public internet without much risk.
 .sp
 klip reads from standard input and writes to standard output. For the sake of
-simplicity and ease of maintenance, there are no options to change the input or
-output to point to files or sockets or anything else. Instead, one can use
+simplicity and ease of maintenance, there are no options to change the input
+or output to point to files or sockets or anything else. Instead, one can use
 pipes or redirection to achieve the desired effect.
 .
 .
@@ -48,8 +48,8 @@ overwrite any existing content.
 .RS 4
 Retrieve content from the klip clipboard and write it to standard output.
 .sp
-The content on the server is left intact until the next \fIcopy\fP or \fImove\fP
-command.
+The content on the server is left intact until the next \fIcopy\fP or
+\fImove\fP command.
 .RE
 .TP 12
 \fIm\fP, \fImove\fP
@@ -75,12 +75,13 @@ there are no access logs.
 Generates all required keys and writes the resultant configuration to standard
 output.
 .sp
-The configuration printed includes the default listen and connect addresses and
-is formatted as a TOML document for ease of copying into a configuration file.
+The configuration printed includes the default listen and connect addresses
+and is formatted as a TOML document for ease of copying into a configuration
+file.
 .sp
 Not all keys are actually necessary for both clients and servers. There are
-separate sections in the output for each use case, and it is recommended to only
-store what is necessary in the configuration file for each host.
+separate sections in the output for each use case, and it is recommended to
+only store what is necessary in the configuration file for each host.
 .RE
 .TP 12
 \fIhelp\fP [\fICOMMAND\fP]
@@ -97,8 +98,8 @@ Display version information.
 .
 .
 .SH OPTIONS
-This section documents all flags that klip accepts. Flags are grouped according
-to the commands they are associated with.
+This section documents all flags that klip accepts. Flags are grouped
+according to the commands they are associated with.
 .
 .SS KLIP OPTIONS
 .sp
@@ -124,8 +125,8 @@ Set the maximum number of simultaneous client connections. Defaults to 10.
 .RE
 \fI\-\-max\-len\-mb\fP=\fINUM\fP
 .RS 4
-Set the maximum content length to accept in MiB. Set to 0 for no limit (which is
-the default).
+Set the maximum content length to accept in MiB. Set to 0 for no limit (which
+is the default).
 .RE
 \fI\-t\fP \fITIMEOUT\fP, \fI\-\-timeout\fP=\fITIMEOUT\fP
 .RS 4
@@ -171,22 +172,22 @@ catastrophic errors and for soft errors.
 .
 .SH CONFIGURATION FILES
 klip reads its configuration from a TOML file. The default location for this
-file is \fI$HOME/.klip.toml\fP. This can be overridden with the \fI\-\-config\fP
-option.
+file is \fI$HOME/.klip.toml\fP. This can be overridden with the
+\fI\-\-config\fP option.
 .sp
 A configuration file can be generated using the \fIgenkeys\fP command. Each
 invocation of this command produces a set of keys for the server and client.
-Clients that share these keys can all share content with each other through the
-server.
+Clients that share these keys can all share content with each other through
+the server.
 .sp
-Only the \fBlisten\fP and \fBconnect\fP fields are meant to be edited manually.
-These fields represent the address that the server should bind to, and the
-address that the client should connect to, respectively.
+Only the \fBlisten\fP and \fBconnect\fP fields are meant to be edited
+manually. These fields represent the address that the server should bind to,
+and the address that the client should connect to, respectively.
 .
 .
 .SH SHELL COMPLETION
-Shell completion files are included in the release tarball for Bash, Fish, Zsh,
-PowerShell, and Elvish.
+Shell completion files are included in the release tarball for Bash, Fish,
+Zsh, PowerShell, and Elvish.
 .sp
 For \fBbash\fP, move \fBklip.bash\fP to \fB$XDG_CONFIG_HOME/bash_completion\fP
 or \fB/etc/bash_completion.d/\fP.
@@ -204,10 +205,7 @@ For \fBzsh\fP, move \fB_klip\fP to one of your \fB$fpath\fP directories.
 \fIhttps://github.com/lmaotrigine/klip\fP
 .sp
 Please report bugs and feature requests to the issue tracker. Please do your
-best to provide a reproducible test case for bugs. This should include the
-content being copied, the \fBklip\fP command, the actual output, and the
-expected output.
-.
+best to provide a reproducible test case for bugs.
 .
 .SH AUTHORS
 Isis Ebsen <\fIisis@5ht2.me\fP>
