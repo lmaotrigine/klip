@@ -15,19 +15,19 @@ impl TomlConf {
         Self { table }
     }
 
-    fn connect(&self) -> SocketAddr {
+    fn connect(&self) -> Result<SocketAddr, Error> {
         if let Some(toml::Value::String(v)) = self.table.get("connect") {
-            v.parse().unwrap_or(crate::DEFAULT_CONNECT)
+            v.parse().map_err(|_| Error::InvalidField("connect"))
         } else {
-            crate::DEFAULT_CONNECT
+            Ok(crate::DEFAULT_CONNECT)
         }
     }
 
-    fn listen(&self) -> SocketAddr {
+    fn listen(&self) -> Result<SocketAddr, Error> {
         if let Some(toml::Value::String(v)) = self.table.get("listen") {
-            v.parse().unwrap_or(crate::DEFAULT_LISTEN)
+            v.parse().map_err(|_| Error::InvalidField("listen"))
         } else {
-            crate::DEFAULT_LISTEN
+            Ok(crate::DEFAULT_LISTEN)
         }
     }
 
@@ -148,8 +148,8 @@ impl Config {
     pub fn new(t: toml::Table, c: &Cli) -> Result<Self, Error> {
         let t = TomlConf::new(t);
         Ok(Self {
-            connect: t.connect(),
-            listen: t.listen(),
+            connect: t.connect()?,
+            listen: t.listen()?,
             max_len: if let Subcommand::Serve(args) = c.subcommand {
                 args.max_len_mb * 1024 * 1024
             } else {
