@@ -67,7 +67,6 @@ impl Connection<'_> {
         Ok(())
     }
 
-    #[allow(clippy::cast_possible_truncation)]
     pub async fn store_operation(self, h1: &[u8]) -> Result<(), Error> {
         let mut rbuf = [0; 112];
         self.stream.read_exact(&mut rbuf).await?;
@@ -98,8 +97,10 @@ impl Connection<'_> {
         if choice.into() {
             return Err(Error::Auth);
         }
-        let mut ciphertext_with_encrypt_sk_and_nonce =
-            vec![0; ciphertext_with_encrypt_sk_and_nonce_len as usize];
+        let full_buf_len = ciphertext_with_encrypt_sk_and_nonce_len.try_into().map_err(|_| {
+            Error::Large { max: usize::MAX as _, got: ciphertext_with_encrypt_sk_and_nonce_len }
+        })?;
+        let mut ciphertext_with_encrypt_sk_and_nonce = vec![0; full_buf_len];
         self.stream.set_timeout(self.state.config().data_timeout());
         self.stream.read_exact(&mut ciphertext_with_encrypt_sk_and_nonce).await?;
         self.state.config().sign_pk().verify_strict(

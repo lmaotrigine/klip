@@ -33,14 +33,6 @@ impl Stream {
         }
     }
 
-    pub async fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize> {
-        if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.read_to_end(buf)).await.map_err(|_| timed_out!())?
-        } else {
-            self.inner.read_to_end(buf).await
-        }
-    }
-
     pub async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
         if let Some(timeout) = self.timeout {
             timeout_at(timeout, self.inner.write_all(buf)).await.map_err(|_| timed_out!())?

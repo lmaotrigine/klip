@@ -38,7 +38,6 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     );
     let ct = &mut content_with_encrypt_sk_id_and_nonce[32..];
     cipher.apply_keystream(ct);
-    assert_eq!(&content_with_encrypt_sk_id_and_nonce[0..8], &config.encrypt_sk_id().to_le_bytes());
     let signature = config.sign_sk().sign(content_with_encrypt_sk_id_and_nonce.as_slice());
     s.set_timeout(config.data_timeout());
     let h2 = auth2store(config.psk(), h1, opcode, &ts, &signature.to_bytes());
@@ -71,7 +70,6 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     Ok(())
 }
 
-#[allow(clippy::cast_possible_truncation)]
 async fn paste_operation(
     config: &Config,
     stream: &mut Stream,
@@ -120,10 +118,12 @@ async fn paste_operation(
     if ciphertext_with_encrypt_sk_id_and_nonce_len < 32 {
         return Err(Error::Short);
     }
-    let mut ciphertext_with_encrypt_sk_id_and_nonce =
-        Vec::with_capacity(ciphertext_with_encrypt_sk_id_and_nonce_len as usize);
+    let full_buf_len = ciphertext_with_encrypt_sk_id_and_nonce_len.try_into().map_err(|_| {
+        Error::Large { max: usize::MAX as _, got: ciphertext_with_encrypt_sk_id_and_nonce_len }
+    })?;
+    let mut ciphertext_with_encrypt_sk_id_and_nonce = vec![0; full_buf_len];
     stream.set_timeout(config.data_timeout());
-    stream.read_to_end(&mut ciphertext_with_encrypt_sk_id_and_nonce).await.map_err(|e| {
+    stream.read_exact(&mut ciphertext_with_encrypt_sk_id_and_nonce[..]).await.map_err(|e| {
         if e.kind() == io::ErrorKind::UnexpectedEof {
             Error::MaybeIncompatibleVersion
         } else {
