@@ -41,26 +41,30 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
     let signature = config.sign_sk().sign(content_with_encrypt_sk_id_and_nonce.as_slice());
     s.set_timeout(config.data_timeout());
     let h2 = auth2store(config.psk(), h1, opcode, &ts, &signature.to_bytes());
-    s.write_all(&[opcode]).await?;
-    s.write_all(&h2).await?;
-    let ciphertext_with_encrypt_sk_id_and_nonce_len =
-        content_with_encrypt_sk_id_and_nonce.len() as u64;
-    s.write_all(&ciphertext_with_encrypt_sk_id_and_nonce_len.to_le_bytes()).await?;
-    s.write_all(&ts).await?;
-    s.write_all(&signature.to_bytes()).await?;
-    s.write_all(&content_with_encrypt_sk_id_and_nonce).await?;
-    s.flush().await?;
-    let mut rbuf = [0; 32];
-    s.read_exact(&mut rbuf).await.map_err(|e| {
-        if e.kind() == io::ErrorKind::UnexpectedEof {
-            Error::MaybeIncompatibleVersion
+    let h3 = (async || -> io::Result<[u8; 32]> {
+        s.write_all(&[opcode]).await?;
+        s.write_all(&h2).await?;
+        let ciphertext_with_encrypt_sk_id_and_nonce_len =
+            content_with_encrypt_sk_id_and_nonce.len() as u64;
+        s.write_all(&ciphertext_with_encrypt_sk_id_and_nonce_len.to_le_bytes()).await?;
+        s.write_all(&ts).await?;
+        s.write_all(&signature.to_bytes()).await?;
+        s.write_all(&content_with_encrypt_sk_id_and_nonce).await?;
+        s.flush().await?;
+        let mut h3 = [0; 32];
+        s.read_exact(&mut h3).await?;
+        Ok(h3)
+    })()
+    .await
+    .map_err(|e| {
+        if matches!(e.kind(), io::ErrorKind::UnexpectedEof | io::ErrorKind::BrokenPipe) {
+            Error::ConnectionClosed
         } else {
             e.into()
         }
     })?;
-    let h3 = &rbuf[..32];
     let wh3 = auth3store(config.psk(), &h2);
-    let choice = u8::ct_ne_slice(&wh3, h3);
+    let choice = wh3.ct_ne(&h3);
     if choice.into() {
         return Err(Error::Auth);
     }
@@ -124,8 +128,8 @@ async fn paste_operation(
     let mut ciphertext_with_encrypt_sk_id_and_nonce = vec![0; full_buf_len];
     stream.set_timeout(config.data_timeout());
     stream.read_exact(&mut ciphertext_with_encrypt_sk_id_and_nonce[..]).await.map_err(|e| {
-        if e.kind() == io::ErrorKind::UnexpectedEof {
-            Error::MaybeIncompatibleVersion
+        if matches!(e.kind(), io::ErrorKind::UnexpectedEof | io::ErrorKind::BrokenPipe) {
+            Error::ConnectionClosed
         } else {
             e.into()
         }

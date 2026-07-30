@@ -12,6 +12,7 @@ pub enum Error {
     Io(std::io::Error),
     Large { max: u64, got: u64 },
     MaybeIncompatibleVersion,
+    ConnectionClosed,
     MissingField(&'static str),
     NoHome,
     Old,
@@ -44,6 +45,11 @@ impl Display for Error {
             Self::MaybeIncompatibleVersion => {
                 f.write_str("the server may be running an incompatible version")
             }
+            Self::ConnectionClosed => f.write_str(
+                "the server unexpectedly closed the connection. \
+                it may be running an incompatible version.\n\
+                check the server logs for more information.",
+            ),
             Self::MissingField(field) => write!(f, "missing required config field `{field}`"),
             Self::NoHome => f.write_str("could not determine home directory"),
             Self::Old => f.write_str("the clipboard content is too old"),
