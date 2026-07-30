@@ -59,13 +59,10 @@ build-release-native target="x86_64-unknown-linux-musl":
 docker *args="":
   TAG="{{tag}}" IMAGE_NAME="{{image}}" RELEASE="{{release}}" docker buildx bake {{args}}
 
-_assert_tag_at_head:
-  @git describe --tags --exact-match HEAD 2>&1 > /dev/null
-
 # update the man page with current release version and date.
 [group('release')]
-update-man: _assert_tag_at_head
-  perl -i -pe 's/[0-9]\+\.[0-9]\+\.[0-9]\+/{{release}}/g' doc/klip.1
+update-man version:
+  perl -i -pe 's/[0-9]\+\.[0-9]\+\.[0-9]\+/{{version}}/g' doc/klip.1
   perl -i -pe "s/[0-9]{4}-[0-9]{2}-[0-9]{2}/$(date -u +%Y-%m-%d)/g" doc/klip.1
 
 # run shellcheck on all shell scripts
