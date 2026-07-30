@@ -125,7 +125,7 @@ pub fn generate_keys(config_file_name: impl std::fmt::Display, key: &[u8]) {
 }
 
 #[inline]
-#[allow(unsafe_code)]
+#[expect(unsafe_code)]
 const fn from_utf8(b: &[u8]) -> &str {
     unsafe { std::str::from_utf8_unchecked(b) }
 }

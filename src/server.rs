@@ -71,9 +71,8 @@ impl Connection<'_> {
         let mut rbuf = [0; 112];
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = &rbuf[..32];
-        let len_buf: [u8; 8] =
-            [rbuf[32], rbuf[33], rbuf[34], rbuf[35], rbuf[36], rbuf[37], rbuf[38], rbuf[39]];
-
+        let mut len_buf = [0; 8];
+        len_buf.copy_from_slice(&rbuf[32..40]);
         let ciphertext_with_encrypt_sk_and_nonce_len = u64::from_le_bytes(len_buf);
         if ciphertext_with_encrypt_sk_and_nonce_len < 32 {
             return Err(Error::ShortCiphertext(ciphertext_with_encrypt_sk_and_nonce_len));
@@ -104,7 +103,7 @@ impl Connection<'_> {
         self.stream.set_timeout(self.state.config().data_timeout());
         self.stream.read_exact(&mut ciphertext_with_encrypt_sk_and_nonce).await?;
         self.state.config().sign_pk().verify_strict(
-            &ciphertext_with_encrypt_sk_and_nonce[..],
+            &ciphertext_with_encrypt_sk_and_nonce,
             &ed25519_dalek::Signature::from_bytes(&signature),
         )?;
         let h3 = auth3store(self.state.config().psk(), h2);

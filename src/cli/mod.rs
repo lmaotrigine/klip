@@ -1,5 +1,5 @@
 use crate::{
-    config::{Config, TomlConfig},
+    config::Config,
     error::{Context, Error, ResultExt},
     state::State,
 };
@@ -123,7 +123,7 @@ impl Cli {
             Some(config_file) => config_file.clone(),
             None => Self::default_config_file()?,
         };
-        let config = toml::from_str::<toml::value::Table>(
+        let table = toml::from_str(
             &std::fs::read_to_string(config_file.canonicalize().context(format!(
                 "failed to canonicalize config file path '{}'",
                 config_file.display()
@@ -131,8 +131,7 @@ impl Cli {
             .context(format!("while reading config file at '{}'", config_file.display()))?,
         )
         .context("while parsing config file")?;
-        let toml_config = TomlConfig::new(config);
-        let config = Config::new(&toml_config, &cli)?;
+        let config = Config::new(table, &cli)?;
         let ret = match cli.subcommand {
             Subcommand::Version => {
                 println!("klip {}", version(true));

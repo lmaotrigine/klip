@@ -6,17 +6,16 @@ use blake2::digest::{Mac, typenum::U8};
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use std::{net::SocketAddr, time::Duration};
 
-#[allow(clippy::module_name_repetitions)]
-pub struct TomlConfig {
-    table: toml::value::Table,
+struct TomlConf {
+    table: toml::Table,
 }
 
-impl TomlConfig {
-    pub const fn new(table: toml::value::Table) -> Self {
+impl TomlConf {
+    const fn new(table: toml::Table) -> Self {
         Self { table }
     }
 
-    pub fn connect(&self) -> SocketAddr {
+    fn connect(&self) -> SocketAddr {
         if let Some(toml::Value::String(v)) = self.table.get("connect") {
             v.parse().unwrap_or(crate::DEFAULT_CONNECT)
         } else {
@@ -24,7 +23,7 @@ impl TomlConfig {
         }
     }
 
-    pub fn listen(&self) -> SocketAddr {
+    fn listen(&self) -> SocketAddr {
         if let Some(toml::Value::String(v)) = self.table.get("listen") {
             v.parse().unwrap_or(crate::DEFAULT_LISTEN)
         } else {
@@ -32,7 +31,7 @@ impl TomlConfig {
         }
     }
 
-    pub fn encrypt_sk(&self) -> Result<[u8; 32], Error> {
+    fn encrypt_sk(&self) -> Result<[u8; 32], Error> {
         if let Some(toml::Value::String(v)) = self.table.get("encrypt_sk") {
             let mut buf = [0; 32];
             crate::util::from_hex(v, &mut buf).map_err(|()| Error::InvalidField("encrypt_sk"))?;
@@ -42,7 +41,7 @@ impl TomlConfig {
         }
     }
 
-    pub fn encrypt_sk_id(&self) -> Result<u64, Error> {
+    fn encrypt_sk_id(&self) -> Result<u64, Error> {
         let mut buf = [0; 8];
         if let Some(toml::Value::String(v)) = self.table.get("encrypt_sk_id") {
             crate::util::from_hex(v, &mut buf)
@@ -61,7 +60,7 @@ impl TomlConfig {
         Ok(u64::from_le_bytes(buf))
     }
 
-    pub fn psk(&self) -> Result<[u8; 32], Error> {
+    fn psk(&self) -> Result<[u8; 32], Error> {
         if let Some(toml::Value::String(v)) = self.table.get("psk") {
             let mut buf = [0; 32];
             crate::util::from_hex(v, &mut buf).map_err(|()| Error::InvalidField("psk"))?;
@@ -71,7 +70,7 @@ impl TomlConfig {
         }
     }
 
-    pub fn sign_pk(&self) -> Result<VerifyingKey, Error> {
+    fn sign_pk(&self) -> Result<VerifyingKey, Error> {
         if let Some(toml::Value::String(v)) = self.table.get("sign_pk") {
             let mut buf = [0; 32];
             crate::util::from_hex(v, &mut buf).map_err(|()| Error::InvalidField("sign_pk"))?;
@@ -81,7 +80,7 @@ impl TomlConfig {
         }
     }
 
-    pub fn sign_sk(&self) -> Result<SigningKey, Error> {
+    fn sign_sk(&self) -> Result<SigningKey, Error> {
         if let Some(toml::Value::String(v)) = self.table.get("sign_sk") {
             let mut buf = [0; 32];
             crate::util::from_hex(v, &mut buf).map_err(|()| Error::InvalidField("sign_sk"))?;
@@ -91,8 +90,8 @@ impl TomlConfig {
         }
     }
 
-    #[allow(clippy::cast_sign_loss)]
-    pub fn ttl(&self) -> Duration {
+    #[expect(clippy::cast_sign_loss)]
+    fn ttl(&self) -> Duration {
         if let Some(toml::Value::Integer(v)) = self.table.get("ttl") {
             if *v > 0 { Duration::from_secs(*v as u64) } else { crate::DEFAULT_TTL }
         } else {
@@ -146,7 +145,8 @@ impl std::fmt::Debug for Config {
 }
 
 impl Config {
-    pub fn new(t: &TomlConfig, c: &Cli) -> Result<Self, Error> {
+    pub fn new(t: toml::Table, c: &Cli) -> Result<Self, Error> {
+        let t = TomlConf::new(t);
         Ok(Self {
             connect: t.connect(),
             listen: t.listen(),
