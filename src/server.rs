@@ -155,7 +155,8 @@ pub async fn serve(state: State) -> Result<(), Error> {
         target_os = "freebsd",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "illumos"
     ))]
     tokio::spawn(async move { State::handle_siginfo().await });
     let listener = TcpListener::bind(state.config().listen()).await?;

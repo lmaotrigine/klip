@@ -23,7 +23,8 @@ pub static CONTENT: RwLock<Option<Content>> = RwLock::const_new(None);
     target_os = "freebsd",
     target_os = "macos",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "illumos"
 ))]
 static ARGV0: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
@@ -106,7 +107,8 @@ impl State {
         target_os = "freebsd",
         target_os = "macos",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "illumos"
     ))]
     pub async fn handle_siginfo() -> std::io::Result<()> {
         use std::{
