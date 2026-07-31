@@ -24,15 +24,6 @@ pub struct Storage {
 }
 
 pub static STORAGE: RwLock<Storage> = RwLock::new(Storage { generation: 0, content: None });
-#[cfg(any(
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "macos",
-    target_os = "netbsd",
-    target_os = "openbsd",
-    target_os = "illumos"
-))]
-static ARGV0: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
 pub struct State {
     config: Config,
@@ -119,13 +110,18 @@ impl State {
     pub async fn handle_siginfo() -> std::io::Result<()> {
         use std::{
             borrow::Cow,
-            env::args,
+            sync::LazyLock,
             time::{Duration, SystemTime, UNIX_EPOCH},
         };
         use tokio::signal::unix::{SignalKind, signal};
+        static BIN: LazyLock<String> = LazyLock::new(|| {
+            std::env::args_os()
+                .next()
+                .map_or_else(|| "klip".to_owned(), |s| s.to_string_lossy().into_owned())
+        });
         let mut signal = signal(SignalKind::info())?;
         while signal.recv().await == Some(()) {
-            let name = ARGV0.get_or_init(|| args().next().unwrap_or_else(|| "klip".to_owned()));
+            let name = &*BIN;
             let ts = STORAGE.read().content.as_ref().map(|c| c.ts);
             if let Some(ts) = ts {
                 let elapsed = SystemTime::now()
