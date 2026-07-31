@@ -28,9 +28,7 @@ features = [
   "rt-multi-thread",
   "net",
   "io-util",
-  "parking_lot",
   "signal",
-  "sync",
   "time",
 ]
 

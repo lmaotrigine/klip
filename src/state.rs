@@ -1,4 +1,5 @@
 use crate::{config::Config, error::Error, server::handle_connection, util::Stream};
+use parking_lot::RwLock;
 use std::{
     collections::VecDeque,
     net::IpAddr,
@@ -7,7 +8,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
     },
 };
-use tokio::{net::TcpStream, sync::RwLock};
+use tokio::net::TcpStream;
 
 // i gave up on borrow checker appeasement and made these global, sue me.
 #[derive(Clone)]
@@ -17,7 +18,12 @@ pub struct Content {
     pub ciphertext_with_encrypt_sk_and_nonce: Vec<u8>,
 }
 
-pub static CONTENT: RwLock<Option<Content>> = RwLock::const_new(None);
+pub struct Storage {
+    pub generation: u64,
+    pub content: Option<Content>,
+}
+
+pub static STORAGE: RwLock<Storage> = RwLock::new(Storage { generation: 0, content: None });
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
@@ -30,7 +36,7 @@ static ARGV0: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
 pub struct State {
     config: Config,
-    trusted_clients: parking_lot::RwLock<VecDeque<IpAddr>>,
+    trusted_clients: RwLock<VecDeque<IpAddr>>,
     client_count: AtomicUsize,
 }
 
@@ -39,7 +45,7 @@ impl State {
         let cap = config.trusted_ip_count();
         Self {
             config,
-            trusted_clients: parking_lot::RwLock::new(VecDeque::with_capacity(cap)),
+            trusted_clients: RwLock::new(VecDeque::with_capacity(cap)),
             client_count: AtomicUsize::new(0),
         }
     }
@@ -120,7 +126,7 @@ impl State {
         let mut signal = signal(SignalKind::info())?;
         while signal.recv().await == Some(()) {
             let name = ARGV0.get_or_init(|| args().next().unwrap_or_else(|| "klip".to_owned()));
-            let ts = CONTENT.read().await.as_ref().map(|c| c.ts);
+            let ts = STORAGE.read().content.as_ref().map(|c| c.ts);
             if let Some(ts) = ts {
                 let elapsed = SystemTime::now()
                     .duration_since(UNIX_EPOCH + Duration::from_secs(ts))

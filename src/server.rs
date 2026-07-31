@@ -2,7 +2,7 @@ use crate::{
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     client::DEFAULT_CLIENT_VERSION,
     error::Error,
-    state::{CONTENT, Content, State},
+    state::{Content, STORAGE, State},
     util::Stream,
 };
 use ctutils::CtEq;
@@ -26,36 +26,39 @@ impl Connection<'_> {
         if choice.into() {
             return Err(Error::Auth);
         }
-        let (content, guard) = if is_move {
-            let guard = CONTENT.write().await;
-            (guard.clone(), Some(guard))
+        let (content, current_generation) = if is_move {
+            let mut guard = STORAGE.write();
+            (guard.content.take(), guard.generation)
         } else {
-            let content = CONTENT.read().await.clone();
-            (content, None)
+            let guard = STORAGE.read();
+            (guard.content.clone(), guard.generation)
         };
         let Some(Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce }) = content else {
-            self.stream.write_all(&[0]).await?;
             self.stream.flush().await?;
             return Ok(());
         };
-        self.stream.set_timeout(self.state.config().data_timeout());
-        let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), &signature);
-        self.stream.write_all(&h3).await?;
-        let ciphertext_with_encrypt_sk_and_nonce_len =
-            ciphertext_with_encrypt_sk_and_nonce.len() as u64;
-        self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce_len.to_le_bytes()).await?;
-        if ts == 0 {
+        let res = (async || {
+            self.stream.set_timeout(self.state.config().data_timeout());
+            let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), &signature);
+            self.stream.write_all(&h3).await?;
+            let ciphertext_with_encrypt_sk_and_nonce_len =
+                ciphertext_with_encrypt_sk_and_nonce.len() as u64;
+            self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce_len.to_le_bytes()).await?;
+            self.stream.write_all(&ts.to_le_bytes()).await?;
+            self.stream.write_all(&signature).await?;
+            self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce).await?;
             self.stream.flush().await?;
-            return Ok(());
+            Ok(())
+        })()
+        .await;
+        if res.is_err() && is_move {
+            let mut guard = STORAGE.write();
+            if guard.generation == current_generation {
+                let content = Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce };
+                guard.content = Some(content);
+            }
         }
-        self.stream.write_all(&ts.to_le_bytes()).await?;
-        self.stream.write_all(&signature).await?;
-        self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce).await?;
-        self.stream.flush().await?;
-        if let Some(mut guard) = guard {
-            *guard = None;
-        }
-        Ok(())
+        res
     }
 
     pub async fn store_operation(self, h1: &[u8]) -> Result<(), Error> {
@@ -100,7 +103,9 @@ impl Connection<'_> {
         let h3 = auth3store(self.state.config().psk(), h2);
         {
             let content = Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce };
-            *CONTENT.write().await = Some(content);
+            let mut guard = STORAGE.write();
+            guard.content = Some(content);
+            guard.generation = guard.generation.wrapping_add(1);
         }
         self.stream.set_timeout(self.state.config().data_timeout());
         self.stream.write_all(&h3).await?;
