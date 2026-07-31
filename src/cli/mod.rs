@@ -8,18 +8,14 @@ use std::{env::home_dir, num::NonZeroUsize, path::PathBuf};
 
 mod commands;
 
-pub fn version(long: bool) -> &'static str {
-    static STORAGE: std::sync::OnceLock<[String; 2]> = std::sync::OnceLock::new();
-    STORAGE.get_or_init(|| {
-        let short = format!("v{}", option_env!("CARGO_PKG_VERSION").unwrap_or("N/A"));
-        let protocol_version = crate::client::DEFAULT_CLIENT_VERSION;
-        let long = option_env!("KLIP_BUILD_GIT_HASH").map_or_else(
-            || format!("{short} (protocol version {protocol_version})"),
-            |hash| format!("{short} (rev {hash}) (protocol version {protocol_version})"),
-        );
-        [short, long]
-    })[usize::from(long)]
-    .as_str()
+pub fn version(long: bool) -> String {
+    let short = format!("v{}", option_env!("CARGO_PKG_VERSION").unwrap_or("N/A"));
+    if !long {
+        return short;
+    }
+    let hash = option_env!("KLIP_BUILD_GIT_HASH")
+        .map_or_else(String::new, |hash| format!(" (rev {hash})"));
+    format!("{short}{hash} (protocol version {})", crate::client::DEFAULT_CLIENT_VERSION)
 }
 
 macro_rules! assert_some {
