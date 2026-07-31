@@ -139,7 +139,7 @@ jobs:
           else
             bin="target/${{ matrix.target }}/debug/klip"
           fi
-          echo "KLIP_BIN=$bin" >> $GITHUB_ENV
+          echo "KLIP=$bin" >> $GITHUB_ENV
       - name: Show build.rs stderr
         shell: bash
         run: |
@@ -158,7 +158,7 @@ jobs:
           docker run --rm \
             -v "$PWD/target:/target:Z" \
             -v "$PWD/test.sh:/test.sh:Z" \
-            -e "KLIP_BIN=${{ matrix.qemu }} /$KLIP_BIN" \
+            -e "KLIP=${{ matrix.qemu }} /$KLIP" \
             "ghcr.io/cross-rs/${{ matrix.target }}:main" \
             /test.sh
       - name: Run tests (native)
