@@ -62,7 +62,7 @@ docker *args="":
 # update the man page with current release version and date.
 [group('release')]
 update-man version:
-  perl -i -pe 's/[0-9]\+\.[0-9]\+\.[0-9]\+/{{version}}/g' doc/klip.1
+  perl -i -pe 's/[0-9]+\.[0-9]+\.[0-9]+/{{version}}/g' doc/klip.1
   perl -i -pe "s/[0-9]{4}-[0-9]{2}-[0-9]{2}/$(date -u +%Y-%m-%d)/g" doc/klip.1
 
 # run shellcheck on all shell scripts

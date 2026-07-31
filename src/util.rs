@@ -10,12 +10,6 @@ pub struct Stream {
     timeout: Option<Instant>,
 }
 
-macro_rules! timed_out {
-    () => {
-        std::io::Error::from(std::io::ErrorKind::TimedOut)
-    };
-}
-
 impl Stream {
     pub fn new(stream: TcpStream) -> Self {
         Self { inner: BufStream::new(stream), timeout: None }
@@ -27,7 +21,7 @@ impl Stream {
 
     pub async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.read_exact(buf)).await.map_err(|_| timed_out!())?
+            timeout_at(timeout, self.inner.read_exact(buf)).await?
         } else {
             self.inner.read_exact(buf).await
         }
@@ -35,7 +29,7 @@ impl Stream {
 
     pub async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
         if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.write_all(buf)).await.map_err(|_| timed_out!())?
+            timeout_at(timeout, self.inner.write_all(buf)).await?
         } else {
             self.inner.write_all(buf).await
         }
@@ -43,7 +37,7 @@ impl Stream {
 
     pub async fn flush(&mut self) -> std::io::Result<()> {
         if let Some(timeout) = self.timeout {
-            timeout_at(timeout, self.inner.flush()).await.map_err(|_| timed_out!())?
+            timeout_at(timeout, self.inner.flush()).await?
         } else {
             self.inner.flush().await
         }

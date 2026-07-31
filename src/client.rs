@@ -6,12 +6,11 @@ use crate::{
     util::Stream,
 };
 use chacha20::cipher::{KeyIvInit, StreamCipher};
-use ctutils::{CtEq, CtEqSlice};
+use ctutils::CtEq;
 use ed25519_dalek::Signer;
 use rand::Rng;
 use std::{
     io::{self, IsTerminal, Read, Write},
-    net::TcpStream,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
@@ -105,8 +104,8 @@ async fn paste_operation(
     ts.copy_from_slice(&rbuf[40..48]);
     let mut signature = [0; 64];
     signature.copy_from_slice(&rbuf[48..112]);
-    let wh3 = auth3get(config.psk(), &h2, &ts, &signature);
-    let choice = u8::ct_ne_slice(&wh3, h3);
+    let wh3 = &auth3get(config.psk(), &h2, &ts, &signature)[..];
+    let choice = wh3.ct_ne(h3);
     if choice.into() {
         return Err(Error::Auth);
     }
@@ -162,10 +161,9 @@ async fn paste_operation(
 
 pub async fn run(config: Config, is_copy: bool, is_move: bool) -> Result<(), Error> {
     let psk = config.psk();
-    let conn = TcpStream::connect_timeout(&config.connect(), config.timeout())?;
-    conn.set_nonblocking(true)?;
-    let s = tokio::net::TcpStream::from_std(conn)?;
-    let mut stream = Stream::new(s);
+    let fut = tokio::net::TcpStream::connect(config.connect());
+    let conn = tokio::time::timeout(config.timeout(), fut).await.map_err(io::Error::from)??;
+    let mut stream = Stream::new(conn);
     let mut r = [0; 32];
     let mut rng = rand::make_rng::<rand::rngs::StdRng>();
     rng.fill_bytes(&mut r);
@@ -195,8 +193,8 @@ pub async fn run(config: Config, is_copy: bool, is_move: bool) -> Result<(), Err
     }
     let r2 = &rbuf[1..33];
     let h1 = &rbuf[33..65];
-    let wh1 = auth1(psk, DEFAULT_CLIENT_VERSION, &h0, r2);
-    let choice = u8::ct_ne_slice(&wh1, h1);
+    let wh1 = &auth1(psk, DEFAULT_CLIENT_VERSION, &h0, r2)[..];
+    let choice = wh1.ct_ne(h1);
     if choice.into() {
         return Err(Error::Auth);
     }

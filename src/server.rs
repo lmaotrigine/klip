@@ -2,10 +2,10 @@ use crate::{
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     client::DEFAULT_CLIENT_VERSION,
     error::Error,
-    state::{State, TS},
+    state::{CONTENT, Content, State},
     util::Stream,
 };
-use ctutils::{CtEq, CtEqSlice};
+use ctutils::CtEq;
 use rand::Rng;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -26,27 +26,20 @@ impl Connection<'_> {
         if choice.into() {
             return Err(Error::Auth);
         }
-        let (ts, signature, ciphertext_with_encrypt_sk_and_nonce, guards) = if is_move {
-            let ts_guard = TS.write().await;
-            let content_guard = self.state.content.write().await;
-            (
-                *ts_guard,
-                content_guard.signature,
-                content_guard.ciphertext_with_encrypt_sk_and_nonce.clone(),
-                Some((ts_guard, content_guard)),
-            )
+        let (content, guard) = if is_move {
+            let guard = CONTENT.write().await;
+            (guard.clone(), Some(guard))
         } else {
-            let content = self.state.content.read().await;
-            let ts = { *TS.read().await };
-            let signature = content.signature;
-            let ciphertext_with_encrypt_sk_and_nonce =
-                content.ciphertext_with_encrypt_sk_and_nonce.clone();
-            drop(content);
-            (ts, signature, ciphertext_with_encrypt_sk_and_nonce, None)
+            let content = CONTENT.read().await.clone();
+            (content, None)
         };
-        let signature = if signature == [0; 64] { &[] } else { &signature[..] };
+        let Some(Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce }) = content else {
+            self.stream.write_all(&[0]).await?;
+            self.stream.flush().await?;
+            return Ok(());
+        };
         self.stream.set_timeout(self.state.config().data_timeout());
-        let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), signature);
+        let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), &signature);
         self.stream.write_all(&h3).await?;
         let ciphertext_with_encrypt_sk_and_nonce_len =
             ciphertext_with_encrypt_sk_and_nonce.len() as u64;
@@ -56,13 +49,11 @@ impl Connection<'_> {
             return Ok(());
         }
         self.stream.write_all(&ts.to_le_bytes()).await?;
-        self.stream.write_all(signature).await?;
+        self.stream.write_all(&signature).await?;
         self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce).await?;
         self.stream.flush().await?;
-        if let Some((mut ts_guard, mut content_guard)) = guards {
-            *ts_guard = 0;
-            content_guard.signature = [0; 64];
-            content_guard.ciphertext_with_encrypt_sk_and_nonce.clear();
+        if let Some(mut guard) = guard {
+            *guard = None;
         }
         Ok(())
     }
@@ -92,7 +83,7 @@ impl Connection<'_> {
         signature.copy_from_slice(&rbuf[48..112]);
         let opcode = b'S';
         let wh2 = auth2store(self.state.config().psk(), h1, opcode, &ts.to_le_bytes(), &signature);
-        let choice = u8::ct_ne_slice(&wh2, h2);
+        let choice = wh2.as_slice().ct_ne(h2);
         if choice.into() {
             return Err(Error::Auth);
         }
@@ -108,10 +99,8 @@ impl Connection<'_> {
         )?;
         let h3 = auth3store(self.state.config().psk(), h2);
         {
-            let mut content = self.state.content.write().await;
-            *TS.write().await = ts;
-            content.signature = signature;
-            content.ciphertext_with_encrypt_sk_and_nonce = ciphertext_with_encrypt_sk_and_nonce;
+            let content = Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce };
+            *CONTENT.write().await = Some(content);
         }
         self.stream.set_timeout(self.state.config().data_timeout());
         self.stream.write_all(&h3).await?;
@@ -134,8 +123,8 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     }
     let r = &rbuf[1..33];
     let h0 = &rbuf[33..65];
-    let wh0 = auth0(config.psk(), client_version, r);
-    let choice = u8::ct_ne_slice(&wh0, h0);
+    let wh0 = &auth0(config.psk(), client_version, r)[..];
+    let choice = wh0.ct_ne(h0);
     if choice.into() {
         return Err(Error::Auth);
     }

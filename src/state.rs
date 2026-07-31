@@ -10,7 +10,14 @@ use std::{
 use tokio::{net::TcpStream, sync::RwLock};
 
 // i gave up on borrow checker appeasement and made these global, sue me.
-pub static TS: RwLock<u64> = RwLock::const_new(0);
+#[derive(Clone)]
+pub struct Content {
+    pub ts: u64,
+    pub signature: [u8; 64],
+    pub ciphertext_with_encrypt_sk_and_nonce: Vec<u8>,
+}
+
+pub static CONTENT: RwLock<Option<Content>> = RwLock::const_new(None);
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
@@ -20,16 +27,10 @@ pub static TS: RwLock<u64> = RwLock::const_new(0);
 ))]
 static ARGV0: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
-pub struct Content {
-    pub signature: [u8; 64],
-    pub ciphertext_with_encrypt_sk_and_nonce: Vec<u8>,
-}
-
 pub struct State {
     config: Config,
     trusted_clients: parking_lot::RwLock<VecDeque<IpAddr>>,
     client_count: AtomicUsize,
-    pub content: Arc<RwLock<Content>>,
 }
 
 impl State {
@@ -39,10 +40,6 @@ impl State {
             config,
             trusted_clients: parking_lot::RwLock::new(VecDeque::with_capacity(cap)),
             client_count: AtomicUsize::new(0),
-            content: Arc::new(RwLock::new(Content {
-                signature: [0; 64],
-                ciphertext_with_encrypt_sk_and_nonce: Vec::new(),
-            })),
         }
     }
 
@@ -114,29 +111,28 @@ impl State {
     pub async fn handle_siginfo() -> std::io::Result<()> {
         use std::{
             borrow::Cow,
+            env::args,
             time::{Duration, SystemTime, UNIX_EPOCH},
         };
         use tokio::signal::unix::{SignalKind, signal};
         let mut signal = signal(SignalKind::info())?;
         while signal.recv().await == Some(()) {
-            let name =
-                ARGV0.get_or_init(|| std::env::args().next().unwrap_or_else(|| "klip".to_owned()));
-            let value = *TS.read().await;
-            match value {
-                0 => println!("{name}: the clipboard is empty"),
-                ts => {
-                    let elapsed = SystemTime::now()
-                        .duration_since(UNIX_EPOCH + Duration::from_secs(ts))
-                        .unwrap_or_default()
-                        .as_secs()
-                        / 60;
-                    let msg = if elapsed <= 1 {
-                        Cow::Borrowed("a few moments ago")
-                    } else {
-                        Cow::Owned(format!("{elapsed} minutes ago"))
-                    };
-                    println!("{name}: the clipboard is not empty (last filled {msg})");
-                }
+            let name = ARGV0.get_or_init(|| args().next().unwrap_or_else(|| "klip".to_owned()));
+            let ts = CONTENT.read().await.as_ref().map(|c| c.ts);
+            if let Some(ts) = ts {
+                let elapsed = SystemTime::now()
+                    .duration_since(UNIX_EPOCH + Duration::from_secs(ts))
+                    .unwrap_or_default()
+                    .as_secs()
+                    / 60;
+                let msg = if elapsed <= 1 {
+                    Cow::Borrowed("a few moments ago")
+                } else {
+                    Cow::Owned(format!("{elapsed} minutes ago"))
+                };
+                println!("{name}: the clipboard is not empty (last filled {msg})");
+            } else {
+                println!("{name}: the clipboard is empty");
             }
         }
         Ok(())
