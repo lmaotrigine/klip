@@ -72,7 +72,7 @@ $ brew install lmaotrigine/tap/klip
 klip can be installed from the flake in this repository.
 
 ```console
-$ nix profile install github:lmaotrigine/klip
+$ nix profile add github:lmaotrigine/klip
 ```
 
 A `default.nix` is also provided for non-flake users.
