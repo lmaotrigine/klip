@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    io::{Error, Write},
+    time::Duration,
+};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufStream},
     net::TcpStream,
@@ -118,4 +121,15 @@ pub fn from_hex(s: &str, buf: &mut [u8]) -> Result<(), ()> {
         *b = (decode_char(bytes[i * 2])? << 4) | decode_char(bytes[i * 2 + 1])?;
     }
     Ok(())
+}
+
+pub fn prompt(prompt: &str) -> Result<String, Error> {
+    let mut ret = String::new();
+    print!("{prompt}");
+    let _ = std::io::stdout().flush();
+    std::io::stdin().read_line(&mut ret)?;
+    while ret.ends_with(['\n', '\r']) {
+        ret.pop();
+    }
+    Ok(ret)
 }

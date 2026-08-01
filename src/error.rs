@@ -114,9 +114,9 @@ impl Debug for Context {
     }
 }
 
-impl From<Error> for Context {
-    fn from(error: Error) -> Self {
-        Self { error, context: None }
+impl<E: Into<Error>> From<E> for Context {
+    fn from(error: E) -> Self {
+        Self { error: error.into(), context: None }
     }
 }
 

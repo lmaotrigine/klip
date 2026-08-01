@@ -2,9 +2,16 @@ TBD
 ===
 Unreleased changes. Release notes have not yet been written.
 
+Bug fixes:
+
+* Fix potential panic in clients when the server terminates the connection in
+  the middle of a paste or move operation.
+* Fix server becoming unresponsive during long-running move operations.
+
 Feature enhancements:
 
 * Tab completion does not include --help and --version if a subcommand has been entered.
+* Provide visual feedback when typing passwords.
 
 Miscellaneous:
 

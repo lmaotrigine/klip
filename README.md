@@ -199,7 +199,7 @@ encrypt_sk = "28956ee776dc1f171e652472c6a27ce27166bf58effa10b574dbe159128d8898"
 
 Don't use these, obviously. Get your own keys as described [above](#setup). Edit
 the `connect` and `listen` properties to reflect the staging server IP and port.
-`chmod go-rwx ~/.klip.toml` might not be a bad idea.
+`chmod go= ~/.klip.toml` might not be a bad idea.
 
 ## Usage (staging server)
 

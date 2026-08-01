@@ -326,7 +326,6 @@ dependencies = [
  "ed25519-dalek",
  "parking_lot",
  "rand",
- "rpassword",
  "scrypt",
  "tikv-jemallocator",
  "tokio",
@@ -459,15 +458,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
 dependencies = [
  "bitflags",
-]
-
-[[package]]
-name = "rpassword"
-version = "7.5.4"
-source = "git+https://github.com/lmaotrigine/rpassword#211fc92a0ae3f905d45c8c7920963c23449a2e64"
-dependencies = [
- "libc",
- "windows-sys",
 ]
 
 [[package]]

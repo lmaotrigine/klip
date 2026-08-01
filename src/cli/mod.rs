@@ -2,6 +2,7 @@ use crate::{
     config::Config,
     error::{Context, Error, ResultExt},
     state::State,
+    util,
 };
 use std::{env::home_dir, num::NonZeroUsize, path::PathBuf};
 
@@ -111,8 +112,7 @@ impl Cli {
                 None => Self::default_config_file()?,
             };
             let key = if password {
-                rpassword::prompt_password("Password: ")
-                    .context("failed to read password interactively")?
+                util::prompt("Password: ").context("failed to read password interactively")?
             } else {
                 String::new()
             };

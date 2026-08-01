@@ -17,7 +17,6 @@ ctutils = "0.4"
 ed25519-dalek = "3"
 parking_lot = "0.12"
 rand = { version = "0.10", features = ["std_rng"] }
-rpassword = { version = "7", git = "https://github.com/lmaotrigine/rpassword" }
 scrypt = "0.12"
 toml = { version = "1", default-features = false, features = ["parse", "serde"] }
 
