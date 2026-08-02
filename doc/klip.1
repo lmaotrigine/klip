@@ -145,8 +145,8 @@ Set the data transmission timeout in seconds. Defaults to 3600.
 \fI\-p\fP, \fI\-\-password\fP
 .RS 4
 If set, the keys are generated deterministically from a password. The password
-must be provided at the subsequent prompt and will not be displayed on the
-screen while typing.
+may be entered at the subsequent prompt or piped to standard input. Unlike
+most other command line tools, the password will be visible while typing.
 .sp
 This flag is not recommended to be set on most systems, and randomly generated
 keys should be used instead. This is provided because it is useful in some
