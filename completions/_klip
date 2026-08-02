@@ -33,20 +33,14 @@ _klip() {
       case $line[1] in
         (copy)
           _arguments "${_arguments_options[@]}" : \
-            '-h[Print help]' \
-            '--help[Print help]' \
             && ret=0
           ;;
         (paste)
           _arguments "${_arguments_options[@]}" : \
-            '-h[Print help]' \
-            '--help[Print help]' \
             && ret=0
           ;;
         (move)
           _arguments "${_arguments_options[@]}" : \
-            '-h[Print help]' \
-            '--help[Print help]' \
             && ret=0
           ;;
         (serve)
