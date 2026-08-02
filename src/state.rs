@@ -59,17 +59,11 @@ impl State {
     }
 
     pub fn accept_client(self: Arc<Self>, mut conn: Stream) {
-        let fut = async move {
-            if let Err(e) = handle_connection(&self, &mut conn).await {
-                self.client_count.fetch_sub(1, Ordering::SeqCst);
-                conn.shutdown().await?;
-                return Err(e);
-            }
-            self.client_count.fetch_sub(1, Ordering::SeqCst);
-            Ok(())
-        };
         tokio::spawn(async move {
-            if let Err(e) = fut.await {
+            let res = handle_connection(&self, &mut conn).await;
+            self.client_count.fetch_sub(1, Ordering::SeqCst);
+            if let Err(e) = res {
+                let _ = conn.shutdown().await;
                 eprintln!("error: {e}");
             }
         });
