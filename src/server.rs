@@ -33,20 +33,25 @@ impl Connection<'_> {
             let guard = STORAGE.read();
             (guard.content.clone(), guard.generation)
         };
-        let Some(Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce }) = content else {
+        let Some(content) = content else {
             self.stream.flush().await?;
             return Ok(());
         };
         let res = (async || {
             self.stream.set_timeout(self.state.config().data_timeout());
-            let h3 = auth3get(self.state.config().psk(), &h2, &ts.to_le_bytes(), &signature);
+            let h3 = auth3get(
+                self.state.config().psk(),
+                &h2,
+                &content.ts.to_le_bytes(),
+                &content.signature,
+            );
             self.stream.write_all(&h3).await?;
             let ciphertext_with_encrypt_sk_and_nonce_len =
-                ciphertext_with_encrypt_sk_and_nonce.len() as u64;
+                content.ciphertext_with_encrypt_sk_and_nonce.len() as u64;
             self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce_len.to_le_bytes()).await?;
-            self.stream.write_all(&ts.to_le_bytes()).await?;
-            self.stream.write_all(&signature).await?;
-            self.stream.write_all(&ciphertext_with_encrypt_sk_and_nonce).await?;
+            self.stream.write_all(&content.ts.to_le_bytes()).await?;
+            self.stream.write_all(&content.signature).await?;
+            self.stream.write_all(&content.ciphertext_with_encrypt_sk_and_nonce).await?;
             self.stream.flush().await?;
             Ok(())
         })()
@@ -54,7 +59,6 @@ impl Connection<'_> {
         if res.is_err() && is_move {
             let mut guard = STORAGE.write();
             if guard.generation == current_generation {
-                let content = Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce };
                 guard.content = Some(content);
             }
         }

@@ -17,7 +17,9 @@ buildflags := if toolchain =~ "-nightly" {
 _default:
   @just --list
 
+alias b := build
 alias c := check
+alias t := test
 
 tag := `git rev-parse --short HEAD`
 image := "ghcr.io/lmaotrigine/klip"
@@ -31,7 +33,7 @@ check:
 
 # run cargo fmt
 [group('lint')]
-fmt *args="":
+fmt *args:
   cargo fmt {{args}}
 
 # check for trailing whitespace and carriage returns
@@ -40,9 +42,23 @@ ws:
   ! rg '\s+$'
   ! rg '\r'
 
+# run shellcheck on all shell scripts
+[group('lint')]
+shellcheck:
+  shellcheck ci/* scripts/* pkg/debian/*
+  fd -e sh -tf -x shellcheck
+
 # perform all linting tasks
 [group('lint')]
 lint: check (fmt "--check") shellcheck ws
+
+[group('test')]
+test: build
+  ./test.sh
+
+[group('build')]
+build *args:
+  cargo build {{args}}
 
 # jemalloc uses some intrinsics that are not implemented natively by rust yet.
 # so we use zigbuild here because we build the stdlib.
@@ -56,7 +72,7 @@ build-release-native target="x86_64-unknown-linux-musl":
 
 # build a docker image from the current source tree.
 [group('build')]
-docker *args="":
+docker *args:
   TAG="{{tag}}" IMAGE_NAME="{{image}}" RELEASE="{{release}}" docker buildx bake {{args}}
 
 # update the man page with current release version and date.
@@ -64,12 +80,6 @@ docker *args="":
 update-man version:
   perl -i -pe 's/[0-9]+\.[0-9]+\.[0-9]+/{{version}}/g' doc/klip.1
   perl -i -pe "s/[0-9]{4}-[0-9]{2}-[0-9]{2}/$(date -u +%Y-%m-%d)/g" doc/klip.1
-
-# run shellcheck on all shell scripts
-[group('lint')]
-shellcheck:
-  shellcheck ci/* scripts/* pkg/debian/*
-  fd -e sh -tf -x shellcheck
 
 # bump package version and create a new git tag.
 [group('release')]
