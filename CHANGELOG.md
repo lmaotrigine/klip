@@ -1,7 +1,5 @@
-TBD
-===
-Unreleased changes. Release notes have not yet been written.
-
+0.3.0
+=====
 Bug fixes:
 
 * Fix potential panic in clients when the server terminates the connection in
@@ -10,12 +8,19 @@ Bug fixes:
 
 Feature enhancements:
 
-* Tab completion does not include --help and --version if a subcommand has been entered.
+* Exclude --help and --version from tab completion if a subcommand has been
+  entered.
+* Provide a more informative error message when the server terminates the
+  connection.
 * Provide visual feedback when typing passwords.
+* Support SIGINFO on illumos.
 
 Miscellaneous:
 
-* Man page mentions that failure to parse CLI arguments results in exit code 2.
+* Return an error when the `connect` or `listen` fields are invalid in the
+  config file instead of silently falling back to the default.
+* Note in the man page that failure to parse CLI arguments results in exit
+  code 2.
 
 0.2.0
 =====

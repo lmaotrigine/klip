@@ -10,7 +10,6 @@ use std::{
 };
 use tokio::net::TcpStream;
 
-// i gave up on borrow checker appeasement and made these global, sue me.
 #[derive(Clone)]
 pub struct Content {
     pub ts: u64,

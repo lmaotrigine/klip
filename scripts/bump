@@ -43,12 +43,13 @@ if [ -n "$(git status --untracked-files=no --porcelain)" ]; then
   echo "Git working directory is not clean." >&2
   exit 1
 fi
+
+manifest=Cargo.toml
+
 if ! grep -q '#:version' "$manifest"; then
   echo "Could not find '#:version' tag in $manifest" >&2
   exit 1
 fi
-
-manifest=Cargo.toml
 
 update_version "$manifest" "$semver"
 pkg="$(pkg_name "$manifest")"
