@@ -121,7 +121,7 @@ Alternatively, one can use
 klip binary directly from GitHub:
 
 ```console
-$ cargo binstall --git https://github.com/lmaotrigine/klip
+$ cargo binstall klip --git https://github.com/lmaotrigine/klip
 ```
 
 ### Compile the source code
