@@ -158,6 +158,7 @@ jobs:
           docker run --rm \
             -v "$PWD/target:/target:Z" \
             -v "$PWD/test.sh:/test.sh:Z" \
+            -e "RUST_BACKTRACE=1" \
             -e "KLIP=${{ matrix.qemu }} /$KLIP" \
             "ghcr.io/cross-rs/${{ matrix.target }}:main" \
             /test.sh
