@@ -154,6 +154,8 @@ jobs:
       - name: Run tests (cross)
         if: matrix.qemu != ''
         shell: bash
+        # --privileged because tokio fails to initialize in i686
+        # we run the same test on the host as well so.. not a big deal
         run: |
           docker run --rm \
             --privileged \
