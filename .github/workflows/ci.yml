@@ -154,10 +154,14 @@ jobs:
       - name: Run tests (cross)
         if: matrix.qemu != ''
         shell: bash
+        # --privileged because tokio fails to initialize in i686
+        # we run the same test on the host as well so.. not a big deal
         run: |
           docker run --rm \
+            --privileged \
             -v "$PWD/target:/target:Z" \
             -v "$PWD/test.sh:/test.sh:Z" \
+            -e "RUST_BACKTRACE=1" \
             -e "KLIP=${{ matrix.qemu }} /$KLIP" \
             "ghcr.io/cross-rs/${{ matrix.target }}:main" \
             /test.sh
