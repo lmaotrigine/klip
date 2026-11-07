@@ -27,8 +27,8 @@ impl TryRng for DeterministicRandom {
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error> {
         let req_len = dest.len();
         dest.copy_from_slice(&self.pool[self.pos..self.pos + req_len]);
-        for i in 0..req_len {
-            self.pool[i] = 0;
+        for b in self.pool.iter_mut().take(req_len) {
+            *b = 0;
         }
         self.pos += req_len;
         Ok(())
