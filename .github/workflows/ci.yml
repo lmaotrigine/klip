@@ -109,6 +109,15 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           ci/ubuntu-install-packages
+      # docker 29.4.2 on Ubuntu 26.04 blocks socketcall, which cross's 32-bit
+      # glibc needs for process spawning. this is fixed in docker 29.4.3
+      # see https://github.com/actions/runner-images/issues/14790
+      - name: Update Docker (32-bit linux)
+        if: matrix.target == 'i686-unknown-linux-gnu'
+        uses: docker/setup-docker-action@v5
+        with:
+          version: latest
+          set-host: true
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
@@ -154,11 +163,8 @@ jobs:
       - name: Run tests (cross)
         if: matrix.qemu != ''
         shell: bash
-        # --privileged because tokio fails to initialize in i686
-        # we run the same test on the host as well so.. not a big deal
         run: |
           docker run --rm \
-            --privileged \
             -v "$PWD/target:/target:Z" \
             -v "$PWD/test.sh:/test.sh:Z" \
             -e "RUST_BACKTRACE=1" \
