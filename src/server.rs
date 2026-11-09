@@ -1,14 +1,24 @@
 use crate::{
+    MAX_CHUNK_SIZE,
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     client::DEFAULT_CLIENT_VERSION,
     error::Error,
-    state::{Content, STORAGE, State},
+    state::{Content, Message, STORAGE, State},
     util::Stream,
 };
 use ctutils::CtEq;
 use rand::Rng;
-use std::sync::Arc;
-use tokio::net::TcpListener;
+use std::{collections::HashMap, sync::Arc, time::SystemTime};
+use tokio::{net::TcpListener, sync::mpsc};
+
+macro_rules! cleanup {
+    ($expr:expr, $cleanup:expr) => {
+        if let Err(e) = $expr {
+            $cleanup.await;
+            return Err(e.into());
+        }
+    };
+}
 
 struct Connection<'a> {
     stream: &'a mut Stream,
@@ -116,6 +126,160 @@ impl Connection<'_> {
         self.stream.flush().await?;
         Ok(())
     }
+
+    pub async fn pull_stream_operation(self, h1: &[u8]) -> Result<(), Error> {
+        let mut rbuf = [0; 32];
+        self.stream.read_exact(&mut rbuf).await?;
+        let h2 = rbuf;
+        let opcode = b'L';
+        let wh2 = auth2get(self.state.config().psk(), h1, opcode);
+        let choice = wh2.ct_ne(&h2);
+        if choice.into() {
+            return Err(Error::Auth);
+        }
+        let (tx, mut rx) = tokio::sync::mpsc::channel(64);
+        let id = {
+            let mut hub = self.state.stream_hub();
+            if hub.push_active {
+                return Err(Error::StreamActive { push: false });
+            }
+            if hub.pullers.len() >= self.state.config().max_waiting_pullers() {
+                return Err(Error::TooManyPullers);
+            }
+            let id = hub.next_id;
+            hub.next_id = hub.next_id.wrapping_add(1);
+            hub.pullers.insert(id, tx);
+            id
+        };
+        let cleanup = || {
+            self.state.stream_hub().pullers.remove(&id);
+        };
+        let wait_timeout = self.state.config().ttl().min(core::time::Duration::from_hours(1));
+        self.stream.set_timeout(wait_timeout);
+        let mut recv = async || {
+            self.stream.set_timeout(self.state.config().data_timeout());
+            while let Some(frame) = rx.recv().await {
+                match frame {
+                    Message::Chunk(chunk) => {
+                        self.stream.write_all(&chunk).await.inspect_err(|_| {
+                            cleanup();
+                        })?;
+                        self.stream.flush().await.inspect_err(|_| {
+                            cleanup();
+                        })?;
+                    }
+                    Message::End => {
+                        cleanup();
+                        return Ok(());
+                    }
+                }
+                self.stream.set_timeout(self.state.config().data_timeout());
+            }
+            cleanup();
+            Ok(())
+        };
+        tokio::select! {
+            r = recv() => r,
+            () = tokio::time::sleep(wait_timeout) => {
+                cleanup();
+                Err(Error::PullerTimeout(id))
+            }
+        }
+    }
+
+    pub async fn push_stream_operation(self, h1: &[u8]) -> Result<(), Error> {
+        let mut rbuf = [0; 32];
+        self.stream.read_exact(&mut rbuf).await?;
+        let h2 = rbuf;
+        let opcode = b'P';
+        let wh2 = auth2get(self.state.config().psk(), h1, opcode);
+        let choice = wh2.ct_ne(&h2);
+        if choice.into() {
+            return Err(Error::Auth);
+        }
+        let mut snapshot = {
+            let Some(mut hub) = ({
+                let hub = self.state.stream_hub();
+                if hub.push_active { None } else { Some(hub) }
+            }) else {
+                let _ = self.stream.write_all(&[0x02]).await;
+                let _ = self.stream.flush().await;
+                return Err(Error::StreamActive { push: true });
+            };
+            hub.push_active = !hub.pullers.is_empty();
+            hub.pullers.clone()
+        };
+        if snapshot.is_empty() {
+            let _ = self.stream.write_all(&[0x00]).await;
+            let _ = self.stream.flush().await;
+            return Err(Error::NoWaiters);
+        }
+        let cleanup = async |snapshot: &mut HashMap<_, mpsc::Sender<_>>| {
+            for tx in snapshot.values_mut() {
+                let _ = tx.send(Message::End).await;
+            }
+            self.state.stream_hub().push_active = false;
+        };
+        self.stream.write_all(&[0x01]).await?;
+        self.stream.flush().await?;
+        let mut remove = vec![];
+        let mut relay = async |frame: Vec<_>, snapshot: &mut HashMap<_, mpsc::Sender<_>>| {
+            remove.clear();
+            for (id, tx) in &mut *snapshot {
+                if tx.send(Message::Chunk(frame.clone())).await.is_err() {
+                    remove.push(*id);
+                }
+            }
+            for id in &remove {
+                snapshot.remove(id);
+            }
+        };
+        let mut header = [0; 32];
+        self.stream.set_timeout(self.state.config().data_timeout());
+        cleanup!(self.stream.read_exact(&mut header).await, cleanup(&mut snapshot));
+        relay(header.to_vec(), &mut snapshot).await;
+        let stream_start = SystemTime::now();
+        let mut total_bytes = 0;
+        loop {
+            let mut len_buf = [0; 4];
+            self.stream.set_timeout(self.state.config().data_timeout());
+            cleanup!(self.stream.read_exact(&mut len_buf).await, cleanup(&mut snapshot));
+            let chunk_len = u32::from_le_bytes(len_buf);
+            if chunk_len == 0 {
+                let mut sig = [0; 64];
+                cleanup!(self.stream.read_exact(&mut sig).await, cleanup(&mut snapshot));
+                let mut frame = vec![0; 68];
+                frame[..4].copy_from_slice(&len_buf);
+                frame[4..68].copy_from_slice(&sig);
+                relay(frame, &mut snapshot).await;
+                cleanup(&mut snapshot).await;
+                return Ok(());
+            }
+            if chunk_len > MAX_CHUNK_SIZE {
+                cleanup(&mut snapshot).await;
+                return Err(Error::ChunkTooLarge { max: MAX_CHUNK_SIZE, got: chunk_len });
+            }
+            let sealed_len = chunk_len as usize + 16;
+            total_bytes += sealed_len as u64;
+            if total_bytes > self.state.config().max_stream_bytes() {
+                cleanup(&mut snapshot).await;
+                return Err(Error::StreamTooLarge);
+            }
+            let elapsed =
+                SystemTime::now().duration_since(stream_start).expect("system clock is broken");
+            if elapsed > self.state.config().max_stream_duration() {
+                cleanup(&mut snapshot).await;
+                return Err(Error::StreamDurationExceeded);
+            }
+            let mut sealed = vec![0; sealed_len];
+            self.stream.set_timeout(self.state.config().data_timeout());
+            cleanup!(self.stream.read_exact(&mut sealed).await, cleanup(&mut snapshot));
+            let mut frame = vec![0; 4 + sealed_len];
+            frame[..4].copy_from_slice(&len_buf);
+            frame[4..].copy_from_slice(&sealed);
+            relay(frame, &mut snapshot).await;
+        }
+    }
 }
 
 pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(), Error> {
@@ -153,6 +317,8 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
         b'G' => conn.get_operation(&h1, false).await,
         b'M' => conn.get_operation(&h1, true).await,
         b'S' => conn.store_operation(&h1).await,
+        b'P' => conn.push_stream_operation(&h1).await,
+        b'L' => conn.pull_stream_operation(&h1).await,
         _ => Err(Error::UnknownOp),
     }
 }

@@ -1,4 +1,5 @@
 use crate::{
+    client::Mode,
     config::Config,
     error::{Context, Error, ResultExt},
     state::State,
@@ -48,11 +49,13 @@ impl ServerArgs {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub enum Subcommand {
     Copy,
     Paste,
     Move,
+    Push(String),
+    Pull(String),
     Serve(ServerArgs),
     Keygen(bool),
     Version,
@@ -65,6 +68,8 @@ impl Subcommand {
                 "copy" => Ok(Self::Copy),
                 "paste" => Ok(Self::Paste),
                 "move" => Ok(Self::Move),
+                "push" => Ok(Self::Push(sub_matches.remove_one("cid").unwrap_or_default())),
+                "pull" => Ok(Self::Pull(sub_matches.remove_one("cid").unwrap_or_default())),
                 "serve" => Ok(Self::Serve(ServerArgs::from_arg_matches_mut(&mut sub_matches)?)),
                 "genkeys" => Ok(Self::Keygen(sub_matches.remove_one("password").unwrap_or(false))),
                 "version" => Ok(Self::Version),
@@ -133,9 +138,11 @@ impl Cli {
                 println!("klip {}", version(true));
                 Ok(())
             }
-            Subcommand::Copy => crate::client::run(config, true, false).await,
-            Subcommand::Move => crate::client::run(config, false, true).await,
-            Subcommand::Paste => crate::client::run(config, false, false).await,
+            Subcommand::Copy => Ok(crate::client::run(config, Mode::Copy).await?),
+            Subcommand::Move => Ok(crate::client::run(config, Mode::Move).await?),
+            Subcommand::Push(ref cid) => Ok(crate::client::run(config, Mode::Push { cid }).await?),
+            Subcommand::Pull(ref cid) => Ok(crate::client::run(config, Mode::Pull { cid }).await?),
+            Subcommand::Paste => Ok(crate::client::run(config, Mode::Paste).await?),
             Subcommand::Serve(_) => crate::server::serve(State::new(config)).await,
             Subcommand::Keygen(_) => unreachable!(),
         };

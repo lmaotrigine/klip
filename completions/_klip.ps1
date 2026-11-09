@@ -31,6 +31,8 @@ Register-ArgumentCompleter -Native -CommandName 'klip' -ScriptBlock {
       [CompletionResult]::new('copy', 'copy', [CompletionResultType]::ParameterValue, 'Store content')
       [CompletionResult]::new('paste', 'paste', [CompletionResultType]::ParameterValue, 'Retrieve content')
       [CompletionResult]::new('move', 'move', [CompletionResultType]::ParameterValue, 'Retrieve and delete content')
+      [CompletionResult]::new('push', 'push', [CompletionResultType]::ParameterValue, 'Stream content to connected pullers')
+      [CompletionResult]::new('pull', 'pull', [CompletionResultType]::ParameterValue, 'Wait and receive one stream from a pusher')
       [CompletionResult]::new('serve', 'serve', [CompletionResultType]::ParameterValue, 'Start a server')
       [CompletionResult]::new('genkeys', 'genkeys', [CompletionResultType]::ParameterValue, 'Generate keys')
       [CompletionResult]::new('version', 'version', [CompletionResultType]::ParameterValue, 'Print version')
@@ -44,6 +46,15 @@ Register-ArgumentCompleter -Native -CommandName 'klip' -ScriptBlock {
       break
     }
     'klip;move' {
+      break
+    }
+    # fall through for push and pull
+    'klip;push' {
+      [CompletionResult]::new('--cid', '--cid', [CompletionResultType]::ParameterName, 'Content identifier label for stream binding')
+      break
+    }
+    'klip;pull' {
+      [CompletionResult]::new('--cid', '--cid', [CompletionResultType]::ParameterName, 'Content identifier label for stream binding')
       break
     }
     'klip;serve' {
@@ -67,6 +78,8 @@ Register-ArgumentCompleter -Native -CommandName 'klip' -ScriptBlock {
       [CompletionResult]::new('copy', 'copy', [CompletionResultType]::ParameterValue, 'Store content')
       [CompletionResult]::new('paste', 'paste', [CompletionResultType]::ParameterValue, 'Retrieve content')
       [CompletionResult]::new('move', 'move', [CompletionResultType]::ParameterValue, 'Retrieve and delete content')
+      [CompletionResult]::new('push', 'push', [CompletionResultType]::ParameterValue, 'Stream content to connected pullers')
+      [CompletionResult]::new('pull', 'pull', [CompletionResultType]::ParameterValue, 'Wait and receive one stream from a pusher')
       [CompletionResult]::new('serve', 'serve', [CompletionResultType]::ParameterValue, 'Start a server')
       [CompletionResult]::new('genkeys', 'genkeys', [CompletionResultType]::ParameterValue, 'Generate keys')
       [CompletionResult]::new('version', 'version', [CompletionResultType]::ParameterValue, 'Print version')
@@ -80,6 +93,12 @@ Register-ArgumentCompleter -Native -CommandName 'klip' -ScriptBlock {
       break
     }
     'klip;help;move' {
+      break
+    }
+    'klip;help;push' {
+      break
+    }
+    'klip;help;pull' {
       break
     }
     'klip;help;serve' {

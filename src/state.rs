@@ -1,14 +1,32 @@
 use crate::{config::Config, error::Error, server::handle_connection, util::Stream};
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 use std::{
-    collections::VecDeque,
+    collections::{HashMap, VecDeque},
     net::IpAddr,
     sync::{
         Arc,
         atomic::{AtomicUsize, Ordering},
     },
 };
-use tokio::net::TcpStream;
+use tokio::{net::TcpStream, sync::mpsc};
+
+#[derive(PartialEq, Eq)]
+pub enum Message {
+    Chunk(Vec<u8>),
+    End,
+}
+
+pub struct StreamHub {
+    pub push_active: bool,
+    pub pullers: HashMap<u64, mpsc::Sender<Message>>,
+    pub next_id: u64,
+}
+
+impl StreamHub {
+    fn new() -> Self {
+        Self { push_active: false, pullers: HashMap::new(), next_id: 0 }
+    }
+}
 
 #[derive(Clone)]
 pub struct Content {
@@ -28,6 +46,7 @@ pub struct State {
     config: Config,
     trusted_clients: RwLock<VecDeque<IpAddr>>,
     client_count: AtomicUsize,
+    stream_hub: Mutex<StreamHub>,
 }
 
 impl State {
@@ -37,6 +56,7 @@ impl State {
             config,
             trusted_clients: RwLock::new(VecDeque::with_capacity(cap)),
             client_count: AtomicUsize::new(0),
+            stream_hub: Mutex::new(StreamHub::new()),
         }
     }
 
@@ -90,6 +110,10 @@ impl State {
         conn.set_timeout(self.config().timeout());
         self.accept_client(conn);
         Ok(())
+    }
+
+    pub fn stream_hub(&self) -> parking_lot::MutexGuard<'_, StreamHub> {
+        self.stream_hub.lock()
     }
 
     #[cfg(any(

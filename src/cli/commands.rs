@@ -15,11 +15,37 @@ fn command(id: &'static str) -> clap::Command {
         .help_template(HELP_TEMPLATE)
 }
 
-fn subcommands() -> [clap::Command; 6] {
+fn parse_cid(s: &str) -> Result<String, &'static str> {
+    if s.len() <= 128 { Ok(s.into()) } else { Err("content ID must be at most 128 bytes") }
+}
+
+fn subcommands() -> [clap::Command; 8] {
     [
         command("copy").about("Store content").alias("c").disable_version_flag(true),
         command("paste").about("Retrieve content").alias("p").disable_version_flag(true),
         command("move").about("Retrieve and delete content").alias("m").disable_version_flag(true),
+        command("push")
+            .about("Stream content to connected pullers")
+            .disable_version_flag(true)
+            .arg(
+                clap::Arg::new("cid")
+                    .help("Content identifier label for stream binding")
+                    .long("cid")
+                    .value_name("CID")
+                    .value_parser(parse_cid)
+                    .default_value(""),
+            ),
+        command("pull")
+            .about("Wait and receive one stream from a pusher")
+            .disable_version_flag(true)
+            .arg(
+                clap::Arg::new("cid")
+                    .help("Content identifier label for stream binding")
+                    .long("cid")
+                    .value_name("CID")
+                    .value_parser(parse_cid)
+                    .default_value(""),
+            ),
         command("serve").about("Start a server").disable_version_flag(true).args([
             clap::Arg::new("max_clients")
                 .help("Maximum number of simultaneous client connections")

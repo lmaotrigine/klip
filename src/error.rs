@@ -24,6 +24,15 @@ pub enum Error {
     Toml(toml::de::Error),
     UnknownOp,
     Future,
+    Aead(chacha20poly1305::Error),
+    ChunkTooLarge { max: u32, got: u32 },
+    StreamTooLarge,
+    StreamDurationExceeded,
+    StreamActive { push: bool },
+    TooManyPullers,
+    PullerTimeout(u64),
+    NoWaiters,
+    GenericStream,
 }
 
 impl Display for Error {
@@ -65,6 +74,23 @@ impl Display for Error {
             Self::Toml(e) => write!(f, "could not parse TOML config: {e}"),
             Self::UnknownOp => f.write_str("unknown opcode"),
             Self::Future => f.write_str("clipboard content timestamp is too far in the future"),
+            Self::Aead(e) => write!(f, "{e}"),
+            Self::ChunkTooLarge { max, got } => {
+                write!(f, "stream: chunk too large ({got} > {max})")
+            }
+            Self::StreamTooLarge => f.write_str("stream rejected: exceeded maximum stream size"),
+            Self::StreamDurationExceeded => {
+                f.write_str("stream rejected: exceeded maximum stream duration")
+            }
+            Self::StreamActive { push } => write!(
+                f,
+                "stream {} rejected: stream already active",
+                if *push { "push" } else { "pull" }
+            ),
+            Self::TooManyPullers => f.write_str("stream pull rejected: too many waiting pullers"),
+            Self::PullerTimeout(id) => write!(f, "puller {id}: wait timeout expired"),
+            Self::NoWaiters => f.write_str("no clients are waiting to receive the stream"),
+            Self::GenericStream => f.write_str("the server rejected the stream"),
         }
     }
 }
@@ -90,6 +116,12 @@ impl From<toml::de::Error> for Error {
 impl From<ed25519_dalek::SignatureError> for Error {
     fn from(_: ed25519_dalek::SignatureError) -> Self {
         Self::Signature
+    }
+}
+
+impl From<chacha20poly1305::Error> for Error {
+    fn from(value: chacha20poly1305::Error) -> Self {
+        Self::Aead(value)
     }
 }
 
