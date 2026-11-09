@@ -53,6 +53,16 @@ _klip() {
             '--data-timeout=[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
             && ret=0
           ;;
+        (push)
+          _arguments "${_arguments_options[@]}" : \
+            '--cid=[Content identifier label for stream binding]:CID:_default' \
+            && ret=0
+          ;;
+        (pull)
+          _arguments "${_arguments_options[@]}" : \
+            '--cid=[Content identifier label for stream binding]:CID:_default' \
+            && ret=0
+          ;;
         (genkeys)
           _arguments "${_arguments_options[@]}" : \
             '-p[Derive the keys from a password (default=random keys)]' \
@@ -91,6 +101,14 @@ _klip() {
                   _arguments "${_arguments_options[@]}" : \
                     && ret=0
                   ;;
+                (push)
+                  _arguments "${_arguments_options[@]}" : \
+                    && ret=0
+                  ;;
+                (pull)
+                  _arguments "${_arguments_options[@]}" : \
+                    && ret=0
+                  ;;
                 (genkeys)
                   _arguments "${_arguments_options[@]}" : \
                     && ret=0
@@ -118,6 +136,8 @@ _klip_commands() {
     'copy:Store content' \
     'paste:Retrieve content' \
     'move:Retrieve and delete content' \
+    'push:Stream content to connected pullers' \
+    'pull:Wait and receive one stream from a pusher' \
     'serve:Start a server' \
     'genkeys:Generate keys' \
     'version:Print version' \
@@ -141,6 +161,8 @@ _klip__subcmd__help_commands() {
     'copy:Store content' \
     'paste:Retrieve content' \
     'move:Retrieve and delete content' \
+    'push:Stream content to connected pullers' \
+    'pull:Wait and receive one stream from a pusher' \
     'serve:Start a server' \
     'genkeys:Generate keys' \
     'version:Print version' \
@@ -173,6 +195,16 @@ _klip__subcmd__help__subcmd__paste_commands() {
   local commands; commands=()
   _describe -t commands 'klip help paste commands' commands "$@"
 }
+(( $+functions[_klip__subcmd__help__subcmd__pull_commands] )) ||
+_klip__subcmd__help__subcmd__pull_commands() {
+  local commands; commands=()
+  _describe -t commands 'klip help pull commands' commands "$@"
+}
+(( $+functions[_klip__subcmd__help__subcmd__push_commands] )) ||
+_klip__subcmd__help__subcmd__push_commands() {
+  local commands; commands=()
+  _describe -t commands 'klip help push commands' commands "$@"
+}
 (( $+functions[_klip__subcmd__help__subcmd__serve_commands] )) ||
 _klip__subcmd__help__subcmd__serve_commands() {
   local commands; commands=()
@@ -192,6 +224,16 @@ _klip__subcmd__move_commands() {
 _klip__subcmd__paste_commands() {
   local commands; commands=()
   _describe -t commands 'klip paste commands' commands "$@"
+}
+(( $+functions[_klip__subcmd__pull_commands] )) ||
+_klip__subcmd__pull_commands() {
+  local commands; commands=()
+  _describe -t commands 'klip pull commands' commands "$@"
+}
+(( $+functions[_klip__subcmd__push_commands] )) ||
+_klip__subcmd__push_commands() {
+  local commands; commands=()
+  _describe -t commands 'klip push commands' commands "$@"
 }
 (( $+functions[_klip__subcmd__serve_commands] )) ||
 _klip__subcmd__serve_commands() {

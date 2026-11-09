@@ -3,6 +3,8 @@ alias klm='klip move'
 alias klp='klip paste'
 alias klpr='klip paste | tar xJpvf -'
 alias klz='klip copy < /dev/null'
+alias klpush='klip push'
+alias klpull='klip pull'
 
 klf() {
   klip copy < $1

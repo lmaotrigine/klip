@@ -22,6 +22,10 @@ impl Stream {
         self.timeout = Some(Instant::now() + dur);
     }
 
+    pub const fn clear_timeout(&mut self) {
+        self.timeout = None;
+    }
+
     pub async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if let Some(timeout) = self.timeout {
             timeout_at(timeout, self.inner.read_exact(buf)).await?

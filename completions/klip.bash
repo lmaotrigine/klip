@@ -31,6 +31,12 @@ _klip() {
       klip,paste)
         cmd="klip__subcmd__paste"
         ;;
+      klip,pull)
+        cmd="klip__subcmd__pull"
+        ;;
+      klip,push)
+        cmd="klip__subcmd__push"
+        ;;
       klip,serve)
         cmd="klip__subcmd__serve"
         ;;
@@ -51,6 +57,12 @@ _klip() {
         ;;
       klip__subcmd__help,paste)
         cmd="klip__subcmd__help__subcmd__paste"
+        ;;
+      klip__subcmd__help,pull)
+        cmd="klip__subcmd__help__subcmd__pull"
+        ;;
+      klip__subcmd__help,push)
+        cmd="klip__subcmd__help__subcmd__push"
         ;;
       klip__subcmd__help,serve)
         cmd="klip__subcmd__help__subcmd__serve"
@@ -198,6 +210,34 @@ _klip() {
       COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
       return 0
       ;;
+    klip__subcmd__help__subcmd__pull)
+      opts=""
+      if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+        return 0
+      fi
+      case "${prev}" in
+        *)
+          COMPREPLY=()
+          ;;
+      esac
+      COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+      return 0
+      ;;
+    klip__subcmd__help__subcmd__push)
+      opts=""
+      if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+        return 0
+      fi
+      case "${prev}" in
+        *)
+          COMPREPLY=()
+          ;;
+      esac
+      COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+      return 0
+      ;;
     klip__subcmd__help__subcmd__serve)
       opts=""
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
@@ -247,6 +287,42 @@ _klip() {
         return 0
       fi
       case "${prev}" in
+        *)
+          COMPREPLY=()
+          ;;
+      esac
+      COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+      return 0
+      ;;
+    klip__subcmd__pull)
+      opts="--cid"
+      if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+        return 0
+      fi
+      case "${prev}" in
+        --cid)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        *)
+          COMPREPLY=()
+          ;;
+      esac
+      COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+      return 0
+      ;;
+    klip__subcmd__push)
+      opts="--cid"
+      if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+        return 0
+      fi
+      case "${prev}" in
+        --cid)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
         *)
           COMPREPLY=()
           ;;

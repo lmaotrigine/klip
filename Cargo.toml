@@ -10,12 +10,13 @@ repository = "https://github.com/lmaotrigine/klip"
 edition = "2024"
 
 [dependencies]
-blake2 = "0.11.0-rc.6"
-chacha20 = { version = "0.10", features = ["xchacha"] }
+blake2 = "0.11"
+chacha20 = { version = "0.10", features = ["xchacha", "zeroize"] }
+chacha20poly1305 = { version = "0.11", default-features = false, features = ["alloc", "zeroize"] }
 clap = { version = "4", features = ["string", "wrap_help"] }
 ctutils = "0.4"
 ed25519-dalek = "3"
-parking_lot = "0.12"
+parking_lot = "0.13"
 rand = { version = "0.10", features = ["std_rng"] }
 scrypt = "0.12"
 toml = { version = "1", default-features = false, features = ["parse", "serde"] }
@@ -28,6 +29,7 @@ features = [
   "net",
   "io-util",
   "signal",
+  "sync",
   "time",
 ]
 
@@ -37,6 +39,10 @@ tikv-jemallocator = "0.7"
 [target.'cfg(windows)'.dependencies.windows-sys]
 version = "0.61"
 features = ["Win32_System_LibraryLoader"]
+
+# don't build syn v2
+[patch.crates-io]
+curve25519-dalek-derive.git = "https://github.com/dalek-cryptography/curve25519-dalek.git"
 
 [lints.rust]
 dead_code = "deny"

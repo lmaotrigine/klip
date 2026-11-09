@@ -2,6 +2,15 @@ TBD
 ===
 Unreleased changes. Release notes have not yet been written.
 
+> [!WARNING]
+> This release includes a protocol version bump. It will not be able to
+> interface with older versions of klip.
+
+Feature enhancements:
+
+* Add support for streaming
+  [#7](https://github.com/lmaotrigine/klip/pull/7)
+
 0.3.0
 =====
 Bug fixes:

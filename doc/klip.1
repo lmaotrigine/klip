@@ -1,4 +1,4 @@
-.TH KLIP 1 2026-08-02 "0.3.0" "User Commands"
+.TH KLIP 1 2026-11-09 "0.3.0" "User Commands"
 .
 .
 .SH NAME
@@ -61,6 +61,34 @@ This operation is atomic, meaning that the content is deleted only after all
 existing clients have finished interacting with it.
 .RE
 .TP 12
+\fIpush\fP [\fIOPTIONS\fP]
+.RS 4
+Stream content from standard input in chunks to the klip clipboard.
+.sp
+This command is useful for sending very large content over a potentially slow
+or unreliable connection. The content is sent in chunks of 64 KiB, and the
+server will relay them to all waiting clients as they are received.
+.sp
+Only one client can be streaming to the server at a time. Subsequent \fIpush\fP
+commands will be rejected until the current stream is finished.
+.sp
+If there are no clients waiting to receive the stream, this command will exit
+immediately with an error.
+.RE
+.TP 12
+\fIpull\fP [\fIOPTIONS\fP]
+.RS 4
+Wait until another client starts streaming content and write the chunks to
+standard output as they are received.
+.sp
+This command is useful for receiving very large content over a potentially slow
+or unreliable connection. The content is received in chunks of 64 KiB, and the
+client will write them to standard output as they are received.
+.sp
+Chunks cannot be received mid\-stream. If a stream is in progress when this
+command is run, it will exit with an error.
+.RE
+.TP 12
 \fIserve\fP [\fIOPTIONS\fP]
 .RS 4
 Start a klip server.
@@ -115,6 +143,19 @@ Display help information for the command.
 \fI\-V\fP, \fI\-\-version\fP
 .RS 4
 Display version information.
+.RE
+.
+.SS PUSH AND PULL OPTIONS
+.sp
+\fI\-\-cid\fP=\fICID\fP
+.RS 4
+Specify a content identifer label for stream binding.
+.sp
+If specified, clients running the \fIpull\fP and \fIpush\fP commands must agree
+on the same label, or the \fIpull\fP command will fail with a decryption error.
+.sp
+This label is not sent over the wire and is only used to derive the encryption
+key for the stream.
 .RE
 .
 .SS SERVE OPTIONS

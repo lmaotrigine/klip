@@ -26,6 +26,10 @@ const DEFAULT_LISTEN: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIF
 const DEFAULT_CONNECT: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8075);
 const DEFAULT_TTL: Duration = Duration::from_hours(7 * 24);
 const MAX_FUTURE_SKEW: Duration = Duration::from_hours(1);
+const MAX_CHUNK_SIZE: u32 = 65536;
+const DEFAULT_MAX_WAITING_PULLERS: usize = 100;
+const DEFAULT_MAX_STREAM_BYTES: u64 = 10 << 30; // 10 GiB
+const DEFAULT_MAX_STREAM_DURATION: Duration = Duration::from_hours(24);
 
 mod authentication;
 mod cli;

@@ -28,6 +28,8 @@ set edit:completion:arg-completer[klip] = {|@words|
             cand paste 'Retrieve content'
             cand move 'Retrieve and delete content'
             cand serve 'Start a server'
+            cand push 'Stream content to connected pullers'
+            cand pull 'Wait and receive one stream from a pusher'
             cand genkeys 'Generate keys'
             cand version 'Print version'
             cand help 'Print this message or the help of the given subcommand(s)'
@@ -37,6 +39,12 @@ set edit:completion:arg-completer[klip] = {|@words|
         &'klip;paste'= {
         }
         &'klip;move'= {
+        }
+        &'klip;push'= {
+            cand --cid 'Content identifier label for stream binding'
+        }
+        &'klip;pull'= {
+            cand --cid 'Content identifier label for stream binding'
         }
         &'klip;serve'= {
             cand --max-clients 'Maximum number of simultaneous client connections'
@@ -56,6 +64,8 @@ set edit:completion:arg-completer[klip] = {|@words|
             cand copy 'Store content'
             cand paste 'Retrieve content'
             cand move 'Retrieve and delete content'
+            cand push 'Stream content to connected pullers'
+            cand pull 'Wait and receive one stream from a pusher'
             cand serve 'Start a server'
             cand genkeys 'Generate keys'
             cand version 'Print version'
@@ -66,6 +76,10 @@ set edit:completion:arg-completer[klip] = {|@words|
         &'klip;help;paste'= {
         }
         &'klip;help;move'= {
+        }
+        &'klip;help;push'= {
+        }
+        &'klip;help;pull'= {
         }
         &'klip;help;serve'= {
         }

@@ -30,10 +30,14 @@ complete -c klip -n "__fish_klip_needs_command" -s V -l version -d 'Print versio
 complete -c klip -n "__fish_klip_needs_command" -f -a "copy" -d 'Store content'
 complete -c klip -n "__fish_klip_needs_command" -f -a "paste" -d 'Retrieve content'
 complete -c klip -n "__fish_klip_needs_command" -f -a "move" -d 'Retrieve and delete content'
+complete -c klip -n "__fish_klip_needs_command" -f -a "push" -d 'Stream content to connected pullers'
+complete -c klip -n "__fish_klip_needs_command" -f -a "pull" -d 'Wait and receive one stream from a pusher'
 complete -c klip -n "__fish_klip_needs_command" -f -a "serve" -d 'Start a server'
 complete -c klip -n "__fish_klip_needs_command" -f -a "genkeys" -d 'Generate keys'
 complete -c klip -n "__fish_klip_needs_command" -f -a "version" -d 'Print version'
 complete -c klip -n "__fish_klip_needs_command" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c klip -n "__fish_klip_using_subcommand push" -l cid -d 'Content identifier label for stream binding' -r
+complete -c klip -n "__fish_klip_using_subcommand pull" -l cid -d 'Content identifier label for stream binding' -r
 complete -c klip -n "__fish_klip_using_subcommand serve" -l max-clients -d 'Maximum number of simultaneous client connections' -r
 complete -c klip -n "__fish_klip_using_subcommand serve" -l max-len-mb -d 'Maximum content length to accept in MiB (0=unlimited)' -r
 complete -c klip -n "__fish_klip_using_subcommand serve" -s t -l timeout -d 'Connection timeout (in seconds)' -r
@@ -42,6 +46,8 @@ complete -c klip -n "__fish_klip_using_subcommand genkeys" -s p -l password -d '
 complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "copy" -d 'Store content'
 complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "paste" -d 'Retrieve content'
 complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "move" -d 'Retrieve and delete content'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "push" -d 'Stream content to connected pullers'
+complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "pull" -d 'Wait and receive one stream from a pusher'
 complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "serve" -d 'Start a server'
 complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "genkeys" -d 'Generate keys'
 complete -c klip -n "__fish_klip_using_subcommand help; and not __fish_seen_subcommand_from copy paste move serve genkeys version help" -f -a "version" -d 'Print version'

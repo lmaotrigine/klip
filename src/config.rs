@@ -98,6 +98,44 @@ impl TomlConf {
             crate::DEFAULT_TTL
         }
     }
+
+    #[expect(clippy::cast_sign_loss)]
+    fn max_stream_bytes(&self) -> u64 {
+        if let Some(toml::Value::Integer(v)) = self.table.get("max_stream_bytes") {
+            if *v > 0 {
+                (*v as u64).max(crate::DEFAULT_MAX_STREAM_BYTES)
+            } else {
+                crate::DEFAULT_MAX_STREAM_BYTES
+            }
+        } else {
+            crate::DEFAULT_MAX_STREAM_BYTES
+        }
+    }
+
+    #[expect(clippy::cast_sign_loss)]
+    fn max_stream_duration(&self) -> Duration {
+        if let Some(toml::Value::Integer(v)) = self.table.get("max_stream_duration") {
+            if *v > 0 {
+                Duration::from_secs(*v as u64).max(crate::DEFAULT_MAX_STREAM_DURATION)
+            } else {
+                crate::DEFAULT_MAX_STREAM_DURATION
+            }
+        } else {
+            crate::DEFAULT_MAX_STREAM_DURATION
+        }
+    }
+
+    fn max_waiting_pullers(&self) -> usize {
+        if let Some(toml::Value::Integer(v)) = self.table.get("max_waiting_pullers") {
+            if *v > 0 {
+                usize::try_from(*v).unwrap_or(crate::DEFAULT_MAX_WAITING_PULLERS)
+            } else {
+                crate::DEFAULT_MAX_WAITING_PULLERS
+            }
+        } else {
+            crate::DEFAULT_MAX_WAITING_PULLERS
+        }
+    }
 }
 
 pub struct Config {
@@ -114,6 +152,9 @@ pub struct Config {
     data_timeout: Duration,
     ttl: Duration,
     trusted_ip_count: usize,
+    max_stream_bytes: u64,
+    max_stream_duration: Duration,
+    max_waiting_pullers: usize,
 }
 
 impl std::fmt::Debug for Config {
@@ -127,7 +168,10 @@ impl std::fmt::Debug for Config {
             .field("timeout", &self.timeout)
             .field("data_timeout", &self.data_timeout)
             .field("ttl", &self.ttl)
-            .field("trusted_ip_count", &self.trusted_ip_count);
+            .field("trusted_ip_count", &self.trusted_ip_count)
+            .field("max_stream_bytes", &self.max_stream_bytes)
+            .field("max_stream_duration", &self.max_stream_duration)
+            .field("max_waiting_pullers", &self.max_waiting_pullers);
         if display_secrets {
             s.field("encrypt_sk", &self.encrypt_sk);
             let mut out = [0; 16];
@@ -196,6 +240,9 @@ impl Config {
             } else {
                 0
             },
+            max_stream_bytes: t.max_stream_bytes(),
+            max_stream_duration: t.max_stream_duration(),
+            max_waiting_pullers: t.max_waiting_pullers(),
         })
     }
 
@@ -249,5 +296,17 @@ impl Config {
 
     pub const fn sign_sk(&self) -> &SigningKey {
         &self.sign_sk
+    }
+
+    pub const fn max_stream_bytes(&self) -> u64 {
+        self.max_stream_bytes
+    }
+
+    pub const fn max_stream_duration(&self) -> Duration {
+        self.max_stream_duration
+    }
+
+    pub const fn max_waiting_pullers(&self) -> usize {
+        self.max_waiting_pullers
     }
 }
