@@ -8,19 +8,11 @@ __cmdline="${KLIP:-target${TARGET}/debug/klip}"
 KLIP_S="${__cmdline} -c ${TMPDIR}/klip-test-server.toml serve"
 KLIP_C="${__cmdline} -c ${TMPDIR}/klip-test-client.toml"
 
-cat > "${TMPDIR}/klip-test-server.toml" <<EOF
-listen     = "127.0.0.1:8076"
-psk        = "0768e822c681c887e1c80ad57412aca814738bdd4380f00445d159d80d4c28c4"
-sign_pk    = "6bdf6e6e0cfdcf6fd4991a9b27114a29fba538f91f84297892612a1b1767f58c"
-EOF
-
-cat > "${TMPDIR}/klip-test-client.toml" <<EOF
-connect    = "127.0.0.1:8076"
-psk        = "0768e822c681c887e1c80ad57412aca814738bdd4380f00445d159d80d4c28c4"
-sign_pk    = "6bdf6e6e0cfdcf6fd4991a9b27114a29fba538f91f84297892612a1b1767f58c"
-sign_sk    = "3128a243ebf8f78dbf551741775f9da36d1ac0ffa11dc7776d038310ea762f2f"
-encrypt_sk = "28956ee776dc1f171e652472c6a27ce27166bf58effa10b574dbe159128d8898"
-EOF
+set +x
+keys=$($__cmdline genkeys)
+echo "$keys" | tail -n +8 | head -n 5 > "${TMPDIR}/klip-test-client.toml"
+echo "$keys" | tail -n +16 | head -n 3 > "${TMPDIR}/klip-test-server.toml"
+set -x
 
 ${KLIP_S} &
 pid=$!
