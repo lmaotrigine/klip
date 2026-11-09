@@ -185,6 +185,11 @@ Sample configuration file for a staging server:
 listen     = "0.0.0.0:8075"     # edit appropriately
 psk        = "0768e822c681c887e1c80ad57412aca814738bdd4380f00445d159d80d4c28c4"
 sign_pk    = "6bdf6e6e0cfdcf6fd4991a9b27114a29fba538f91f84297892612a1b1767f58c"
+
+# optional streaming limits (defaults shown)
+# max_stream_bytes    = 10737418240  # 10 GiB
+# max_stream_duration = 86400        # 24 hours
+# max_waiting_pullers = 100
 ```
 
 Sample configuration file for clients:
@@ -242,6 +247,57 @@ Well, that's it!
 
 Feed it anything. Text, binary data, whatever. If it fits it memory, it'll work.
 
+## Streaming mode
+
+klip also supports real-time streaming between hosts. One or more receivers
+connect and wait, then a sender streams data that all receivers get
+simultaneously.
+
+Start a receiver on one or more hosts:
+
+```console
+$ klip pull > received_data
+```
+
+Then stream from the sender:
+
+```console
+$ klip push < data_to_send
+```
+
+Naturally, you can also pipe from/to a live process:
+
+```console
+$ tar -cf - backup_dir | klip push
+```
+
+All connected receivers get the same stream. Only one sender can be active at a
+time.
+
+Just like the copy/paste operations, streamed content is end-to-end encrypted
+and signed. The server just relays opaque bytes.
+
+### Content identifiers
+
+The optional `--cid` flag binds a label into the stream's key derivation, so
+both sides must agree on the same value for decryption to succeed:
+
+```console
+$ klip pull --cid "backup-42" > payload  # receiver
+$ klip push --cid "backup-42" < payload  # sender
+```
+
+The label is sent over the wire. If the sender and receiver use different
+labels, the receiver will fail with a decryption error.
+
+### Trust model
+
+Stream output should be considered tentative until the process exits normally
+(with exit code 0). A zero exit status means all chunks were authenticated via
+AEAD and the complete stream signature was verified. A non-zero exit status
+means the stream was either incomplete or tampered with. Pipelines should check
+the exit status before trusting the output.
+
 ## Suggested shell aliases
 
 But wait, what about the `klc` and `klp` commands mentioned at the beginning?
@@ -278,6 +334,12 @@ klfr() {
 
 # klpr: extract clipboard content that was sent using the klfr command
 alias klpr='klip paste | tar xJpvf -'
+
+# klpush: stream stdin to connected pullers
+alias klpush='klip push'
+
+# klpull: wait and receive a stream to stdout
+alias klpull='klip pull'
 ```
 
 ## klip integration in third-party applications
@@ -302,58 +364,3 @@ Use it to
 * Start a slow download at the office, retrieve it later at home
 * Quickly back up a file to the cloud before messing with it
 * ... and more!
-
-## Protocol
-
-Common definitions
-
-```text
-k: API key
-ek: 256-bit symmetric encryption key
-ekid: encryption key ID encoded as an unsigned 64-bit little-endian integer
-m: plaintext
-ct: XChaCha20 ek,n (m)
-Hk,s: Blake2b(domain="KLIP", key=k, salt=s, size=32)
-Len(x): x encoded as an unsigned 64-bit little-endian integer
-n: random 192-bit nonce
-r: random 256-bit client nonce
-r': random 256-bit server nonce
-ts: Unix timestamp as an unsigned 64-bit little-endian integer
-Sid: Ed25519
-v: 1
-```
-
-Copy:
-
-```text
--> v || r || h0
-h0 := Hk,0(v || r)
-
-<- v || r' || h1
-h1 := Hk,1(v || r' || h0)
-
--> 'S' || h2 || Len(ekid || n || ct) || ts || s || ekid || n || ct
-s := Sig(ekid || n || ct)
-h2 :=Hk,2(h1 || 'S' || ts || s)
-
-<- Hk.3(h2)
-```
-
-Move/Paste:
-
-```text
-Move: opcode := 'M'
-Paste: opcode := 'G'
-
--> v || r || h0
-h0 := Hk,0(v || r)
-
-<- v || r' || h1
-h1 := Hk,1(v || r' || h0)
-
--> opcode || h2
-h2 := Hk,2(h1 || opcode)
-
-<- Hk,3(h2 || ts || s) || Len(ekid || n || ct) || ts || s || ekid || n || ct
-s := Sig(ekid || n || ct)
-```

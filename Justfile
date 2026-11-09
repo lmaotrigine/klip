@@ -41,6 +41,7 @@ fmt *args:
 ws:
   ! rg '\s+$'
   ! rg '\r'
+  ! rg -g '!*.fish' '\t'
 
 # run shellcheck on all shell scripts
 [group('lint')]
