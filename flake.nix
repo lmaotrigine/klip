@@ -96,6 +96,7 @@
               pkgs.fd
               pkgs.cargo-zigbuild
               pkgs.cargo-outdated
+              pkgs.cargo-deb
               pkgs.shellcheck
             ];
           };
