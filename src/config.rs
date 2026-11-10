@@ -221,15 +221,23 @@ impl Config {
             } else {
                 t.sign_sk()?
             },
-            timeout: if let Subcommand::Serve(args) = c.subcommand {
-                Duration::from_secs(args.timeout)
-            } else {
-                Duration::from_secs(10)
+            timeout: match c.subcommand {
+                Subcommand::Copy(args)
+                | Subcommand::Move(args)
+                | Subcommand::Paste(args)
+                | Subcommand::Push(args, _)
+                | Subcommand::Pull(args, _) => Duration::from_secs(args.timeout),
+                Subcommand::Serve(args) => Duration::from_secs(args.timeout),
+                _ => Duration::from_secs(10),
             },
-            data_timeout: if let Subcommand::Serve(args) = c.subcommand {
-                Duration::from_secs(args.data_timeout)
-            } else {
-                Duration::from_hours(1)
+            data_timeout: match c.subcommand {
+                Subcommand::Copy(args)
+                | Subcommand::Move(args)
+                | Subcommand::Paste(args)
+                | Subcommand::Push(args, _)
+                | Subcommand::Pull(args, _) => Duration::from_secs(args.data_timeout),
+                Subcommand::Serve(args) => Duration::from_secs(args.data_timeout),
+                _ => Duration::from_hours(1),
             },
             ttl: t.ttl(),
             trusted_ip_count: if let Subcommand::Serve(args) = c.subcommand {

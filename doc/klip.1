@@ -1,4 +1,4 @@
-.TH KLIP 1 2026-11-09 "0.3.0" "User Commands"
+.TH KLIP 1 2026-11-10 "0.3.0" "User Commands"
 .
 .
 .SH NAME
@@ -36,7 +36,7 @@ pipes or redirection to achieve the desired effect.
 .
 .SH COMMANDS
 .TP 12
-\fIc\fP, \fIcopy\fP
+\fIc\fP, \fIcopy\fP [\fITRANSMISSION OPTIONS\fP]
 .RS 4
 Send the content of standard input to the klip clipboard.
 .sp
@@ -44,7 +44,7 @@ The clipboard is not persisted anywhere and has no history. This command will
 overwrite any existing content.
 .RE
 .TP 12
-\fIp\fP, \fIpaste\fP
+\fIp\fP, \fIpaste\fP [\fITRANSMISSION OPTIONS\fP]
 .RS 4
 Retrieve content from the klip clipboard and write it to standard output.
 .sp
@@ -52,7 +52,7 @@ The content on the server is left intact until the next \fIcopy\fP or
 \fImove\fP command.
 .RE
 .TP 12
-\fIm\fP, \fImove\fP
+\fIm\fP, \fImove\fP [\fITRANSMISSION OPTIONS\fP]
 .RS 4
 Retrieve and delete content from the klip clipboard and write it to standard
 output.
@@ -61,7 +61,7 @@ This operation is atomic, meaning that the content is deleted only after all
 existing clients have finished interacting with it.
 .RE
 .TP 12
-\fIpush\fP [\fIOPTIONS\fP]
+\fIpush\fP [\fIOPTIONS\fP] [\fITRANSMISSION OPTIONS\fP]
 .RS 4
 Stream content from standard input in chunks to the klip clipboard.
 .sp
@@ -76,7 +76,7 @@ If there are no clients waiting to receive the stream, this command will exit
 immediately with an error.
 .RE
 .TP 12
-\fIpull\fP [\fIOPTIONS\fP]
+\fIpull\fP [\fIOPTIONS\fP] [\fITRANSMISSION OPTIONS\fP]
 .RS 4
 Wait until another client starts streaming content and write the chunks to
 standard output as they are received.
@@ -89,7 +89,7 @@ Chunks cannot be received mid\-stream. If a stream is in progress when this
 command is run, it will exit with an error.
 .RE
 .TP 12
-\fIserve\fP [\fIOPTIONS\fP]
+\fIserve\fP [\fIOPTIONS\fP] [\fITRANSMISSION OPTIONS\fP]
 .RS 4
 Start a klip server.
 .sp
@@ -127,7 +127,9 @@ Display version information.
 .
 .SH OPTIONS
 This section documents all flags that klip accepts. Flags are grouped
-according to the commands they are associated with.
+according to the commands they are associated with, except for the
+\fITRANSMISSION OPTIONS\fP group, which is common for multiple commands, as
+indicated in their usages above.
 .
 .SS KLIP OPTIONS
 .sp
@@ -143,6 +145,20 @@ Display help information for the command.
 \fI\-V\fP, \fI\-\-version\fP
 .RS 4
 Display version information.
+.RE
+.
+.SS TRANSMISSION OPTIONS
+.sp
+\fI\-t\fP \fITIMEOUT\fP, \fI\-\-timeout\fP=\fITIMEOUT\fP
+.RS 4
+Set the connection timeout in seconds. Defaults to 10.
+.sp
+This refers only to the timeout for establishing a connection. Use the
+\fI\-\-data\-timeout\fP flag to set the data transmission timeout.
+.RE
+\fI\-d\fP \fITIMEOUT\fP, \fI\-\-data\-timeout\fP=\fITIMEOUT\fP
+.RS 4
+Set the data transmission timeout in seconds. Defaults to 3600.
 .RE
 .
 .SS PUSH AND PULL OPTIONS
@@ -168,17 +184,6 @@ Set the maximum number of simultaneous client connections. Defaults to 10.
 .RS 4
 Set the maximum content length to accept in MiB. Set to 0 for no limit (which
 is the default).
-.RE
-\fI\-t\fP \fITIMEOUT\fP, \fI\-\-timeout\fP=\fITIMEOUT\fP
-.RS 4
-Set the connection timeout in seconds. Defaults to 10.
-.sp
-This refers only to the timeout for establishing a connection. Use the
-\fI\-\-data\-timeout\fP flag to set the data transmission timeout.
-.RE
-\fI\-\-data\-timeout\fP=\fITIMEOUT\fP
-.RS 4
-Set the data transmission timeout in seconds. Defaults to 3600.
 .RE
 .
 .SS GENKEYS OPTIONS

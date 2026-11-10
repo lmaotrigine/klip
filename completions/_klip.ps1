@@ -40,21 +40,40 @@ Register-ArgumentCompleter -Native -CommandName 'klip' -ScriptBlock {
       break
     }
     'klip;copy' {
+      [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('--timeout', '--timeout', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
+      [CompletionResult]::new('--data-timeout', '--data-timeout', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
       break
     }
     'klip;paste' {
+      [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('--timeout', '--timeout', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
+      [CompletionResult]::new('--data-timeout', '--data-timeout', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
       break
     }
     'klip;move' {
+      [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('--timeout', '--timeout', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
+      [CompletionResult]::new('--data-timeout', '--data-timeout', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
       break
     }
-    # fall through for push and pull
     'klip;push' {
       [CompletionResult]::new('--cid', '--cid', [CompletionResultType]::ParameterName, 'Content identifier label for stream binding')
+      [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('--timeout', '--timeout', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
+      [CompletionResult]::new('--data-timeout', '--data-timeout', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
       break
     }
     'klip;pull' {
       [CompletionResult]::new('--cid', '--cid', [CompletionResultType]::ParameterName, 'Content identifier label for stream binding')
+      [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('--timeout', '--timeout', [CompletionResultType]::ParameterName, 'Connection timeout (in seconds)')
+      [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
+      [CompletionResult]::new('--data-timeout', '--data-timeout', [CompletionResultType]::ParameterName, 'Data transmission timeout (in seconds)')
       break
     }
     'klip;serve' {

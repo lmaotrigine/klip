@@ -33,14 +33,26 @@ _klip() {
       case $line[1] in
         (copy)
           _arguments "${_arguments_options[@]}" : \
+            '-t+[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '--timeout=[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '-d+[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
+            '--data-timeout=[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
             && ret=0
           ;;
         (paste)
           _arguments "${_arguments_options[@]}" : \
+            '-t+[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '--timeout=[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '-d+[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
+            '--data-timeout=[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
             && ret=0
           ;;
         (move)
           _arguments "${_arguments_options[@]}" : \
+            '-t+[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '--timeout=[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '-d+[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
+            '--data-timeout=[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
             && ret=0
           ;;
         (serve)
@@ -56,11 +68,19 @@ _klip() {
         (push)
           _arguments "${_arguments_options[@]}" : \
             '--cid=[Content identifier label for stream binding]:CID:_default' \
+            '-t+[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '--timeout=[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '-d+[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
+            '--data-timeout=[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
             && ret=0
           ;;
         (pull)
           _arguments "${_arguments_options[@]}" : \
             '--cid=[Content identifier label for stream binding]:CID:_default' \
+            '-t+[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '--timeout=[Connection timeout (in seconds)]:TIMEOUT:_default' \
+            '-d+[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
+            '--data-timeout=[Data transmission timeout (in seconds)]:TIMEOUT:_default' \
             && ret=0
           ;;
         (genkeys)

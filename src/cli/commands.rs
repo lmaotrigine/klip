@@ -19,46 +19,9 @@ fn parse_cid(s: &str) -> Result<String, &'static str> {
     if s.len() <= 128 { Ok(s.into()) } else { Err("content ID must be at most 128 bytes") }
 }
 
-fn subcommands() -> [clap::Command; 8] {
-    [
-        command("copy").about("Store content").alias("c").disable_version_flag(true),
-        command("paste").about("Retrieve content").alias("p").disable_version_flag(true),
-        command("move").about("Retrieve and delete content").alias("m").disable_version_flag(true),
-        command("push")
-            .about("Stream content to connected pullers")
-            .disable_version_flag(true)
-            .arg(
-                clap::Arg::new("cid")
-                    .help("Content identifier label for stream binding")
-                    .long("cid")
-                    .value_name("CID")
-                    .value_parser(parse_cid)
-                    .default_value(""),
-            ),
-        command("pull")
-            .about("Wait and receive one stream from a pusher")
-            .disable_version_flag(true)
-            .arg(
-                clap::Arg::new("cid")
-                    .help("Content identifier label for stream binding")
-                    .long("cid")
-                    .value_name("CID")
-                    .value_parser(parse_cid)
-                    .default_value(""),
-            ),
-        command("serve").about("Start a server").disable_version_flag(true).args([
-            clap::Arg::new("max_clients")
-                .help("Maximum number of simultaneous client connections")
-                .long("max-clients")
-                .value_name("NUM")
-                .default_value("10")
-                .value_parser(clap::value_parser!(NonZeroUsize)),
-            clap::Arg::new("max_len_mb")
-                .help("Maximum content length to accept in MiB (0=unlimited)")
-                .long("max-len-mb")
-                .value_name("NUM")
-                .default_value("0")
-                .value_parser(clap::value_parser!(u64)),
+macro_rules! timeout_args {
+    () => {
+        [
             clap::Arg::new("timeout")
                 .help("Connection timeout (in seconds)")
                 .long("timeout")
@@ -73,7 +36,69 @@ fn subcommands() -> [clap::Command; 8] {
                 .value_name("TIMEOUT")
                 .default_value("3600")
                 .value_parser(clap::value_parser!(u64)),
-        ]),
+        ]
+    };
+}
+
+fn subcommands() -> [clap::Command; 8] {
+    [
+        command("copy")
+            .about("Store content")
+            .alias("c")
+            .disable_version_flag(true)
+            .args(timeout_args!()),
+        command("paste")
+            .about("Retrieve content")
+            .alias("p")
+            .disable_version_flag(true)
+            .args(timeout_args!()),
+        command("move")
+            .about("Retrieve and delete content")
+            .alias("m")
+            .disable_version_flag(true)
+            .args(timeout_args!()),
+        command("push")
+            .about("Stream content to connected pullers")
+            .disable_version_flag(true)
+            .arg(
+                clap::Arg::new("cid")
+                    .help("Content identifier label for stream binding")
+                    .long("cid")
+                    .value_name("CID")
+                    .value_parser(parse_cid)
+                    .default_value(""),
+            )
+            .args(timeout_args!()),
+        command("pull")
+            .about("Wait and receive one stream from a pusher")
+            .disable_version_flag(true)
+            .arg(
+                clap::Arg::new("cid")
+                    .help("Content identifier label for stream binding")
+                    .long("cid")
+                    .value_name("CID")
+                    .value_parser(parse_cid)
+                    .default_value(""),
+            )
+            .args(timeout_args!()),
+        command("serve")
+            .about("Start a server")
+            .disable_version_flag(true)
+            .args([
+                clap::Arg::new("max_clients")
+                    .help("Maximum number of simultaneous client connections")
+                    .long("max-clients")
+                    .value_name("NUM")
+                    .default_value("10")
+                    .value_parser(clap::value_parser!(NonZeroUsize)),
+                clap::Arg::new("max_len_mb")
+                    .help("Maximum content length to accept in MiB (0=unlimited)")
+                    .long("max-len-mb")
+                    .value_name("NUM")
+                    .default_value("0")
+                    .value_parser(clap::value_parser!(u64)),
+            ])
+            .args(timeout_args!()),
         command("genkeys").about("Generate keys").disable_version_flag(true).arg(
             clap::Arg::new("password")
                 .help("Derive the keys from a password (default=random keys)")

@@ -10,6 +10,8 @@ Feature enhancements:
 
 * Add support for streaming
   [#7](https://github.com/lmaotrigine/klip/pull/7)
+* Add `--timeout` and `--data-timeout` flags to more commands so that clients
+  can also override the defaults.
 
 0.3.0
 =====

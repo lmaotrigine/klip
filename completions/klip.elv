@@ -35,16 +35,36 @@ set edit:completion:arg-completer[klip] = {|@words|
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'klip;copy'= {
+            cand -t 'Connection timeout (in seconds)'
+            cand --timeout 'Connection timeout (in seconds)'
+            cand -d 'Data transmission timeout (in seconds)'
+            cand --data-timeout 'Data transmission timeout (in seconds)'
         }
         &'klip;paste'= {
+            cand -t 'Connection timeout (in seconds)'
+            cand --timeout 'Connection timeout (in seconds)'
+            cand -d 'Data transmission timeout (in seconds)'
+            cand --data-timeout 'Data transmission timeout (in seconds)'
         }
         &'klip;move'= {
+            cand -t 'Connection timeout (in seconds)'
+            cand --timeout 'Connection timeout (in seconds)'
+            cand -d 'Data transmission timeout (in seconds)'
+            cand --data-timeout 'Data transmission timeout (in seconds)'
         }
         &'klip;push'= {
             cand --cid 'Content identifier label for stream binding'
+            cand -t 'Connection timeout (in seconds)'
+            cand --timeout 'Connection timeout (in seconds)'
+            cand -d 'Data transmission timeout (in seconds)'
+            cand --data-timeout 'Data transmission timeout (in seconds)'
         }
         &'klip;pull'= {
             cand --cid 'Content identifier label for stream binding'
+            cand -t 'Connection timeout (in seconds)'
+            cand --timeout 'Connection timeout (in seconds)'
+            cand -d 'Data transmission timeout (in seconds)'
+            cand --data-timeout 'Data transmission timeout (in seconds)'
         }
         &'klip;serve'= {
             cand --max-clients 'Maximum number of simultaneous client connections'

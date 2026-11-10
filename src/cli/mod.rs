@@ -44,13 +44,28 @@ impl ServerArgs {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct TimeoutArgs {
+    pub timeout: u64,
+    pub data_timeout: u64,
+}
+
+impl TimeoutArgs {
+    fn from_arg_matches_mut(matches: &mut clap::ArgMatches) -> Result<Self, clap::Error> {
+        Ok(Self {
+            timeout: assert_some!(matches, "timeout")?,
+            data_timeout: assert_some!(matches, "data_timeout")?,
+        })
+    }
+}
+
 #[derive(Debug)]
 pub enum Subcommand {
-    Copy,
-    Paste,
-    Move,
-    Push(String),
-    Pull(String),
+    Copy(TimeoutArgs),
+    Paste(TimeoutArgs),
+    Move(TimeoutArgs),
+    Push(TimeoutArgs, String),
+    Pull(TimeoutArgs, String),
     Serve(ServerArgs),
     Keygen(bool),
     Version,
@@ -60,11 +75,17 @@ impl Subcommand {
     fn from_arg_matches_mut(matches: &mut clap::ArgMatches) -> Result<Self, clap::Error> {
         if let Some((subcommand, mut sub_matches)) = matches.remove_subcommand() {
             match subcommand.as_str() {
-                "copy" => Ok(Self::Copy),
-                "paste" => Ok(Self::Paste),
-                "move" => Ok(Self::Move),
-                "push" => Ok(Self::Push(sub_matches.remove_one("cid").unwrap_or_default())),
-                "pull" => Ok(Self::Pull(sub_matches.remove_one("cid").unwrap_or_default())),
+                "copy" => Ok(Self::Copy(TimeoutArgs::from_arg_matches_mut(&mut sub_matches)?)),
+                "paste" => Ok(Self::Paste(TimeoutArgs::from_arg_matches_mut(&mut sub_matches)?)),
+                "move" => Ok(Self::Move(TimeoutArgs::from_arg_matches_mut(&mut sub_matches)?)),
+                "push" => Ok(Self::Push(
+                    TimeoutArgs::from_arg_matches_mut(&mut sub_matches)?,
+                    sub_matches.remove_one("cid").unwrap_or_default(),
+                )),
+                "pull" => Ok(Self::Pull(
+                    TimeoutArgs::from_arg_matches_mut(&mut sub_matches)?,
+                    sub_matches.remove_one("cid").unwrap_or_default(),
+                )),
                 "serve" => Ok(Self::Serve(ServerArgs::from_arg_matches_mut(&mut sub_matches)?)),
                 "genkeys" => Ok(Self::Keygen(sub_matches.remove_one("password").unwrap_or(false))),
                 "version" => Ok(Self::Version),
@@ -132,11 +153,15 @@ impl Cli {
                 println!("klip {}", version(true));
                 Ok(())
             }
-            Subcommand::Copy => Ok(crate::client::run(config, Mode::Copy).await?),
-            Subcommand::Move => Ok(crate::client::run(config, Mode::Move).await?),
-            Subcommand::Push(ref cid) => Ok(crate::client::run(config, Mode::Push { cid }).await?),
-            Subcommand::Pull(ref cid) => Ok(crate::client::run(config, Mode::Pull { cid }).await?),
-            Subcommand::Paste => Ok(crate::client::run(config, Mode::Paste).await?),
+            Subcommand::Copy(_) => Ok(crate::client::run(config, Mode::Copy).await?),
+            Subcommand::Move(_) => Ok(crate::client::run(config, Mode::Move).await?),
+            Subcommand::Push(_, ref cid) => {
+                Ok(crate::client::run(config, Mode::Push { cid }).await?)
+            }
+            Subcommand::Pull(_, ref cid) => {
+                Ok(crate::client::run(config, Mode::Pull { cid }).await?)
+            }
+            Subcommand::Paste(_) => Ok(crate::client::run(config, Mode::Paste).await?),
             Subcommand::Serve(_) => crate::server::serve(State::new(config)).await,
             Subcommand::Keygen(_) => unreachable!(),
         };

@@ -36,8 +36,18 @@ complete -c klip -n "__fish_klip_needs_command" -f -a "serve" -d 'Start a server
 complete -c klip -n "__fish_klip_needs_command" -f -a "genkeys" -d 'Generate keys'
 complete -c klip -n "__fish_klip_needs_command" -f -a "version" -d 'Print version'
 complete -c klip -n "__fish_klip_needs_command" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c klip -n "__fish_klip_using_subcommand copy" -s t -l timeout -d 'Connection timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand copy" -s d -l data-timeout -d 'Data transmission timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand move" -s t -l timeout -d 'Connection timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand move" -s d -l data-timeout -d 'Data transmission timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand paste" -s t -l timeout -d 'Connection timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand paste" -s d -l data-timeout -d 'Data transmission timeout (in seconds)' -r
 complete -c klip -n "__fish_klip_using_subcommand push" -l cid -d 'Content identifier label for stream binding' -r
+complete -c klip -n "__fish_klip_using_subcommand push" -s t -l timeout -d 'Connection timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand push" -s d -l data-timeout -d 'Data transmission timeout (in seconds)' -r
 complete -c klip -n "__fish_klip_using_subcommand pull" -l cid -d 'Content identifier label for stream binding' -r
+complete -c klip -n "__fish_klip_using_subcommand pull" -s t -l timeout -d 'Connection timeout (in seconds)' -r
+complete -c klip -n "__fish_klip_using_subcommand pull" -s d -l data-timeout -d 'Data transmission timeout (in seconds)' -r
 complete -c klip -n "__fish_klip_using_subcommand serve" -l max-clients -d 'Maximum number of simultaneous client connections' -r
 complete -c klip -n "__fish_klip_using_subcommand serve" -l max-len-mb -d 'Maximum content length to accept in MiB (0=unlimited)' -r
 complete -c klip -n "__fish_klip_using_subcommand serve" -s t -l timeout -d 'Connection timeout (in seconds)' -r

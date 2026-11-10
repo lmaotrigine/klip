@@ -99,12 +99,28 @@ _klip() {
       return 0
       ;;
     klip__subcmd__copy)
-      opts=""
+      opts="-t -d --timeout --data-timeout"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
       fi
       case "${prev}" in
+        --timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -t)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        --data-timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -d)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
         *)
           COMPREPLY=()
           ;;
@@ -127,7 +143,7 @@ _klip() {
       return 0
       ;;
     klip__subcmd__help)
-      opts="copy paste move serve genkeys version help"
+      opts="copy paste move push pull serve genkeys version help"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
@@ -267,12 +283,28 @@ _klip() {
       return 0
       ;;
     klip__subcmd__move)
-      opts=""
+      opts="-t -d --timeout --data-timeout"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
           COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
           return 0
       fi
       case "${prev}" in
+        --timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -t)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        --data-timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -d)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
         *)
           COMPREPLY=()
           ;;
@@ -281,12 +313,28 @@ _klip() {
       return 0
       ;;
     klip__subcmd__paste)
-      opts=""
+      opts="-t -d --timeout --data-timeout"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
       fi
       case "${prev}" in
+        --timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -t)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        --data-timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -d)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
         *)
           COMPREPLY=()
           ;;
@@ -295,13 +343,29 @@ _klip() {
       return 0
       ;;
     klip__subcmd__pull)
-      opts="--cid"
+      opts="-t -d --cid --timeout --data-timeout"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
       fi
       case "${prev}" in
         --cid)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        --timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -t)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        --data-timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -d)
           COMPREPLY=($(compgen -f "${cur}"))
           return 0
           ;;
@@ -313,13 +377,29 @@ _klip() {
       return 0
       ;;
     klip__subcmd__push)
-      opts="--cid"
+      opts="-t -d --cid --timeout --data-timeout"
       if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
       fi
       case "${prev}" in
         --cid)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        --timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -t)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        --data-timeout)
+          COMPREPLY=($(compgen -f "${cur}"))
+          return 0
+          ;;
+        -d)
           COMPREPLY=($(compgen -f "${cur}"))
           return 0
           ;;
