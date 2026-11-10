@@ -28,6 +28,7 @@ features = [
   "macros",
   "rt-multi-thread",
   "net",
+  "io-std",
   "io-util",
   "signal",
   "sync",

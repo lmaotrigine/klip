@@ -16,9 +16,10 @@ use ctutils::CtEq;
 use ed25519_dalek::Signer;
 use rand::Rng;
 use std::{
-    io::{self, IsTerminal, Read, Write},
+    io::{self, IsTerminal},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+use tokio::io::{AsyncReadExt, AsyncWriteExt, stdin, stdout};
 
 pub const DEFAULT_CLIENT_VERSION: u8 = 2;
 
@@ -41,7 +42,7 @@ async fn copy_operation(config: &Config, s: &mut Stream, h1: &[u8]) -> Result<()
         .copy_from_slice(&config.encrypt_sk_id().to_le_bytes());
     let mut rng = rand::make_rng::<rand::rngs::StdRng>();
     rng.fill_bytes(&mut content_with_encrypt_sk_id_and_nonce[8..32]);
-    io::stdin().lock().read_to_end(&mut content_with_encrypt_sk_id_and_nonce)?;
+    stdin().read_to_end(&mut content_with_encrypt_sk_id_and_nonce).await?;
     let opcode = b'S';
     let mut cipher = chacha20::XChaCha20::new(
         &config.encrypt_sk().into(),
@@ -168,8 +169,8 @@ async fn paste_operation(
     );
     let content = &mut ciphertext_with_encrypt_sk_id_and_nonce[32..];
     cipher.apply_keystream(&mut content[..]);
-    io::stdout().lock().write_all(content)?;
-    io::stdout().lock().flush()?;
+    stdout().write_all(content).await?;
+    stdout().flush().await?;
     Ok(())
 }
 
@@ -224,7 +225,8 @@ async fn push_stream_operation(
     let mut plain_buf = vec![0; MAX_CHUNK_SIZE as usize];
     let mut chunk_index = 0;
     loop {
-        let res = io::stdin().lock().read(&mut plain_buf);
+        // this blocking is fine, it's only 64KiB
+        let res = stdin().read(&mut plain_buf).await;
         match res {
             Ok(n) if n > 0 => {
                 let nonce = derive_chunk_nonce(nonce_prefix, chunk_index);
@@ -351,7 +353,7 @@ async fn pull_stream_operation(
         transcript.update(&chunk_index.to_le_bytes());
         transcript.update(&chunk_len.to_le_bytes());
         transcript.update(&sealed);
-        io::stdout().lock().write_all(&plain)?;
+        stdout().write_all(&plain).await?;
         chunk_index += 1;
     }
 }
