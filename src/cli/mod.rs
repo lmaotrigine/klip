@@ -1,10 +1,5 @@
-use crate::{
-    client::Mode,
-    config::Config,
-    error::{Context, Error, ResultExt},
-    state::State,
-    util,
-};
+use crate::{client::Mode, config::Config, error::Error, state::State, util};
+use anyhow::Context;
 use std::{env::home_dir, num::NonZeroUsize, path::PathBuf};
 
 mod commands;
@@ -105,7 +100,7 @@ impl Cli {
         Self::try_parse().unwrap_or_else(|e| e.exit())
     }
 
-    pub async fn run() -> Result<(), Context> {
+    pub async fn run() -> anyhow::Result<()> {
         let cli = Self::parse();
         if let Subcommand::Keygen(password) = cli.subcommand {
             let config_file = match cli.config {
@@ -125,11 +120,10 @@ impl Cli {
             None => Self::default_config_file()?,
         };
         let table = toml::from_str(
-            &std::fs::read_to_string(config_file.canonicalize().context(format!(
-                "failed to canonicalize config file path '{}'",
-                config_file.display()
-            ))?)
-            .context(format!("while reading config file at '{}'", config_file.display()))?,
+            &std::fs::read_to_string(config_file.canonicalize().with_context(|| {
+                format!("failed to canonicalize config file path '{}'", config_file.display())
+            })?)
+            .with_context(|| format!("while reading config file at '{}'", config_file.display()))?,
         )
         .context("while parsing config file")?;
         let config = Config::new(table, &cli)?;

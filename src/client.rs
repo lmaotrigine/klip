@@ -5,9 +5,10 @@ use crate::{
         derive_chunk_nonce, derive_stream_key, new_transcript_hash,
     },
     config::Config,
-    error::{Context, Error, ResultExt},
+    error::Error,
     util::Stream,
 };
+use anyhow::Context;
 use blake2::digest::Mac;
 use chacha20::cipher::{KeyIvInit, StreamCipher};
 use chacha20poly1305::{KeyInit, aead::Aead};
@@ -132,7 +133,7 @@ async fn paste_operation(
         return Err(Error::Old);
     }
     if ciphertext_with_encrypt_sk_id_and_nonce_len < 32 {
-        return Err(Error::Short);
+        return Err(Error::Short(None));
     }
     let full_buf_len = ciphertext_with_encrypt_sk_id_and_nonce_len.try_into().map_err(|_| {
         Error::Large { max: usize::MAX as _, got: ciphertext_with_encrypt_sk_id_and_nonce_len }
@@ -266,7 +267,7 @@ async fn pull_stream_operation(
     stream: &mut Stream,
     h1: &[u8],
     cid: &str,
-) -> Result<(), Context> {
+) -> anyhow::Result<()> {
     let opcode = b'L';
     let h2 = auth2get(config.psk(), h1, opcode);
     stream.write_all(&[opcode]).await?;
@@ -344,9 +345,9 @@ async fn pull_stream_operation(
         stream.set_timeout(config.data_timeout());
         stream.read_exact(&mut sealed).await.context("stream: failed to read chunk data")?;
         let nonce = derive_chunk_nonce(nonce_prefix, chunk_index);
-        let plain = aead
-            .decrypt(&nonce.into(), sealed.as_slice())
-            .context(format!("stream: aead authentication failed for chunk {chunk_index}"))?;
+        let plain = aead.decrypt(&nonce.into(), sealed.as_slice()).with_context(|| {
+            format!("stream: aead authentication failed for chunk {chunk_index}")
+        })?;
         transcript.update(&chunk_index.to_le_bytes());
         transcript.update(&chunk_len.to_le_bytes());
         transcript.update(&sealed);
@@ -355,7 +356,7 @@ async fn pull_stream_operation(
     }
 }
 
-pub async fn run(config: Config, mode: Mode<'_>) -> Result<(), Context> {
+pub async fn run(config: Config, mode: Mode<'_>) -> anyhow::Result<()> {
     let psk = config.psk();
     let fut = tokio::net::TcpStream::connect(config.connect());
     let conn = tokio::time::timeout(config.timeout(), fut).await.map_err(io::Error::from)??;
@@ -371,14 +372,12 @@ pub async fn run(config: Config, mode: Mode<'_>) -> Result<(), Context> {
     let mut rbuf = [0; 65];
     stream.read_exact(&mut rbuf).await.map_err(|_| {
         if rbuf.iter().position(|&b| b == 0).is_some_and(|p| p < 2) {
-            io::Error::new(
-                io::ErrorKind::ConnectionRefused,
+            anyhow::anyhow!(
                 "the server rejected the connection - check that it is running the same klip \
-                 version or retry later",
+                 version or retry later"
             )
-            .into()
         } else {
-            Error::ProtocolUnsupported
+            anyhow::anyhow!(Error::ProtocolUnsupported)
         }
     })?;
     if rbuf[0] != DEFAULT_CLIENT_VERSION {

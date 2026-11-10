@@ -83,7 +83,7 @@ impl State {
             self.client_count.fetch_sub(1, Ordering::SeqCst);
             if let Err(e) = res {
                 let _ = conn.shutdown().await;
-                eprintln!("error: {e}");
+                eprintln!("error: {e:?}");
             }
         });
     }

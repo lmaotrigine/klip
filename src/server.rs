@@ -83,7 +83,7 @@ impl Connection<'_> {
         len_buf.copy_from_slice(&rbuf[32..40]);
         let ciphertext_with_encrypt_sk_and_nonce_len = u64::from_le_bytes(len_buf);
         if ciphertext_with_encrypt_sk_and_nonce_len < 32 {
-            return Err(Error::ShortCiphertext(ciphertext_with_encrypt_sk_and_nonce_len));
+            return Err(Error::Short(Some(ciphertext_with_encrypt_sk_and_nonce_len)));
         }
         if self.state.config().max_len() > 0
             && ciphertext_with_encrypt_sk_and_nonce_len > self.state.config().max_len()
@@ -338,7 +338,7 @@ pub async fn serve(state: State) -> Result<(), Error> {
     loop {
         let (conn, _) = listener.accept().await?;
         if let Err(e) = state.clone().maybe_accept_client(conn) {
-            eprintln!("error: {e}");
+            eprintln!("error: {e:?}");
         }
     }
 }

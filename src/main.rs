@@ -95,8 +95,8 @@ fn preflight() {
         LOAD_LIBRARY_SEARCH_SYSTEM32, SetDefaultDllDirectories,
     };
     // default to delay loading DLLs from the system directory.
-    // for DLLs loaded at load time, this relies on the `/DELAYLOAD` linker flag.
-    // this is only necessary prior to Windows 10 RS1.
+    // for DLLs loaded at load time, this relies on the `/DELAYLOAD` linker
+    // flag. this is only necessary prior to Windows 10 RS1.
     let result = unsafe { SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32) };
     // SetDefaultDllDirectories should never fail if given valid arguments.
     // but, just to be safe, bail if it did.
@@ -104,7 +104,7 @@ fn preflight() {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), error::Context> {
+async fn main() -> anyhow::Result<()> {
     #[cfg(windows)]
     preflight();
     tokio::select! {
