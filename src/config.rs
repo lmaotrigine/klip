@@ -3,8 +3,8 @@ use crate::{
     error::Error,
 };
 use blake2::digest::{Mac, typenum::U8};
+use core::{net::SocketAddr, time::Duration};
 use ed25519_dalek::{SigningKey, VerifyingKey};
-use std::{net::SocketAddr, time::Duration};
 
 struct TomlConf {
     table: toml::Table,
@@ -157,8 +157,8 @@ pub struct Config {
     max_waiting_pullers: usize,
 }
 
-impl std::fmt::Debug for Config {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Config {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let display_secrets = f.alternate();
         let mut s = f.debug_struct("Config");
         s.field("connect", &self.connect)
@@ -176,8 +176,8 @@ impl std::fmt::Debug for Config {
             s.field("encrypt_sk", &self.encrypt_sk);
             let mut out = [0; 16];
             let inp = self.encrypt_sk_id.to_le_bytes();
-            crate::util::hex(&inp, &mut out);
-            s.field("encrypt_sk_id", &std::str::from_utf8(&out).expect("hex should be valid utf8"));
+            let hex = crate::util::hex(&inp, &mut out);
+            s.field("encrypt_sk_id", &hex);
             s.field("psk", &self.psk);
             s.field("sign_pk", &self.sign_pk);
             s.field("sign_sk", &self.sign_sk);

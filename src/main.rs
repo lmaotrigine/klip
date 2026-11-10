@@ -16,7 +16,7 @@
     clippy::unwrap_used
 )]
 
-use std::{
+use core::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     time::Duration,
 };

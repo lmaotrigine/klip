@@ -50,7 +50,7 @@ impl Stream {
         }
     }
 
-    pub fn peer_addr(&self) -> std::io::Result<std::net::SocketAddr> {
+    pub fn peer_addr(&self) -> std::io::Result<core::net::SocketAddr> {
         self.inner.get_ref().peer_addr()
     }
 
@@ -98,10 +98,15 @@ impl core::iter::ExactSizeIterator for Hex<'_> {
     }
 }
 
-pub fn hex(inp: &[u8], out: &mut [u8]) {
+pub fn hex<'a>(inp: &[u8], out: &'a mut [u8]) -> &'a str {
     let iter = Hex { inner: inp.iter(), next: None };
     for (i, j) in iter.zip(out.iter_mut()) {
         *j = i;
+    }
+    // SAFETY: Hex iterator only produces ASCII characters
+    #[expect(unsafe_code)]
+    unsafe {
+        core::str::from_utf8_unchecked(out)
     }
 }
 
