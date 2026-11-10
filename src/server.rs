@@ -207,7 +207,7 @@ impl Connection<'_> {
                 return Err(Error::StreamActive { push: true });
             };
             hub.push_active = !hub.pullers.is_empty();
-            hub.pullers.clone()
+            core::mem::take(&mut hub.pullers)
         };
         if snapshot.is_empty() {
             let _ = self.stream.write_all(&[0x00]).await;
