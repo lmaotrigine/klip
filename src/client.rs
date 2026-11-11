@@ -275,6 +275,21 @@ async fn pull_stream_operation(
     stream.write_all(&[opcode]).await?;
     stream.write_all(&h2).await?;
     stream.flush().await?;
+    stream.set_timeout(config.timeout());
+    let mut status = [0];
+    stream.read_exact(&mut status).await.map_err(|e| {
+        if matches!(e.kind(), io::ErrorKind::UnexpectedEof | io::ErrorKind::BrokenPipe) {
+            Error::ConnectionClosed
+        } else {
+            e.into()
+        }
+    })?;
+    match status[0] {
+        0x00 => return Err(Error::StreamActive { push: false }.into()),
+        0x01 => (),
+        0x02 => return Err(Error::TooManyPullers.into()),
+        _ => return Err(Error::GenericStream.into()),
+    }
     let cid_bytes = cid.as_bytes();
     stream.clear_timeout();
     let mut header = [0; 32];
@@ -285,16 +300,13 @@ async fn pull_stream_operation(
     let now = SystemTime::now();
     let ts_val = UNIX_EPOCH + Duration::from_secs(ts);
     match now.duration_since(ts_val) {
-        Ok(elapsed) => {
-            if elapsed > config.ttl() {
-                return Err(Error::Old.into());
-            }
+        Ok(elapsed) if elapsed > config.ttl() => {
+            return Err(Error::Old.into());
         }
-        Err(skew) => {
-            if skew.duration() > MAX_FUTURE_SKEW {
-                return Err(Error::Future.into());
-            }
+        Err(skew) if skew.duration() > MAX_FUTURE_SKEW => {
+            return Err(Error::Future.into());
         }
+        _ => (),
     }
     if encrypt_sk_id != config.encrypt_sk_id() {
         return Err(Error::SecretKeyIDMismatch {

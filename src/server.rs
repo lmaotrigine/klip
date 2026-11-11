@@ -138,22 +138,33 @@ impl Connection<'_> {
             return Err(Error::Auth);
         }
         let (tx, mut rx) = tokio::sync::mpsc::channel(64);
-        let id = {
+        let maybe_id = {
             let mut hub = self.state.stream_hub();
             if hub.push_active {
-                return Err(Error::StreamActive { push: false });
+                Err((Error::StreamActive { push: false }, 0x00))
+            } else if hub.pullers.len() >= self.state.config().max_waiting_pullers() {
+                Err((Error::TooManyPullers, 0x02))
+            } else {
+                let id = hub.next_id;
+                hub.next_id = hub.next_id.wrapping_add(1);
+                hub.pullers.insert(id, tx);
+                drop(hub);
+                Ok(id)
             }
-            if hub.pullers.len() >= self.state.config().max_waiting_pullers() {
-                return Err(Error::TooManyPullers);
+        };
+        let id = match maybe_id {
+            Ok(id) => id,
+            Err((e, b)) => {
+                self.stream.write_all(&[b]).await?;
+                self.stream.flush().await?;
+                return Err(e);
             }
-            let id = hub.next_id;
-            hub.next_id = hub.next_id.wrapping_add(1);
-            hub.pullers.insert(id, tx);
-            id
         };
         let cleanup = || {
             self.state.stream_hub().pullers.remove(&id);
         };
+        self.stream.write_all(&[0x01]).await?;
+        self.stream.flush().await?;
         let wait_timeout = self.state.config().ttl().min(core::time::Duration::from_hours(1));
         self.stream.set_timeout(wait_timeout);
         let mut recv = async || {

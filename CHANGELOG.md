@@ -6,6 +6,10 @@ Unreleased changes. Release notes have not yet been written.
 > This release includes a protocol version bump. It will not be able to
 > interface with older versions of klip.
 
+Bug fixes:
+
+* Fix Ctrl-C not being handled while operating on stdin/stdout.
+
 Feature enhancements:
 
 * Add support for streaming
