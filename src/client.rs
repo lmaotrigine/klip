@@ -17,7 +17,7 @@ use ed25519_dalek::Signer;
 use rand::Rng;
 use std::{
     io::{self, IsTerminal},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt, stdin, stdout};
 
@@ -327,7 +327,7 @@ async fn pull_stream_operation(
     transcript.update(&cid_bind);
     let mut chunk_index = 0;
     let mut total_bytes = 0;
-    let pull_start = SystemTime::now();
+    let pull_start = Instant::now();
     loop {
         stream.set_timeout(config.data_timeout());
         let mut chunk_len = [0; 4];
@@ -351,8 +351,7 @@ async fn pull_stream_operation(
         if total_bytes > config.max_stream_bytes() {
             return Err(Error::StreamTooLarge.into());
         }
-        let elapsed = SystemTime::now().duration_since(pull_start).expect("system clock is broken");
-        if elapsed > config.max_stream_duration() {
+        if pull_start.elapsed() > config.max_stream_duration() {
             return Err(Error::StreamDurationExceeded.into());
         }
         let mut sealed = vec![0; sealed_len];

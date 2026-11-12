@@ -8,7 +8,7 @@ use crate::{
 };
 use ctutils::CtEq;
 use rand::Rng;
-use std::{collections::HashMap, sync::Arc, time::SystemTime};
+use std::{collections::HashMap, sync::Arc, time::Instant};
 use tokio::{net::TcpListener, sync::mpsc};
 
 macro_rules! cleanup {
@@ -249,7 +249,7 @@ impl Connection<'_> {
         self.stream.set_timeout(self.state.config().data_timeout());
         cleanup!(self.stream.read_exact(&mut header).await, cleanup(&mut snapshot));
         relay(header.to_vec(), &mut snapshot).await;
-        let stream_start = SystemTime::now();
+        let stream_start = Instant::now();
         let mut total_bytes = 0;
         loop {
             let mut len_buf = [0; 4];
@@ -276,9 +276,7 @@ impl Connection<'_> {
                 cleanup(&mut snapshot).await;
                 return Err(Error::StreamTooLarge);
             }
-            let elapsed =
-                SystemTime::now().duration_since(stream_start).expect("system clock is broken");
-            if elapsed > self.state.config().max_stream_duration() {
+            if stream_start.elapsed() > self.state.config().max_stream_duration() {
                 cleanup(&mut snapshot).await;
                 return Err(Error::StreamDurationExceeded);
             }
