@@ -14,6 +14,13 @@ buildflags := if toolchain =~ "-nightly" {
   ""
 }
 
+# allow override to not use zigbuild
+use-zigbuild := env("USE_ZIGBUILD", "1")
+buildcmd := if use-zigbuild == "1" { "zigbuild" } else { "build" }
+# only added to RUSTFLAGS if building for 64-bit musl targets because of
+# jemalloc+build_std woes (see below)
+lgcc := if buildcmd == "build" { " -C link-arg=-lgcc" } else { "" }
+
 _default:
   @just --list
 
@@ -69,7 +76,8 @@ build *args:
 # build a non-portable release binary with host CPU features.
 [group('build')]
 build-release-native target="x86_64-unknown-linux-musl":
-  RUSTFLAGS="{{rustflags}}" cargo zigbuild {{buildflags}} --release --target {{target}}
+  RUSTFLAGS="{{rustflags}}{{ if target =~ "64.+-musl" { lgcc } else { "" } }}" \
+  cargo {{buildcmd}} {{buildflags}} --release --target {{target}}
 
 # build a docker image from the current source tree.
 [group('build')]

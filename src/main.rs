@@ -108,10 +108,10 @@ async fn main() -> anyhow::Result<()> {
     #[cfg(windows)]
     preflight();
     tokio::select! {
-        r = async { Cli::run().await } => r,
+        r = Cli::run() => r,
         () = shutdown() => {
             eprintln!("violently shutting down");
             std::process::exit(1);
-        },
+        }
     }
 }
