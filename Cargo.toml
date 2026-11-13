@@ -38,10 +38,6 @@ features = [
 [target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
 tikv-jemallocator = "0.7"
 
-[target.'cfg(windows)'.dependencies.windows-sys]
-version = "0.61"
-features = ["Win32_System_LibraryLoader"]
-
 # don't build syn v2
 [patch.crates-io]
 curve25519-dalek-derive.git = "https://github.com/dalek-cryptography/curve25519-dalek.git"

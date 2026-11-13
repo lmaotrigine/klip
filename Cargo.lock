@@ -361,7 +361,6 @@ dependencies = [
  "tikv-jemallocator",
  "tokio",
  "toml",
- "windows-sys",
 ]
 
 [[package]]
