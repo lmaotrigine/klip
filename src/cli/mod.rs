@@ -91,7 +91,7 @@ impl Subcommand {
                 "version" => Ok(Self::Version),
                 _ => Err(clap::Error::raw(
                     clap::error::ErrorKind::InvalidSubcommand,
-                    format!("the subcommand '{subcommand}' wasn't recognized"),
+                    format!("the subcommand '{subcommand}' wasn't recognised"),
                 )),
             }
         } else {
@@ -142,7 +142,7 @@ impl Cli {
         };
         let table = toml::from_str(
             &std::fs::read_to_string(config_file.canonicalize().with_context(|| {
-                format!("failed to canonicalize config file path '{}'", config_file.display())
+                format!("failed to canonicalise config file path '{}'", config_file.display())
             })?)
             .with_context(|| format!("while reading config file at '{}'", config_file.display()))?,
         )

@@ -59,7 +59,7 @@ all = "deny"
 pedantic = "deny"
 nursery = "deny"
 
-# our dependency tree is amenable to aggressive optimization without much
+# our dependency tree is amenable to aggressive optimisation without much
 # compile time overhead. it still takes a bit, though.
 [profile.release]
 # on some platforms, opt-level = 3 performs better. i haven't profiled this
