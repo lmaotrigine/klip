@@ -13,6 +13,7 @@ macro_rules! some {
 ///
 /// This allows you to specify the necessary keys and configuration options.
 #[must_use]
+#[derive(Clone, Copy)]
 pub struct Builder {
     addr: Option<SocketAddr>,
     max_len: Option<u64>,
