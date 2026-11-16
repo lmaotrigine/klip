@@ -142,6 +142,7 @@ jobs:
       - name: Build klip
         shell: bash
         run: |
+          ${{ env.CARGO }} build --verbose --locked ${{ env.TARGET_FLAGS }} --no-default-features
           ${{ env.CARGO }} build --verbose --locked ${{ env.TARGET_FLAGS }}
           if [[ "${{ matrix.os }}" == "windows-*" ]]; then
             bin="target/${{ matrix.target }}/debug/klip.exe"
@@ -206,6 +207,7 @@ jobs:
             sh rustup.sh -y --profile minimal --default-toolchain stable
           run: |
             . $HOME/.cargo/env
+            cargo build --verbose --locked --no-default-features
             cargo build --verbose --locked
             KLIP=target/debug/klip ./test.sh
   netbsd:
@@ -226,5 +228,6 @@ jobs:
             sh rustup.sh -y --profile minimal --default-toolchain stable
           run: |
             . $HOME/.cargo/env
+            cargo build --verbose --locked --no-default-features
             cargo build --verbose --locked
             KLIP=target/debug/klip ./test.sh

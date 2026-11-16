@@ -10,17 +10,18 @@ repository = "https://github.com/lmaotrigine/klip"
 edition = "2024"
 
 [dependencies]
-anyhow = { version = "1", default-features = false }
+anyhow = { version = "1", default-features = false, optional = true }
 blake2 = "0.11"
 chacha20 = { version = "0.10", features = ["xchacha", "zeroize"] }
 chacha20poly1305 = { version = "0.11", default-features = false, features = ["alloc", "zeroize"] }
-clap = { version = "4", features = ["string", "wrap_help"] }
+clap = { version = "4", features = ["string", "wrap_help"], optional = true }
 ctutils = "0.4"
 ed25519-dalek = "3"
+log = { version = "0.4", default-features = false }
 parking_lot = "0.13"
 rand = { version = "0.10", features = ["std_rng"] }
-scrypt = "0.12"
-toml = { version = "1", default-features = false, features = ["parse", "serde"] }
+scrypt = { version = "0.12", optional = true }
+toml = { version = "1", default-features = false, features = ["parse", "serde"], optional = true }
 
 [dependencies.tokio]
 version = "1"
@@ -28,7 +29,6 @@ features = [
   "macros",
   "rt-multi-thread",
   "net",
-  "io-std",
   "io-util",
   "signal",
   "sync",
@@ -37,6 +37,15 @@ features = [
 
 [target.'cfg(all(target_env = "musl", target_pointer_width = "64"))'.dependencies]
 tikv-jemallocator = "0.7"
+
+[features]
+default = ["cli"]
+cli = ["dep:anyhow", "dep:clap", "dep:scrypt", "tokio/io-std", "dep:toml"]
+
+[[bin]]
+name = "klip"
+path = "src/main.rs"
+required-features = ["cli"]
 
 # don't build syn v2
 [patch.crates-io]
@@ -52,12 +61,15 @@ nonstandard_style = "deny"
 rust_2018_idioms = "deny"
 trivial_casts = "deny"
 trivial_numeric_casts = "deny"
+unsafe_code = "deny"
 unused = "deny"
 
 [lints.clippy]
-all = "deny"
-pedantic = "deny"
-nursery = "deny"
+all = { level = "deny",priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used ="deny"
+too_many_lines = "allow"
 
 # our dependency tree is amenable to aggressive optimisation without much
 # compile time overhead. it still takes a bit, though.

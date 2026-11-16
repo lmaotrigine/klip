@@ -2,6 +2,7 @@ use crate::{
     MAX_CHUNK_SIZE,
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     client::DEFAULT_CLIENT_VERSION,
+    config::Config,
     error::Error,
     state::{Content, Message, STORAGE, State},
     util::Stream,
@@ -26,7 +27,7 @@ struct Connection<'a> {
 }
 
 impl Connection<'_> {
-    pub async fn get_operation(self, h1: &[u8], is_move: bool) -> Result<(), Error> {
+    async fn get_operation(self, h1: &[u8], is_move: bool) -> Result<(), Error> {
         let mut rbuf = [0; 32];
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = rbuf;
@@ -47,7 +48,7 @@ impl Connection<'_> {
             self.stream.flush().await?;
             return Ok(());
         };
-        let res = (async || {
+        let res = async {
             self.stream.set_timeout(self.state.config().data_timeout());
             let h3 = auth3get(
                 self.state.config().psk(),
@@ -64,7 +65,7 @@ impl Connection<'_> {
             self.stream.write_all(&content.ciphertext_with_encrypt_sk_and_nonce).await?;
             self.stream.flush().await?;
             Ok(())
-        })()
+        }
         .await;
         if res.is_err() && is_move {
             let mut guard = STORAGE.write();
@@ -75,7 +76,7 @@ impl Connection<'_> {
         res
     }
 
-    pub async fn store_operation(self, h1: &[u8]) -> Result<(), Error> {
+    async fn store_operation(self, h1: &[u8]) -> Result<(), Error> {
         let mut rbuf = [0; 112];
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = &rbuf[..32];
@@ -127,7 +128,7 @@ impl Connection<'_> {
         Ok(())
     }
 
-    pub async fn pull_stream_operation(self, h1: &[u8]) -> Result<(), Error> {
+    async fn pull_stream_operation(self, h1: &[u8]) -> Result<(), Error> {
         let mut rbuf = [0; 32];
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = rbuf;
@@ -198,7 +199,7 @@ impl Connection<'_> {
         }
     }
 
-    pub async fn push_stream_operation(self, h1: &[u8]) -> Result<(), Error> {
+    async fn push_stream_operation(self, h1: &[u8]) -> Result<(), Error> {
         let mut rbuf = [0; 32];
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = rbuf;
@@ -332,22 +333,44 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     }
 }
 
-pub async fn serve(state: State) -> Result<(), Error> {
-    let state = Arc::new(state);
-    #[cfg(any(
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "macos",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "illumos"
-    ))]
-    tokio::spawn(async move { State::handle_siginfo().await });
-    let listener = TcpListener::bind(state.config().listen()).await?;
-    loop {
-        let (conn, _) = listener.accept().await?;
-        if let Err(e) = state.clone().maybe_accept_client(conn) {
-            eprintln!("error: {e:?}");
+/// Represents a klip server. Returned by
+/// [`Builder::build_server`][crate::Builder::build_server].
+#[derive(Debug)]
+pub struct Server {
+    config: Config,
+}
+
+impl Server {
+    pub(crate) const fn new(config: Config) -> Self {
+        Self { config }
+    }
+
+    /// Run the server.
+    ///
+    /// # Errors
+    ///
+    /// This method fails if the server cannot bind to the configured address.
+    pub async fn serve(self) -> Result<(), Error> {
+        let state = Arc::new(State::new(self.config));
+        #[cfg(any(
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "macos",
+            target_os = "netbsd",
+            target_os = "openbsd",
+            target_os = "illumos"
+        ))]
+        tokio::spawn(async move { State::handle_siginfo().await });
+        let listener = TcpListener::bind(state.config().listen()).await?;
+        loop {
+            let Ok((conn, _)) = listener.accept().await.inspect_err(|e| {
+                log::warn!("while accepting new connection: {e:?}");
+            }) else {
+                continue;
+            };
+            if let Err(e) = state.clone().maybe_accept_client(conn) {
+                log::warn!("while checking preconditions for new client: {e:?}");
+            }
         }
     }
 }

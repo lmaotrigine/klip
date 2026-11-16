@@ -1,5 +1,9 @@
 use core::fmt::{Debug, Display};
 
+/// Represents an error that can occur in klip.
+///
+/// Many of the variants are deliberately opaque as they represent failure
+/// states in cryptographic operations.
 pub enum Error {
     /// Authentication failed
     Auth,
@@ -9,14 +13,24 @@ pub enum Error {
     /// The clipboard is empty
     Empty,
     /// The client and server are running different versions of the protocol
-    IncompatibleVersions { client: u8, server: u8 },
+    IncompatibleVersions {
+        /// The protocol version used by the client
+        client: u8,
+        /// The protocol version used by the server
+        server: u8,
+    },
     /// A config field has an invalid value
     InvalidField(&'static str),
     /// An I/O error occurred
     Io(std::io::Error),
     /// The content requested to be stored is larger than the configured maximum
     /// size
-    Large { max: u64, got: u64 },
+    Large {
+        /// The configured maximum size
+        max: u64,
+        /// The actual size of the content that was attempted to be stored
+        got: u64,
+    },
     /// The bytes read from the stream could not be parsed.
     MaybeIncompatibleVersion,
     /// The server closed the connection unexpectedly.
@@ -34,7 +48,12 @@ pub enum Error {
     ProtocolUnsupported,
     /// The secret key ID retrieved from the server does not match the one in
     /// the client's configuration.
-    SecretKeyIDMismatch { expected: u64, actual: u64 },
+    SecretKeyIDMismatch {
+        /// The secret key ID expected by the client
+        expected: u64,
+        /// The secret key ID reported by the server
+        actual: u64,
+    },
     /// The encrypted clipboard content is too short to be valid
     ///
     /// The inner value is the actual length of the ciphertext that is only
@@ -42,8 +61,6 @@ pub enum Error {
     Short(Option<u64>),
     /// Ed25519 signature verification failed
     Signature,
-    /// The TOML config file could not be parsed
-    Toml(toml::de::Error),
     /// The provided opcode is not recognised by the server
     UnknownOp,
     /// The clipboard content has a timestamp that is too far in the future
@@ -51,7 +68,12 @@ pub enum Error {
     /// XChaCha20-Poly1305 encryption/decryption error
     Aead(chacha20poly1305::Error),
     /// A stream chunk was larger than expected
-    ChunkTooLarge { max: u32, got: u32 },
+    ChunkTooLarge {
+        /// The configured maximum chunk size
+        max: u32,
+        /// The actual size of the chunk that was attempted to be sent
+        got: u32,
+    },
     /// The total stream size exceeded the configured maximum size
     StreamTooLarge,
     /// The stream duration exceeded the configured maximum duration
@@ -70,6 +92,8 @@ pub enum Error {
     NoWaiters,
     /// The server rejected the stream
     GenericStream,
+    /// Another error occurred
+    Message(&'static str),
 }
 
 impl Display for Error {
@@ -107,7 +131,6 @@ impl Display for Error {
             Self::Short(None) => f.write_str("the clipboard content is too short"),
             Self::Short(Some(len)) => write!(f, "short encrypted message (only {len} bytes)"),
             Self::Signature => f.write_str("signature verification failed"),
-            Self::Toml(e) => write!(f, "could not parse TOML config: {e}"),
             Self::UnknownOp => f.write_str("unknown opcode"),
             Self::Future => f.write_str("clipboard content timestamp is too far in the future"),
             Self::Aead(e) => write!(f, "{e}"),
@@ -127,6 +150,7 @@ impl Display for Error {
             Self::PullerTimeout(id) => write!(f, "puller {id}: wait timeout expired"),
             Self::NoWaiters => f.write_str("no clients are waiting to receive the stream"),
             Self::GenericStream => f.write_str("the server rejected the stream"),
+            Self::Message(s) => f.write_str(s),
         }
     }
 }
@@ -141,7 +165,6 @@ impl core::error::Error for Error {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Self::Io(e) => Some(e),
-            Self::Toml(e) => Some(e),
             Self::Aead(e) => Some(e),
             _ => None,
         }
@@ -151,12 +174,6 @@ impl core::error::Error for Error {
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
         Self::Io(value)
-    }
-}
-
-impl From<toml::de::Error> for Error {
-    fn from(value: toml::de::Error) -> Self {
-        Self::Toml(value)
     }
 }
 

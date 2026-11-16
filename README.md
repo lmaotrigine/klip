@@ -364,3 +364,21 @@ Use it to
 * Start a slow download at the office, retrieve it later at home
 * Quickly back up a file to the cloud before messing with it
 * ... and more!
+
+## Embedding
+
+klip can also be used as a library, allowing you to make use of its protocol within your own
+application. Just add the following to your `Cargo.toml`:
+
+```toml
+[dependencies.klip]
+git = "https://github.com/lmaotrigine/klip"
+# this avoids pulling in clap and toml and other things only the CLI uses
+default-features = false
+# specify a revision or tag to avoid breaking changes!
+# rev = "..."
+```
+
+The library uses [`tokio`](https://docs.rs/tokio) for network operations. If you wish
+to use a different runtime or a separate TCP implementation, you will have to reimplement the
+protocol.

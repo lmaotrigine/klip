@@ -1,15 +1,23 @@
+#[cfg(feature = "cli")]
 use crate::{
     cli::{Cli, Subcommand},
     error::Error,
 };
+#[cfg(feature = "cli")]
 use blake2::digest::{Mac, typenum::U8};
+
 use core::{net::SocketAddr, time::Duration};
 use ed25519_dalek::{SigningKey, VerifyingKey};
 
+mod builder;
+pub use builder::Builder;
+
+#[cfg(feature = "cli")]
 struct TomlConf {
     table: toml::Table,
 }
 
+#[cfg(feature = "cli")]
 impl TomlConf {
     const fn new(table: toml::Table) -> Self {
         Self { table }
@@ -189,7 +197,8 @@ impl core::fmt::Debug for Config {
 }
 
 impl Config {
-    pub fn new(t: toml::Table, c: &Cli) -> Result<Self, Error> {
+    #[cfg(feature = "cli")]
+    pub(crate) fn from_toml_and_args(t: toml::Table, c: &Cli) -> Result<Self, Error> {
         let t = TomlConf::new(t);
         Ok(Self {
             connect: t.connect()?,

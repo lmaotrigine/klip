@@ -1,6 +1,11 @@
-use crate::{client::Mode, config::Config, error::Error, state::State, util};
+use crate::{client::Client, config::Config, error::Error, util};
 use anyhow::Context;
-use std::{env::home_dir, num::NonZeroUsize, path::PathBuf};
+use std::{
+    env::home_dir,
+    io::{self, IsTerminal},
+    num::NonZeroUsize,
+    path::PathBuf,
+};
 
 mod commands;
 
@@ -103,9 +108,44 @@ impl Subcommand {
     }
 }
 
+pub enum Mode<'a> {
+    Copy,
+    Paste,
+    Move,
+    Push { cid: &'a str },
+    Pull { cid: &'a str },
+}
+
+impl Mode<'_> {
+    async fn run(self, config: Config) -> Result<(), Error> {
+        let mut client = Client::new(config);
+        match self {
+            Self::Copy => {
+                client.copy(tokio::io::stdin()).await?;
+                if io::stderr().is_terminal() {
+                    eprintln!("Sent");
+                }
+                Ok(())
+            }
+            Self::Paste => client.paste(tokio::io::stdout(), false).await,
+            Self::Move => client.paste(tokio::io::stdout(), true).await,
+            Self::Push { cid } => {
+                client.push_stream(tokio::io::stdin(), cid).await?;
+                if io::stderr().is_terminal() {
+                    eprintln!("Stream sent");
+                }
+                Ok(())
+            }
+            Self::Pull { cid } => client.pull_stream(tokio::io::stdout(), cid).await,
+        }
+    }
+}
+
+/// Represents the command line interface for klip. This struct is only useful
+/// in the context of the klip binary.
 #[derive(Debug)]
 pub struct Cli {
-    pub subcommand: Subcommand,
+    pub(crate) subcommand: Subcommand,
     config: Option<PathBuf>,
 }
 
@@ -121,6 +161,13 @@ impl Cli {
         Self::try_parse().unwrap_or_else(|e| e.exit())
     }
 
+    /// Parse command line arguments and run the appropriate subcommand.
+    ///
+    /// # Errors
+    ///
+    /// Errors can occur while reading the config file, parsing it, or
+    /// performing the requested operation. In any case, the error is returned
+    /// wrapped in [`anyhow::Error`].
     pub async fn run() -> anyhow::Result<()> {
         let cli = Self::parse();
         if let Subcommand::Keygen(password) = cli.subcommand {
@@ -147,25 +194,20 @@ impl Cli {
             .with_context(|| format!("while reading config file at '{}'", config_file.display()))?,
         )
         .context("while parsing config file")?;
-        let config = Config::new(table, &cli)?;
-        let ret = match cli.subcommand {
+        let config = Config::from_toml_and_args(table, &cli)?;
+        Ok(match &cli.subcommand {
             Subcommand::Version => {
                 println!("klip {}", version(true));
                 Ok(())
             }
-            Subcommand::Copy(_) => Ok(crate::client::run(config, Mode::Copy).await?),
-            Subcommand::Move(_) => Ok(crate::client::run(config, Mode::Move).await?),
-            Subcommand::Push(_, ref cid) => {
-                Ok(crate::client::run(config, Mode::Push { cid }).await?)
-            }
-            Subcommand::Pull(_, ref cid) => {
-                Ok(crate::client::run(config, Mode::Pull { cid }).await?)
-            }
-            Subcommand::Paste(_) => Ok(crate::client::run(config, Mode::Paste).await?),
-            Subcommand::Serve(_) => crate::server::serve(State::new(config)).await,
+            Subcommand::Copy(_) => Mode::Copy.run(config).await,
+            Subcommand::Move(_) => Mode::Move.run(config).await,
+            Subcommand::Push(_, cid) => Mode::Push { cid }.run(config).await,
+            Subcommand::Pull(_, cid) => Mode::Pull { cid }.run(config).await,
+            Subcommand::Paste(_) => Mode::Paste.run(config).await,
+            Subcommand::Serve(_) => crate::server::Server::new(config).serve().await,
             Subcommand::Keygen(_) => unreachable!(),
-        };
-        Ok(ret?)
+        }?)
     }
 
     fn default_config_file() -> Result<PathBuf, Error> {

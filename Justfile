@@ -21,6 +21,18 @@ buildcmd := if use-zigbuild == "1" { "zigbuild" } else { "build" }
 # jemalloc+build_std woes (see below)
 lgcc := if buildcmd == "build" { " -C link-arg=-lgcc" } else { "" }
 
+# doc stuff to deploy on gh-pages
+package-name := `cargo metadata --format-version 1 --no-deps | jq -r '.packages[0].name'`
+index-header := (
+  '<!DOCTYPE html>'
+  + '<html>'
+  +   '<head><meta http-equiv="refresh" content="0;url=' + package-name + '/index.html"></head>'
+  +   '<body>'
+  +     '<p>Redirecting to <a href="./' + package-name + '/index.html">./' + package-name + '/index.html</a>...</p>'
+  +   '</body>'
+  + '</html>'
+)
+
 _default:
   @just --list
 
@@ -32,10 +44,19 @@ tag := `git rev-parse --short HEAD`
 image := "ghcr.io/lmaotrigine/klip"
 release := `git describe --tags --exact-match 2>/dev/null || true`
 
+[group('docs')]
+[env('RUSTDOCFLAGS', '-Wrustdoc::broken_intra_doc_links')]
+doc:
+  cargo clean --doc
+  cargo +nightly doc --no-deps --all-features -Zrustdoc-map
+  rm -f target/doc/.lock
+  printf '{{index-header}}' > target/doc/index.html
+
 # run clippy
 [group('lint')]
 [env('RUSTFLAGS', '-Wunused-crate-dependencies')]
 check:
+  cargo clippy --all-targets --no-default-features
   cargo clippy --all-targets
 
 # run cargo fmt

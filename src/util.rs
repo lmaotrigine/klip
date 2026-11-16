@@ -1,12 +1,111 @@
-use std::{
-    io::{Error, Write},
-    time::Duration,
-};
+use core::{future::Future, time::Duration};
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt, BufStream},
+    io::BufStream,
     net::TcpStream,
     time::{Instant, timeout_at},
 };
+
+/// Read bytes from a source.
+///
+/// This is analogous to [`AsyncReadExt`][tokio::io::AsyncReadExt], but does not
+/// require [`AsyncRead`][tokio::io::AsyncRead] to be implemented, and only
+/// contains the methods that are actually used by klip.
+pub trait Reader: Unpin {
+    /// Pulls some bytes from this source into the specified buffer, returning
+    /// how many bytes were read.
+    ///
+    /// Equivalent to:
+    ///
+    /// ```ignore
+    /// async fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize>;
+    /// ```
+    ///
+    /// Implementors should provide the same guarantees and caveats as
+    /// [`AsyncReadExt::read()`][tokio::io::AsyncReadExt::read]. Consult the
+    /// documentation for that method for more information.
+    fn read(&mut self, buf: &mut [u8]) -> impl Future<Output = std::io::Result<usize>>;
+    /// Reads the exact number of bytes required to fill `buf`.
+    ///
+    /// Equivalent to:
+    ///
+    /// ```ignore
+    /// async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize>;
+    /// ```
+    ///
+    /// Implementors should provide the same guarantees and caveats as
+    /// [`AsyncReadExt::read_exact()`][tokio::io::AsyncReadExt::read_exact].
+    /// Consult the documentation for that method for more information.
+    fn read_exact(&mut self, buf: &mut [u8]) -> impl Future<Output = std::io::Result<usize>>;
+    /// Reads all bytes until EOF in this source, placing them into `buf`.
+    ///
+    /// Equivalent to:
+    ///
+    /// ```ignore
+    /// async fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize>;
+    /// ```
+    ///
+    /// Implementors should provide the same guarantees and caveats as
+    /// [`AsyncReadExt::read_to_end()`][tokio::io::AsyncReadExt::read_to_end()].
+    /// Consult the documentation for that method for more information.
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> impl Future<Output = std::io::Result<usize>>;
+}
+
+/// Write bytes to a sink.
+///
+/// This is analogous to [`tokio::io::AsyncWriteExt`], but does not require
+/// [`tokio::io::AsyncWrite`] to be implemented, and only contains the methods
+/// that are actually used by klip.
+pub trait Writer: Unpin {
+    /// Attempts to write an entire buffer into this writer.
+    ///
+    /// Equivalent to:
+    ///
+    /// ```ignore
+    /// async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()>;
+    /// ```
+    ///
+    /// Implementors should provide the same guarantees and caveats as
+    /// [`AsyncWriteExt::write_all()`][tokio::io::AsyncWriteExt::write_all()].
+    /// Consult the documentation for that method for more information.
+    fn write_all(&mut self, buf: &[u8]) -> impl Future<Output = std::io::Result<()>>;
+    /// Flushes this output stream, ensuring that all intermediately buffered
+    /// contents reach their destination.
+    ///
+    /// Equivalent to:
+    ///
+    /// ```ignore
+    /// async fn flush(&mut self) -> std::io::Result<()>;
+    /// ```
+    ///
+    /// Implementors should provide the same guarantees and caveats as
+    /// [`AsyncWriteExt::flush()`][tokio::io::AsyncWriteExt::flush()]. Consult
+    /// the documentation for that method for more information.
+    fn flush(&mut self) -> impl Future<Output = std::io::Result<()>>;
+}
+
+impl<R: tokio::io::AsyncRead + Unpin> Reader for R {
+    async fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        tokio::io::AsyncReadExt::read(self, buf).await
+    }
+
+    async fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        tokio::io::AsyncReadExt::read_exact(self, buf).await
+    }
+
+    async fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize> {
+        tokio::io::AsyncReadExt::read_to_end(self, buf).await
+    }
+}
+
+impl<W: tokio::io::AsyncWrite + Unpin> Writer for W {
+    async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
+        tokio::io::AsyncWriteExt::write_all(self, buf).await
+    }
+
+    async fn flush(&mut self) -> std::io::Result<()> {
+        tokio::io::AsyncWriteExt::flush(self).await
+    }
+}
 
 pub struct Stream {
     inner: BufStream<TcpStream>,
@@ -55,7 +154,7 @@ impl Stream {
     }
 
     pub async fn shutdown(mut self) -> std::io::Result<()> {
-        self.inner.shutdown().await
+        tokio::io::AsyncWriteExt::shutdown(&mut self.inner).await
     }
 }
 
@@ -110,6 +209,7 @@ pub fn hex<'a>(inp: &[u8], out: &'a mut [u8]) -> &'a str {
     }
 }
 
+#[cfg(feature = "cli")]
 pub fn from_hex(s: &str, buf: &mut [u8]) -> Result<(), ()> {
     const fn decode_char(b: u8) -> Result<u8, ()> {
         match b {
@@ -132,7 +232,9 @@ pub fn from_hex(s: &str, buf: &mut [u8]) -> Result<(), ()> {
     Ok(())
 }
 
-pub fn prompt(prompt: &str) -> Result<String, Error> {
+#[cfg(feature = "cli")]
+pub fn prompt(prompt: &str) -> Result<String, std::io::Error> {
+    use std::io::Write;
     let mut ret = String::new();
     print!("{prompt}");
     let _ = std::io::stdout().flush();

@@ -237,7 +237,7 @@ dependencies = [
 [[package]]
 name = "curve25519-dalek-derive"
 version = "0.1.1"
-source = "git+https://github.com/dalek-cryptography/curve25519-dalek.git#9119ea1fb33b909b54ba625b7dbe5425f2fcac47"
+source = "git+https://github.com/dalek-cryptography/curve25519-dalek.git#328771a7148bf72df1468fdef5e453beb60c0b5f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -355,6 +355,7 @@ dependencies = [
  "clap",
  "ctutils",
  "ed25519-dalek",
+ "log",
  "parking_lot",
  "rand",
  "scrypt",
@@ -383,6 +384,12 @@ checksum = "65d91b22da179613dcf4d6ec8349563f52a363f6849e03b00dd0a185ec4a59af"
 dependencies = [
  "scopeguard",
 ]
+
+[[package]]
+name = "log"
+version = "0.4.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
 name = "mio"

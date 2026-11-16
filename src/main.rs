@@ -1,47 +1,61 @@
-#![deny(
-    dead_code,
-    deprecated,
-    future_incompatible,
-    missing_copy_implementations,
-    missing_debug_implementations,
-    nonstandard_style,
-    rust_2018_idioms,
-    trivial_casts,
-    trivial_numeric_casts,
-    unsafe_code,
-    unused,
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::unwrap_used
-)]
+use klip::Cli;
 
-use core::{
-    net::{IpAddr, Ipv4Addr, SocketAddr},
-    time::Duration,
-};
+macro_rules! eprintln_log {
+    ($($tt:tt)*) => {{
+        use ::std::io::Write;
+        let mut stderr = ::std::io::stderr().lock();
+        if let Err(e) = ::core::write!(stderr, "klip: ") {
+            if e.kind() == ::std::io::ErrorKind::BrokenPipe {
+                ::std::process::exit(0);
+            } else {
+                ::std::process::exit(1);
+            }
+        }
+        if let Err(e) = ::core::writeln!(stderr, $($tt)*) {
+            if e.kind() == ::std::io::ErrorKind::BrokenPipe {
+                ::std::process::exit(0);
+            } else {
+                ::std::process::exit(1);
+            }
+        }
+    }}
+}
 
-const DOMAIN: &str = "KLIP";
-const DEFAULT_LISTEN: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8075);
-const DEFAULT_CONNECT: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8075);
-const DEFAULT_TTL: Duration = Duration::from_hours(7 * 24);
-const MAX_FUTURE_SKEW: Duration = Duration::from_hours(1);
-const MAX_CHUNK_SIZE: u32 = 65536;
-const DEFAULT_MAX_WAITING_PULLERS: usize = 100;
-const DEFAULT_MAX_STREAM_BYTES: u64 = 10 << 30; // 10 GiB
-const DEFAULT_MAX_STREAM_DURATION: Duration = Duration::from_hours(24);
+struct Logger(());
+const LOGGER: &Logger = &Logger(());
 
-mod authentication;
-mod cli;
-mod client;
-mod config;
-mod error;
-mod keygen;
-mod server;
-mod state;
-mod util;
+impl Logger {
+    fn init() -> Result<(), log::SetLoggerError> {
+        log::set_logger(LOGGER)
+    }
+}
 
-use cli::Cli;
+impl log::Log for Logger {
+    fn enabled(&self, _: &log::Metadata<'_>) -> bool {
+        true
+    }
+
+    fn log(&self, record: &log::Record<'_>) {
+        match (record.file(), record.line()) {
+            (Some(file), Some(line)) => {
+                eprintln_log!(
+                    "{}|{}|{file}:{line}: {}",
+                    record.level(),
+                    record.target(),
+                    record.args()
+                );
+            }
+            (Some(file), None) => {
+                eprintln_log!("{}|{}|{file}: {}", record.level(), record.target(), record.args());
+            }
+            _ => {
+                eprintln_log!("{}|{}: {}", record.level(), record.target(), record.args());
+            }
+        }
+    }
+
+    fn flush(&self) {}
+}
 
 // since Rust no longer uses jemalloc by default, klip will, by default, use the
 // system allocator. on linux, this would normally be glibc's allocator, which
@@ -86,10 +100,14 @@ async fn shutdown() {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    if let Err(e) = Logger::init() {
+        anyhow::bail!("failed to initialise logger: {e}");
+    }
+    log::set_max_level(log::LevelFilter::Warn);
     tokio::select! {
         r = Cli::run() => r,
         () = shutdown() => {
-            eprintln!("violently shutting down");
+            log::warn!("violently shutting down");
             std::process::exit(1);
         }
     }
