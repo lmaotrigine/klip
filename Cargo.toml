@@ -20,7 +20,7 @@ ed25519-dalek = "3"
 log = { version = "0.4", default-features = false }
 parking_lot = "0.13"
 rand = { version = "0.10", features = ["std_rng"] }
-scrypt = { version = "0.12", optional = true }
+scrypt = "0.12"
 toml = { version = "1", default-features = false, features = ["parse", "serde"], optional = true }
 
 [dependencies.tokio]
@@ -40,7 +40,7 @@ tikv-jemallocator = "0.7"
 
 [features]
 default = ["cli"]
-cli = ["dep:anyhow", "dep:clap", "dep:scrypt", "tokio/io-std", "dep:toml"]
+cli = ["dep:anyhow", "dep:clap", "tokio/io-std", "dep:toml"]
 
 [[bin]]
 name = "klip"

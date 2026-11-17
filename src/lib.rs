@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-#![cfg_attr(doc, feature(doc_cfg))]
+#![cfg_attr(all(doc, not(doctest)), feature(doc_cfg))]
 
 //! # klip
 //!
@@ -11,17 +11,6 @@
 //!
 //! The server does not know much about the data it is handling, and can
 //! therefore be exposed to the public internet without much risk.
-//!
-//! Clients and servers can be configured through a [`Builder`]:
-//!
-//! ```ignore
-//! let client = Builder::new().addr("127.0.0.1:8281".parse().unwrap())
-//!     // add other fields, including keys and limits.
-//!     .build_client()?;
-//! ```
-//!
-//! Refer to the documentation for [`Builder`] for a list of required fields for
-//! both uses.
 
 use core::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
@@ -39,22 +28,22 @@ const DEFAULT_MAX_STREAM_BYTES: u64 = 10 << 30; // 10 GiB
 const DEFAULT_MAX_STREAM_DURATION: Duration = Duration::from_hours(24);
 
 mod authentication;
+mod builder;
 #[cfg(feature = "cli")]
 mod cli;
 mod client;
-mod config;
 mod error;
-#[cfg(feature = "cli")]
 mod keygen;
 mod server;
 mod state;
 mod util;
 
+pub use builder::{Client as ClientBuilder, Server as ServerBuilder};
 #[cfg(any(feature = "cli", doc))]
-#[cfg_attr(doc, doc(cfg(feature = "cli")))]
+#[cfg_attr(all(doc, not(doctest)), doc(cfg(feature = "cli")))]
 pub use cli::Cli;
 pub use client::Client;
-pub use config::Builder;
 pub use error::Error;
+pub use keygen::Keys;
 pub use server::Server;
 pub use util::{Reader, Writer};

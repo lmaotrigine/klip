@@ -4,7 +4,6 @@ use crate::{
         auth0, auth1, auth2get, auth2store, auth3get, auth3store, compute_cid_bind,
         derive_chunk_nonce, derive_stream_key, new_transcript_hash,
     },
-    config::Config,
     error::Error,
     util::{Reader, Stream, Writer},
 };
@@ -16,26 +15,31 @@ use ed25519_dalek::Signer;
 use rand::Rng;
 use std::{
     io,
+    net::SocketAddr,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 pub const DEFAULT_CLIENT_VERSION: u8 = 2;
 
-/// A client for the klip protocol. Returned by
-/// [`Builder::build_client`][crate::Builder::build_client].
+/// A client for the klip protocol.
 pub struct Client {
-    config: Config,
+    pub(crate) addr: SocketAddr,
+    pub(crate) encrypt_sk: [u8; 32],
+    pub(crate) encrypt_sk_id: u64,
+    pub(crate) psk: [u8; 32],
+    pub(crate) sign_pk: ed25519_dalek::VerifyingKey,
+    pub(crate) sign_sk: ed25519_dalek::SigningKey,
+    pub(crate) timeout: Duration,
+    pub(crate) data_timeout: Duration,
+    pub(crate) ttl: Duration,
+    pub(crate) max_stream_bytes: u64,
+    pub(crate) max_stream_duration: Duration,
 }
 
 impl Client {
-    pub(crate) const fn new(config: Config) -> Self {
-        Self { config }
-    }
-
     pub(crate) async fn connect(&self) -> Result<Stream, Error> {
-        let fut = tokio::net::TcpStream::connect(self.config.connect());
-        let conn =
-            tokio::time::timeout(self.config.timeout(), fut).await.map_err(io::Error::from)??;
+        let fut = tokio::net::TcpStream::connect(self.addr);
+        let conn = tokio::time::timeout(self.timeout, fut).await.map_err(io::Error::from)??;
         Ok(Stream::new(conn))
     }
 
@@ -44,7 +48,7 @@ impl Client {
         stream: &mut Stream,
         buf: &'a mut [u8; 32],
     ) -> Result<&'a [u8; 32], Error> {
-        let psk = self.config.psk();
+        let psk = self.psk;
         let mut r = [0; 32];
         let mut rng = rand::make_rng::<rand::rngs::StdRng>();
         rng.fill_bytes(&mut r);
@@ -106,22 +110,22 @@ impl Client {
             .to_le_bytes();
         let mut content_with_encrypt_sk_id_and_nonce = vec![0; 32];
         content_with_encrypt_sk_id_and_nonce[..8]
-            .copy_from_slice(&self.config.encrypt_sk_id().to_le_bytes());
+            .copy_from_slice(&self.encrypt_sk_id.to_le_bytes());
         let mut rng = rand::make_rng::<rand::rngs::StdRng>();
         rng.fill_bytes(&mut content_with_encrypt_sk_id_and_nonce[8..32]);
         reader.read_to_end(&mut content_with_encrypt_sk_id_and_nonce).await?;
         let opcode = b'S';
         let mut cipher = chacha20::XChaCha20::new(
-            &self.config.encrypt_sk().into(),
+            &self.encrypt_sk.into(),
             &content_with_encrypt_sk_id_and_nonce[8..32]
                 .try_into()
                 .expect("8..32 doesn't span 24 bytes. math has died."),
         );
         let ct = &mut content_with_encrypt_sk_id_and_nonce[32..];
         cipher.apply_keystream(ct);
-        let signature = self.config.sign_sk().sign(content_with_encrypt_sk_id_and_nonce.as_slice());
-        stream.set_timeout(self.config.data_timeout());
-        let h2 = auth2store(self.config.psk(), h1, opcode, &ts, &signature.to_bytes());
+        let signature = self.sign_sk.sign(content_with_encrypt_sk_id_and_nonce.as_slice());
+        stream.set_timeout(self.data_timeout);
+        let h2 = auth2store(self.psk, h1, opcode, &ts, &signature.to_bytes());
         let h3 = async {
             stream.write_all(&[opcode]).await?;
             stream.write_all(&h2).await?;
@@ -144,7 +148,7 @@ impl Client {
                 e.into()
             }
         })?;
-        let wh3 = auth3store(self.config.psk(), &h2);
+        let wh3 = auth3store(self.psk, &h2);
         let choice = wh3.ct_ne(&h3);
         if choice.into() {
             return Err(Error::Auth);
@@ -165,7 +169,7 @@ impl Client {
         let opcode = if is_move { b'M' } else { b'G' };
         let mut h1_buf = [0; 32];
         let h1 = self.handshake(&mut stream, &mut h1_buf).await?;
-        let h2 = auth2get(self.config.psk(), h1, opcode);
+        let h2 = auth2get(self.psk, h1, opcode);
         stream.write_all(&[opcode]).await?;
         stream.write_all(&h2).await?;
         stream.flush().await?;
@@ -189,7 +193,7 @@ impl Client {
         ts.copy_from_slice(&rbuf[40..48]);
         let mut signature = [0; 64];
         signature.copy_from_slice(&rbuf[48..112]);
-        let wh3 = &auth3get(self.config.psk(), &h2, &ts, &signature)[..];
+        let wh3 = &auth3get(self.psk, &h2, &ts, &signature)[..];
         let choice = wh3.ct_ne(h3);
         if choice.into() {
             return Err(Error::Auth);
@@ -200,7 +204,7 @@ impl Client {
             return Err(Error::Future);
         }
         let elapsed = now.duration_since(ts_val).unwrap_or_else(|_| Duration::from_secs(0));
-        if elapsed >= self.config.ttl() {
+        if elapsed >= self.ttl {
             return Err(Error::Old);
         }
         if ciphertext_with_encrypt_sk_id_and_nonce_len < 32 {
@@ -212,7 +216,7 @@ impl Client {
                 got: ciphertext_with_encrypt_sk_id_and_nonce_len,
             })?;
         let mut ciphertext_with_encrypt_sk_id_and_nonce = vec![0; full_buf_len];
-        stream.set_timeout(self.config.data_timeout());
+        stream.set_timeout(self.data_timeout);
         stream.read_exact(&mut ciphertext_with_encrypt_sk_id_and_nonce[..]).await.map_err(|e| {
             if matches!(e.kind(), io::ErrorKind::UnexpectedEof | io::ErrorKind::BrokenPipe) {
                 Error::ConnectionClosed
@@ -224,19 +228,19 @@ impl Client {
             let c = &ciphertext_with_encrypt_sk_id_and_nonce[..8];
             [c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]]
         };
-        let choice = encrypt_sk_id.ct_ne(&self.config.encrypt_sk_id().to_le_bytes());
+        let choice = encrypt_sk_id.ct_ne(&self.encrypt_sk_id.to_le_bytes());
         if choice.into() {
-            let w_encrypt_sk = self.config.encrypt_sk_id();
+            let w_encrypt_sk = self.encrypt_sk_id;
             let encrypt_sk = u64::from_le_bytes(encrypt_sk_id);
             return Err(Error::SecretKeyIDMismatch { expected: w_encrypt_sk, actual: encrypt_sk });
         }
-        self.config.sign_pk().verify_strict(
+        self.sign_pk.verify_strict(
             &ciphertext_with_encrypt_sk_id_and_nonce[..],
             &ed25519_dalek::Signature::from_bytes(&signature),
         )?;
         let nonce = &ciphertext_with_encrypt_sk_id_and_nonce[8..32];
         let mut cipher = chacha20::XChaCha20::new(
-            &self.config.encrypt_sk().into(),
+            &self.encrypt_sk.into(),
             nonce
                 .try_into()
                 .unwrap_or_else(|_| unreachable!("8..32 doesn't span 24 bytes. math has died.")),
@@ -271,11 +275,11 @@ impl Client {
         let opcode = b'P';
         let mut h1_buf = [0; 32];
         let h1 = self.handshake(&mut stream, &mut h1_buf).await?;
-        let h2 = auth2get(self.config.psk(), h1, opcode);
+        let h2 = auth2get(self.psk, h1, opcode);
         stream.write_all(&[opcode]).await?;
         stream.write_all(&h2).await?;
         stream.flush().await?;
-        stream.set_timeout(self.config.timeout());
+        stream.set_timeout(self.timeout);
         let mut status = [0];
         stream.read_exact(&mut status).await.map_err(|e| {
             if matches!(e.kind(), io::ErrorKind::UnexpectedEof | io::ErrorKind::BrokenPipe) {
@@ -295,26 +299,21 @@ impl Client {
             SystemTime::now().duration_since(UNIX_EPOCH).expect("system clock is broken").as_secs();
         let mut nonce_prefix = [0; 16];
         rand::make_rng::<rand::rngs::StdRng>().fill_bytes(&mut nonce_prefix);
-        let stream_key = derive_stream_key(
-            self.config.encrypt_sk(),
-            ts,
-            self.config.encrypt_sk_id(),
-            nonce_prefix,
-            cid_bytes,
-        );
+        let stream_key =
+            derive_stream_key(self.encrypt_sk, ts, self.encrypt_sk_id, nonce_prefix, cid_bytes);
         let aead = chacha20poly1305::XChaCha20Poly1305::new(&stream_key.into());
-        let cid_bind = compute_cid_bind(self.config.encrypt_sk(), cid_bytes);
+        let cid_bind = compute_cid_bind(self.encrypt_sk, cid_bytes);
         let mut transcript = new_transcript_hash();
         transcript.update(&[DEFAULT_CLIENT_VERSION, opcode]);
         transcript.update(&ts.to_le_bytes());
-        transcript.update(&self.config.encrypt_sk_id().to_le_bytes());
+        transcript.update(&self.encrypt_sk_id.to_le_bytes());
         transcript.update(&nonce_prefix);
         transcript.update(&cid_bind);
         let mut header = [0; 32];
         header[..8].copy_from_slice(&ts.to_le_bytes());
-        header[8..16].copy_from_slice(&self.config.encrypt_sk_id().to_le_bytes());
+        header[8..16].copy_from_slice(&self.encrypt_sk_id.to_le_bytes());
         header[16..32].copy_from_slice(&nonce_prefix);
-        stream.set_timeout(self.config.data_timeout());
+        stream.set_timeout(self.data_timeout);
         stream.write_all(&header).await?;
         stream.flush().await?;
         let mut plain_buf = vec![0; MAX_CHUNK_SIZE as usize];
@@ -329,7 +328,7 @@ impl Client {
                     transcript.update(&chunk_index.to_le_bytes());
                     transcript.update(&chunk_len.to_le_bytes());
                     transcript.update(&sealed);
-                    stream.set_timeout(self.config.data_timeout());
+                    stream.set_timeout(self.data_timeout);
                     stream.write_all(&chunk_len.to_le_bytes()).await?;
                     stream.write_all(&sealed).await?;
                     stream.flush().await?;
@@ -347,9 +346,9 @@ impl Client {
             }
         }
         let transcript_digest = transcript.finalize().into_bytes();
-        let signature = self.config.sign_sk().sign(&transcript_digest);
+        let signature = self.sign_sk.sign(&transcript_digest);
         let end_marker = [0; 4];
-        stream.set_timeout(self.config.data_timeout());
+        stream.set_timeout(self.data_timeout);
         stream.write_all(&end_marker).await?;
         stream.write_all(&signature.to_bytes()).await?;
         stream.flush().await?;
@@ -370,11 +369,11 @@ impl Client {
         let opcode = b'L';
         let mut h1_buf = [0; 32];
         let h1 = self.handshake(&mut stream, &mut h1_buf).await?;
-        let h2 = auth2get(self.config.psk(), h1, opcode);
+        let h2 = auth2get(self.psk, h1, opcode);
         stream.write_all(&[opcode]).await?;
         stream.write_all(&h2).await?;
         stream.flush().await?;
-        stream.set_timeout(self.config.timeout());
+        stream.set_timeout(self.timeout);
         let mut status = [0];
         stream.read_exact(&mut status).await.map_err(|e| {
             if matches!(e.kind(), io::ErrorKind::UnexpectedEof | io::ErrorKind::BrokenPipe) {
@@ -406,7 +405,7 @@ impl Client {
         let now = SystemTime::now();
         let ts_val = UNIX_EPOCH + Duration::from_secs(ts);
         match now.duration_since(ts_val) {
-            Ok(elapsed) if elapsed > self.config.ttl() => {
+            Ok(elapsed) if elapsed > self.ttl => {
                 return Err(Error::Old);
             }
             Err(skew) if skew.duration() > MAX_FUTURE_SKEW => {
@@ -414,16 +413,16 @@ impl Client {
             }
             _ => (),
         }
-        if encrypt_sk_id != self.config.encrypt_sk_id() {
+        if encrypt_sk_id != self.encrypt_sk_id {
             return Err(Error::SecretKeyIDMismatch {
-                expected: self.config.encrypt_sk_id(),
+                expected: self.encrypt_sk_id,
                 actual: encrypt_sk_id,
             });
         }
         let stream_key =
-            derive_stream_key(self.config.encrypt_sk(), ts, encrypt_sk_id, nonce_prefix, cid_bytes);
+            derive_stream_key(self.encrypt_sk, ts, encrypt_sk_id, nonce_prefix, cid_bytes);
         let aead = chacha20poly1305::XChaCha20Poly1305::new(&stream_key.into());
-        let cid_bind = compute_cid_bind(self.config.encrypt_sk(), cid_bytes);
+        let cid_bind = compute_cid_bind(self.encrypt_sk, cid_bytes);
         let mut transcript = new_transcript_hash();
         transcript.update(&[DEFAULT_CLIENT_VERSION, b'P']);
         transcript.update(&ts.to_le_bytes());
@@ -434,7 +433,7 @@ impl Client {
         let mut total_bytes = 0;
         let pull_start = Instant::now();
         loop {
-            stream.set_timeout(self.config.data_timeout());
+            stream.set_timeout(self.data_timeout);
             let mut chunk_len = [0; 4];
             stream.read_exact(&mut chunk_len).await.inspect_err(|e| {
                 log::error!("stream: failed to read chunk length: {e:?}");
@@ -446,11 +445,9 @@ impl Client {
                     log::error!("stream: failed to read signature: {e:?}");
                 })?;
                 let transcript_digest = transcript.finalize().into_bytes();
-                self.config.sign_pk().verify_strict(&transcript_digest, &sig.into()).inspect_err(
-                    |_| {
-                        log::error!("stream signature verification failed");
-                    },
-                )?;
+                self.sign_pk.verify_strict(&transcript_digest, &sig.into()).inspect_err(|_| {
+                    log::error!("stream signature verification failed");
+                })?;
                 return Ok(());
             }
             if chunk_len > MAX_CHUNK_SIZE {
@@ -462,14 +459,14 @@ impl Client {
             total_bytes += u64::try_from(sealed_len).unwrap_or_else(|_| {
                 unreachable!("sealed_len (max 65536 + 16) cannot be too big for u64")
             });
-            if total_bytes > self.config.max_stream_bytes() {
+            if total_bytes > self.max_stream_bytes {
                 return Err(Error::StreamTooLarge);
             }
-            if pull_start.elapsed() > self.config.max_stream_duration() {
+            if pull_start.elapsed() > self.max_stream_duration {
                 return Err(Error::StreamDurationExceeded);
             }
             let mut sealed = vec![0; sealed_len];
-            stream.set_timeout(self.config.data_timeout());
+            stream.set_timeout(self.data_timeout);
             stream.read_exact(&mut sealed).await.inspect_err(|e| {
                 log::error!("stream: failed to read chunk data: {e:?}");
             })?;
@@ -488,6 +485,24 @@ impl Client {
 
 impl core::fmt::Debug for Client {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Client").finish_non_exhaustive()
+        let display_secrets = f.alternate();
+        let mut s = f.debug_struct("Client");
+        s.field("addr", &self.addr)
+            .field("timeout", &self.timeout)
+            .field("data_timeout", &self.data_timeout)
+            .field("ttl", &self.ttl)
+            .field("max_stream_bytes", &self.max_stream_bytes)
+            .field("max_stream_duration", &self.max_stream_duration);
+        if display_secrets {
+            let mut id = [0; 16];
+            let id_hex = crate::util::hex(&self.encrypt_sk_id.to_le_bytes(), &mut id);
+            let mut buf = [0; 64];
+            s.field("encrypt_sk", &crate::util::hex(&self.encrypt_sk, &mut buf))
+                .field("encrypt_sk_id", &id_hex)
+                .field("psk", &crate::util::hex(&self.psk, &mut buf))
+                .field("sign_pk", &crate::util::hex(&self.sign_pk.to_bytes(), &mut buf))
+                .field("sign_sk", &crate::util::hex(&self.sign_sk.to_bytes(), &mut buf));
+        }
+        s.finish()
     }
 }

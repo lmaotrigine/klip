@@ -1,4 +1,4 @@
-use crate::{config::Config, error::Error, server::handle_connection, util::Stream};
+use crate::{error::Error, server::handle_connection, util::Stream};
 use parking_lot::{Mutex, RwLock};
 use std::{
     collections::{HashMap, VecDeque},
@@ -43,30 +43,49 @@ pub struct Storage {
 pub static STORAGE: RwLock<Storage> = RwLock::new(Storage { generation: 0, content: None });
 
 pub struct State {
-    config: Config,
+    pub(crate) psk: [u8; 32],
+    pub(crate) sign_pk: ed25519_dalek::VerifyingKey,
+    pub(crate) timeout: core::time::Duration,
+    pub(crate) data_timeout: core::time::Duration,
+    pub(crate) ttl: core::time::Duration,
+    pub(crate) max_len: u64,
+    pub(crate) max_stream_bytes: u64,
+    pub(crate) max_stream_duration: core::time::Duration,
+    pub(crate) max_waiting_pullers: usize,
+    max_clients: usize,
+    trusted_ip_count: usize,
     trusted_clients: RwLock<VecDeque<IpAddr>>,
     client_count: AtomicUsize,
     stream_hub: Mutex<StreamHub>,
 }
 
 impl State {
-    pub fn new(config: Config) -> Self {
-        let cap = config.trusted_ip_count();
+    pub fn new(server: &crate::Server) -> Self {
+        let trusted_ip_count = match server.max_clients / 10 {
+            0 => 1,
+            n => n,
+        };
         Self {
-            config,
-            trusted_clients: RwLock::new(VecDeque::with_capacity(cap)),
+            psk: server.psk,
+            sign_pk: server.sign_pk,
+            timeout: server.timeout,
+            data_timeout: server.data_timeout,
+            ttl: server.ttl,
+            max_clients: server.max_clients,
+            max_len: server.max_len,
+            max_stream_bytes: server.max_stream_bytes,
+            max_stream_duration: server.max_stream_duration,
+            max_waiting_pullers: server.max_waiting_pullers,
+            trusted_ip_count,
+            trusted_clients: RwLock::new(VecDeque::with_capacity(trusted_ip_count)),
             client_count: AtomicUsize::new(0),
             stream_hub: Mutex::new(StreamHub::new()),
         }
     }
 
-    pub const fn config(&self) -> &Config {
-        &self.config
-    }
-
     pub fn add_trusted_ip(&self, ip: IpAddr) {
         let mut lock = self.trusted_clients.write();
-        if lock.len() >= self.config.trusted_ip_count() {
+        if lock.len() >= self.trusted_ip_count {
             lock.pop_front();
         }
         lock.push_back(ip);
@@ -93,9 +112,7 @@ impl State {
         let mut count;
         loop {
             count = self.client_count.load(Ordering::SeqCst);
-            if count >= self.config.max_clients() - self.config.trusted_ip_count()
-                && !self.is_trusted_ip(remote_ip)
-            {
+            if count >= self.max_clients - self.trusted_ip_count && !self.is_trusted_ip(remote_ip) {
                 return Err(Error::CapacityReached);
             }
             if self
@@ -107,7 +124,7 @@ impl State {
             }
         }
         let mut conn = Stream::new(conn);
-        conn.set_timeout(self.config().timeout());
+        conn.set_timeout(self.timeout);
         self.accept_client(conn);
         Ok(())
     }
@@ -122,7 +139,7 @@ impl State {
         target_os = "macos",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "illumos"
+        target_os = "illumos",
     ))]
     pub async fn handle_siginfo() -> std::io::Result<()> {
         use std::{

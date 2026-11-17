@@ -1,4 +1,4 @@
-use crate::{client::Client, config::Config, error::Error, util};
+use crate::{error::Error, util};
 use anyhow::Context;
 use std::{
     env::home_dir,
@@ -8,6 +8,8 @@ use std::{
 };
 
 mod commands;
+mod config;
+use config::Config;
 
 pub fn version(long: bool) -> String {
     let short = format!("v{}", option_env!("CARGO_PKG_VERSION").unwrap_or("N/A"));
@@ -117,8 +119,8 @@ pub enum Mode<'a> {
 }
 
 impl Mode<'_> {
-    async fn run(self, config: Config) -> Result<(), Error> {
-        let mut client = Client::new(config);
+    async fn run(self, config: Config<'_>) -> Result<(), Error> {
+        let mut client = config.into_client()?;
         match self {
             Self::Copy => {
                 client.copy(tokio::io::stdin()).await?;
@@ -194,7 +196,7 @@ impl Cli {
             .with_context(|| format!("while reading config file at '{}'", config_file.display()))?,
         )
         .context("while parsing config file")?;
-        let config = Config::from_toml_and_args(table, &cli)?;
+        let config = Config::new(table, &cli);
         Ok(match &cli.subcommand {
             Subcommand::Version => {
                 println!("klip {}", version(true));
@@ -205,7 +207,7 @@ impl Cli {
             Subcommand::Push(_, cid) => Mode::Push { cid }.run(config).await,
             Subcommand::Pull(_, cid) => Mode::Pull { cid }.run(config).await,
             Subcommand::Paste(_) => Mode::Paste.run(config).await,
-            Subcommand::Serve(_) => crate::server::Server::new(config).serve().await,
+            Subcommand::Serve(_) => config.into_server()?.serve().await,
             Subcommand::Keygen(_) => unreachable!(),
         }?)
     }

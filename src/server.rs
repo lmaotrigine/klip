@@ -2,14 +2,18 @@ use crate::{
     MAX_CHUNK_SIZE,
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
     client::DEFAULT_CLIENT_VERSION,
-    config::Config,
     error::Error,
     state::{Content, Message, STORAGE, State},
     util::Stream,
 };
 use ctutils::CtEq;
 use rand::Rng;
-use std::{collections::HashMap, sync::Arc, time::Instant};
+use std::{
+    collections::HashMap,
+    net::SocketAddr,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use tokio::{net::TcpListener, sync::mpsc};
 
 macro_rules! cleanup {
@@ -32,7 +36,7 @@ impl Connection<'_> {
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = rbuf;
         let opcode = if is_move { b'M' } else { b'G' };
-        let wh2 = auth2get(self.state.config().psk(), h1, opcode);
+        let wh2 = auth2get(self.state.psk, h1, opcode);
         let choice = wh2.ct_ne(&h2);
         if choice.into() {
             return Err(Error::Auth);
@@ -49,13 +53,8 @@ impl Connection<'_> {
             return Ok(());
         };
         let res = async {
-            self.stream.set_timeout(self.state.config().data_timeout());
-            let h3 = auth3get(
-                self.state.config().psk(),
-                &h2,
-                &content.ts.to_le_bytes(),
-                &content.signature,
-            );
+            self.stream.set_timeout(self.state.data_timeout);
+            let h3 = auth3get(self.state.psk, &h2, &content.ts.to_le_bytes(), &content.signature);
             self.stream.write_all(&h3).await?;
             let ciphertext_with_encrypt_sk_and_nonce_len =
                 content.ciphertext_with_encrypt_sk_and_nonce.len() as u64;
@@ -86,11 +85,9 @@ impl Connection<'_> {
         if ciphertext_with_encrypt_sk_and_nonce_len < 32 {
             return Err(Error::Short(Some(ciphertext_with_encrypt_sk_and_nonce_len)));
         }
-        if self.state.config().max_len() > 0
-            && ciphertext_with_encrypt_sk_and_nonce_len > self.state.config().max_len()
-        {
+        if self.state.max_len > 0 && ciphertext_with_encrypt_sk_and_nonce_len > self.state.max_len {
             return Err(Error::Large {
-                max: self.state.config().max_len(),
+                max: self.state.max_len,
                 got: ciphertext_with_encrypt_sk_and_nonce_len,
             });
         }
@@ -100,7 +97,7 @@ impl Connection<'_> {
         let mut signature = [0; 64];
         signature.copy_from_slice(&rbuf[48..112]);
         let opcode = b'S';
-        let wh2 = auth2store(self.state.config().psk(), h1, opcode, &ts.to_le_bytes(), &signature);
+        let wh2 = auth2store(self.state.psk, h1, opcode, &ts.to_le_bytes(), &signature);
         let choice = wh2.as_slice().ct_ne(h2);
         if choice.into() {
             return Err(Error::Auth);
@@ -109,20 +106,20 @@ impl Connection<'_> {
             Error::Large { max: usize::MAX as _, got: ciphertext_with_encrypt_sk_and_nonce_len }
         })?;
         let mut ciphertext_with_encrypt_sk_and_nonce = vec![0; full_buf_len];
-        self.stream.set_timeout(self.state.config().data_timeout());
+        self.stream.set_timeout(self.state.data_timeout);
         self.stream.read_exact(&mut ciphertext_with_encrypt_sk_and_nonce).await?;
-        self.state.config().sign_pk().verify_strict(
+        self.state.sign_pk.verify_strict(
             &ciphertext_with_encrypt_sk_and_nonce,
             &ed25519_dalek::Signature::from_bytes(&signature),
         )?;
-        let h3 = auth3store(self.state.config().psk(), h2);
+        let h3 = auth3store(self.state.psk, h2);
         {
             let content = Content { ts, signature, ciphertext_with_encrypt_sk_and_nonce };
             let mut guard = STORAGE.write();
             guard.content = Some(content);
             guard.generation = guard.generation.wrapping_add(1);
         }
-        self.stream.set_timeout(self.state.config().data_timeout());
+        self.stream.set_timeout(self.state.data_timeout);
         self.stream.write_all(&h3).await?;
         self.stream.flush().await?;
         Ok(())
@@ -133,7 +130,7 @@ impl Connection<'_> {
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = rbuf;
         let opcode = b'L';
-        let wh2 = auth2get(self.state.config().psk(), h1, opcode);
+        let wh2 = auth2get(self.state.psk, h1, opcode);
         let choice = wh2.ct_ne(&h2);
         if choice.into() {
             return Err(Error::Auth);
@@ -143,7 +140,7 @@ impl Connection<'_> {
             let mut hub = self.state.stream_hub();
             if hub.push_active {
                 Err((Error::StreamActive { push: false }, 0x00))
-            } else if hub.pullers.len() >= self.state.config().max_waiting_pullers() {
+            } else if hub.pullers.len() >= self.state.max_waiting_pullers {
                 Err((Error::TooManyPullers, 0x02))
             } else {
                 let id = hub.next_id;
@@ -166,10 +163,10 @@ impl Connection<'_> {
         };
         self.stream.write_all(&[0x01]).await?;
         self.stream.flush().await?;
-        let wait_timeout = self.state.config().ttl().min(core::time::Duration::from_hours(1));
+        let wait_timeout = self.state.ttl.min(Duration::from_hours(1));
         self.stream.set_timeout(wait_timeout);
         let mut recv = async || {
-            self.stream.set_timeout(self.state.config().data_timeout());
+            self.stream.set_timeout(self.state.data_timeout);
             while let Some(frame) = rx.recv().await {
                 match frame {
                     Message::Chunk(chunk) => {
@@ -185,7 +182,7 @@ impl Connection<'_> {
                         return Ok(());
                     }
                 }
-                self.stream.set_timeout(self.state.config().data_timeout());
+                self.stream.set_timeout(self.state.data_timeout);
             }
             cleanup();
             Ok(())
@@ -204,7 +201,7 @@ impl Connection<'_> {
         self.stream.read_exact(&mut rbuf).await?;
         let h2 = rbuf;
         let opcode = b'P';
-        let wh2 = auth2get(self.state.config().psk(), h1, opcode);
+        let wh2 = auth2get(self.state.psk, h1, opcode);
         let choice = wh2.ct_ne(&h2);
         if choice.into() {
             return Err(Error::Auth);
@@ -247,14 +244,14 @@ impl Connection<'_> {
             }
         };
         let mut header = [0; 32];
-        self.stream.set_timeout(self.state.config().data_timeout());
+        self.stream.set_timeout(self.state.data_timeout);
         cleanup!(self.stream.read_exact(&mut header).await, cleanup(&mut snapshot));
         relay(header.to_vec(), &mut snapshot).await;
         let stream_start = Instant::now();
         let mut total_bytes = 0;
         loop {
             let mut len_buf = [0; 4];
-            self.stream.set_timeout(self.state.config().data_timeout());
+            self.stream.set_timeout(self.state.data_timeout);
             cleanup!(self.stream.read_exact(&mut len_buf).await, cleanup(&mut snapshot));
             let chunk_len = u32::from_le_bytes(len_buf);
             if chunk_len == 0 {
@@ -273,16 +270,16 @@ impl Connection<'_> {
             }
             let sealed_len = chunk_len as usize + 16;
             total_bytes += sealed_len as u64;
-            if total_bytes > self.state.config().max_stream_bytes() {
+            if total_bytes > self.state.max_stream_bytes {
                 cleanup(&mut snapshot).await;
                 return Err(Error::StreamTooLarge);
             }
-            if stream_start.elapsed() > self.state.config().max_stream_duration() {
+            if stream_start.elapsed() > self.state.max_stream_duration {
                 cleanup(&mut snapshot).await;
                 return Err(Error::StreamDurationExceeded);
             }
             let mut sealed = vec![0; sealed_len];
-            self.stream.set_timeout(self.state.config().data_timeout());
+            self.stream.set_timeout(self.state.data_timeout);
             cleanup!(self.stream.read_exact(&mut sealed).await, cleanup(&mut snapshot));
             let mut frame = vec![0; 4 + sealed_len];
             frame[..4].copy_from_slice(&len_buf);
@@ -293,7 +290,6 @@ impl Connection<'_> {
 }
 
 pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(), Error> {
-    let config = state.config();
     let mut rbuf = [0; 65];
     let remote_addr = stream.peer_addr()?;
     stream.read_exact(&mut rbuf).await?;
@@ -306,7 +302,7 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     }
     let r = &rbuf[1..33];
     let h0 = &rbuf[33..65];
-    let wh0 = &auth0(config.psk(), client_version, r)[..];
+    let wh0 = &auth0(state.psk, client_version, r)[..];
     let choice = wh0.ct_ne(h0);
     if choice.into() {
         return Err(Error::Auth);
@@ -314,7 +310,7 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     let mut r2 = [0; 32];
     let mut rand = rand::make_rng::<rand::rngs::StdRng>();
     rand.fill_bytes(&mut r2);
-    let h1 = auth1(config.psk(), client_version, h0, &r2);
+    let h1 = auth1(state.psk, client_version, h0, &r2);
     stream.write_all(&[client_version]).await?;
     stream.write_all(&r2).await?;
     stream.write_all(&h1).await?;
@@ -333,25 +329,29 @@ pub async fn handle_connection(state: &State, stream: &mut Stream) -> Result<(),
     }
 }
 
-/// Represents a klip server. Returned by
-/// [`Builder::build_server`][crate::Builder::build_server].
-#[derive(Debug)]
+/// A server for the klip protocol.
 pub struct Server {
-    config: Config,
+    pub(crate) addr: SocketAddr,
+    pub(crate) max_clients: usize,
+    pub(crate) psk: [u8; 32],
+    pub(crate) sign_pk: ed25519_dalek::VerifyingKey,
+    pub(crate) timeout: Duration,
+    pub(crate) data_timeout: Duration,
+    pub(crate) ttl: Duration,
+    pub(crate) max_len: u64,
+    pub(crate) max_stream_bytes: u64,
+    pub(crate) max_stream_duration: Duration,
+    pub(crate) max_waiting_pullers: usize,
 }
 
 impl Server {
-    pub(crate) const fn new(config: Config) -> Self {
-        Self { config }
-    }
-
     /// Run the server.
     ///
     /// # Errors
     ///
     /// This method fails if the server cannot bind to the configured address.
     pub async fn serve(self) -> Result<(), Error> {
-        let state = Arc::new(State::new(self.config));
+        let state = Arc::new(State::new(&self));
         #[cfg(any(
             target_os = "dragonfly",
             target_os = "freebsd",
@@ -361,7 +361,7 @@ impl Server {
             target_os = "illumos"
         ))]
         tokio::spawn(async move { State::handle_siginfo().await });
-        let listener = TcpListener::bind(state.config().listen()).await?;
+        let listener = TcpListener::bind(self.addr).await?;
         loop {
             let Ok((conn, _)) = listener.accept().await.inspect_err(|e| {
                 log::warn!("while accepting new connection: {e:?}");
@@ -372,5 +372,27 @@ impl Server {
                 log::warn!("while checking preconditions for new client: {e:?}");
             }
         }
+    }
+}
+
+impl core::fmt::Debug for Server {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let display_secrets = f.alternate();
+        let mut s = f.debug_struct("Server");
+        s.field("addr", &self.addr)
+            .field("max_clients", &self.max_clients)
+            .field("timeout", &self.timeout)
+            .field("data_timeout", &self.data_timeout)
+            .field("ttl", &self.ttl)
+            .field("max_len", &self.max_len)
+            .field("max_stream_bytes", &self.max_stream_bytes)
+            .field("max_stream_duration", &self.max_stream_duration)
+            .field("max_waiting_pullers", &self.max_waiting_pullers);
+        if display_secrets {
+            let mut buf = [0; 64];
+            s.field("psk", &crate::util::hex(&self.psk, &mut buf))
+                .field("sign_pk", &crate::util::hex(&self.sign_pk.to_bytes(), &mut buf));
+        }
+        s.finish()
     }
 }

@@ -17,6 +17,10 @@ Feature enhancements:
 * Add `--timeout` and `--data-timeout` flags to more commands so that clients
   can also override the defaults.
 
+Miscellaneous:
+
+* Expose a library to interface with the klip protocol.
+
 0.3.0
 =====
 Bug fixes:
