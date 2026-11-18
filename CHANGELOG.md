@@ -19,6 +19,8 @@ Feature enhancements:
 
 Miscellaneous:
 
+* BREAKING: remove encrypt_sk_id configuration option. It is always derived
+  from encrypt_sk.
 * Expose a library to interface with the klip protocol.
 
 0.3.0

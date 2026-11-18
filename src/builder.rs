@@ -9,7 +9,6 @@ use ed25519_dalek::{SigningKey, VerifyingKey};
 pub struct Client {
     addr: SocketAddr,
     encrypt_sk: [u8; 32],
-    encrypt_sk_id: Option<u64>,
     psk: [u8; 32],
     sign_pk: [u8; 32],
     sign_sk: [u8; 32],
@@ -34,7 +33,6 @@ impl Client {
         Self {
             addr: crate::DEFAULT_CONNECT,
             encrypt_sk,
-            encrypt_sk_id: None,
             psk,
             sign_pk,
             sign_sk: sign_sk_,
@@ -50,19 +48,6 @@ impl Client {
     /// `127.0.0.1:8075`.
     pub const fn addr(mut self, addr: SocketAddr) -> Self {
         self.addr = addr;
-        self
-    }
-
-    /// Specify a unique identifier for the ChaCha20(-Poly1305) secret key. This
-    /// is calculated automatically from the secret key, and need not be
-    /// specified unless you are interacting with an older version that did not
-    /// support this functionality.
-    #[deprecated(
-        since = "0.4.0",
-        note = "encrypt_sk_id is calculated from encrypt_sk and need not be specified manually"
-    )]
-    pub const fn encrypt_sk_id(mut self, encrypt_sk_id: u64) -> Self {
-        self.encrypt_sk_id = Some(encrypt_sk_id);
         self
     }
 
@@ -102,9 +87,6 @@ impl Client {
     }
 
     fn make_eskid(&self) -> u64 {
-        if let Some(id) = self.encrypt_sk_id {
-            return id;
-        }
         let mut hasher = blake2::Blake2bMac::<U8>::new_with_salt_and_personal(
             None,
             &[],
@@ -276,10 +258,7 @@ impl core::fmt::Debug for Client {
             .field("max_stream_bytes", &self.max_stream_bytes)
             .field("max_stream_duration", &self.max_stream_duration);
         if display_secrets {
-            let mut buf = [0; 16];
-            let hex = self.encrypt_sk_id.map(|x| crate::util::hex(&x.to_le_bytes(), &mut buf));
             s.field("encrypt_sk", &self.encrypt_sk)
-                .field("encrypt_sk_id", &hex)
                 .field("psk", &self.psk)
                 .field("sign_pk", &self.sign_pk)
                 .field("sign_sk", &self.sign_sk);

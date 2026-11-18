@@ -61,22 +61,15 @@ impl<'a> Config<'a> {
         if self.serve_args().is_some() {
             return Ok(0);
         }
-        let mut buf = [0; 8];
-        if let Some(toml::Value::String(v)) = self.table.get("encrypt_sk_id") {
-            crate::util::from_hex(v, &mut buf)
-                .map_err(|()| Error::InvalidField("encrypt_sk_id"))?;
-        } else {
-            let encrypt_sk = self.encrypt_sk()?;
-            let mut hasher = blake2::Blake2bMac::<U8>::new_with_salt_and_personal(
-                None,
-                &[],
-                crate::DOMAIN.as_bytes(),
-            )
-            .expect("invalid params in blake2b");
-            hasher.update(&encrypt_sk);
-            buf.copy_from_slice(&hasher.finalize().into_bytes());
-        }
-        Ok(u64::from_le_bytes(buf))
+        let encrypt_sk = self.encrypt_sk()?;
+        let mut hasher = blake2::Blake2bMac::<U8>::new_with_salt_and_personal(
+            None,
+            &[],
+            crate::DOMAIN.as_bytes(),
+        )
+        .expect("invalid params in blake2b");
+        hasher.update(&encrypt_sk);
+        Ok(u64::from_le_bytes(hasher.finalize().into_bytes().into()))
     }
 
     fn psk(&self) -> Result<[u8; 32], Error> {
