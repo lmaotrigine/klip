@@ -4,6 +4,7 @@ use crate::{
         auth0, auth1, auth2get, auth2store, auth3get, auth3store, compute_cid_bind,
         derive_chunk_nonce, derive_stream_key, new_transcript_hash,
     },
+    builder::Debug,
     error::Error,
     util::{Reader, Stream, Writer},
 };
@@ -485,24 +486,18 @@ impl Client {
 
 impl core::fmt::Debug for Client {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let display_secrets = f.alternate();
-        let mut s = f.debug_struct("Client");
-        s.field("addr", &self.addr)
+        f.debug_struct("Client")
+            .field("addr", &self.addr)
+            .field("encrypt_sk", &Debug(self.encrypt_sk))
+            .field("encrypt_sk_id", &Debug(self.encrypt_sk_id.to_le_bytes()))
+            .field("psk", &Debug(self.psk))
+            .field("sign_pk", &Debug(self.sign_pk.to_bytes()))
+            .field("sign_sk", &Debug(self.sign_sk.to_bytes()))
             .field("timeout", &self.timeout)
             .field("data_timeout", &self.data_timeout)
             .field("ttl", &self.ttl)
             .field("max_stream_bytes", &self.max_stream_bytes)
-            .field("max_stream_duration", &self.max_stream_duration);
-        if display_secrets {
-            let mut id = [0; 16];
-            let id_hex = crate::util::hex(&self.encrypt_sk_id.to_le_bytes(), &mut id);
-            let mut buf = [0; 64];
-            s.field("encrypt_sk", &crate::util::hex(&self.encrypt_sk, &mut buf))
-                .field("encrypt_sk_id", &id_hex)
-                .field("psk", &crate::util::hex(&self.psk, &mut buf))
-                .field("sign_pk", &crate::util::hex(&self.sign_pk.to_bytes(), &mut buf))
-                .field("sign_sk", &crate::util::hex(&self.sign_sk.to_bytes(), &mut buf));
-        }
-        s.finish()
+            .field("max_stream_duration", &self.max_stream_duration)
+            .finish()
     }
 }

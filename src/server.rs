@@ -1,6 +1,7 @@
 use crate::{
     MAX_CHUNK_SIZE,
     authentication::{auth0, auth1, auth2get, auth2store, auth3get, auth3store},
+    builder::Debug,
     client::DEFAULT_CLIENT_VERSION,
     error::Error,
     state::{Content, Message, STORAGE, State},
@@ -377,22 +378,18 @@ impl Server {
 
 impl core::fmt::Debug for Server {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let display_secrets = f.alternate();
-        let mut s = f.debug_struct("Server");
-        s.field("addr", &self.addr)
+        f.debug_struct("Server")
+            .field("addr", &self.addr)
             .field("max_clients", &self.max_clients)
+            .field("psk", &Debug(self.psk))
+            .field("sign_pk", &Debug(self.sign_pk.to_bytes()))
             .field("timeout", &self.timeout)
             .field("data_timeout", &self.data_timeout)
             .field("ttl", &self.ttl)
             .field("max_len", &self.max_len)
             .field("max_stream_bytes", &self.max_stream_bytes)
             .field("max_stream_duration", &self.max_stream_duration)
-            .field("max_waiting_pullers", &self.max_waiting_pullers);
-        if display_secrets {
-            let mut buf = [0; 64];
-            s.field("psk", &crate::util::hex(&self.psk, &mut buf))
-                .field("sign_pk", &crate::util::hex(&self.sign_pk.to_bytes(), &mut buf));
-        }
-        s.finish()
+            .field("max_waiting_pullers", &self.max_waiting_pullers)
+            .finish()
     }
 }

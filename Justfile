@@ -44,6 +44,7 @@ tag := `git rev-parse --short HEAD`
 image := "ghcr.io/lmaotrigine/klip"
 release := `git describe --tags --exact-match 2>/dev/null || true`
 
+# build docs with a redirect page in target/doc/index.html
 [group('docs')]
 [env('RUSTDOCFLAGS', '-Wrustdoc::broken_intra_doc_links')]
 doc:
