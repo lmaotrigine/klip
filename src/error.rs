@@ -1,4 +1,7 @@
-use core::fmt::{Debug, Display};
+use std::{
+    borrow::Cow,
+    fmt::{Debug, Display},
+};
 
 /// Represents an error that can occur in klip.
 ///
@@ -38,10 +41,6 @@ pub enum Error {
     /// This usually indicates a protocol mismatch or a decryption/verification
     /// error
     ConnectionClosed,
-    /// A required config field is missing
-    MissingField(&'static str),
-    /// The home directory could not be determined
-    NoHome,
     /// The clipboard content is older than the configured maximum age
     Old,
     /// The server doesn't support the protocol used by the client
@@ -93,7 +92,13 @@ pub enum Error {
     /// The server rejected the stream
     GenericStream,
     /// Another error occurred
-    Message(&'static str),
+    Message(Cow<'static, str>),
+}
+
+impl Error {
+    pub(crate) fn message<S: Into<Cow<'static, str>>>(s: S) -> Self {
+        Self::Message(s.into())
+    }
 }
 
 impl Display for Error {
@@ -119,8 +124,6 @@ impl Display for Error {
                 "the server unexpectedly closed the connection. it may be running an incompatible \
                  version.\ncheck the server logs for more information.",
             ),
-            Self::MissingField(field) => write!(f, "missing required config field `{field}`"),
-            Self::NoHome => f.write_str("could not determine home directory"),
             Self::Old => f.write_str("the clipboard content is too old"),
             Self::ProtocolUnsupported => f.write_str("the server doesn't support this protocol"),
             Self::SecretKeyIDMismatch { expected, actual } => write!(

@@ -61,7 +61,7 @@ impl Client {
         let mut rbuf = [0; 65];
         stream.read_exact(&mut rbuf).await.map_err(|_| {
             if rbuf.iter().position(|&b| b == 0).is_some_and(|p| p < 2) {
-                Error::Message(
+                Error::message(
                     "the server rejected the connection - check that it is running the same klip \
                      version or retry later",
                 )

@@ -213,6 +213,9 @@ impl Cli {
     }
 
     fn default_config_file() -> Result<PathBuf, Error> {
-        Ok(home_dir().ok_or(Error::NoHome)?.canonicalize()?.join(".klip.toml"))
+        Ok(home_dir()
+            .ok_or_else(|| Error::message("could not determine home directory"))?
+            .canonicalize()?
+            .join(".klip.toml"))
     }
 }

@@ -1,10 +1,21 @@
-use crate::{
-    cli::{Cli, Subcommand},
-    error::Error,
-};
+use crate::cli::{Cli, Subcommand};
 use blake2::digest::{Mac, typenum::U8};
 use core::{net::SocketAddr, time::Duration};
 use ed25519_dalek::{SigningKey, VerifyingKey};
+
+enum Error {
+    InvalidField(&'static str),
+    MissingField(&'static str),
+}
+
+impl From<Error> for crate::Error {
+    fn from(value: Error) -> Self {
+        match value {
+            Error::InvalidField(f) => Self::InvalidField(f),
+            Error::MissingField(f) => Self::message(format!("missing required config field `{f}`")),
+        }
+    }
+}
 
 pub struct Config<'a> {
     table: toml::Table,
@@ -176,7 +187,7 @@ impl<'a> Config<'a> {
         }
     }
 
-    pub fn into_client(self) -> Result<crate::Client, Error> {
+    pub fn into_client(self) -> Result<crate::Client, crate::Error> {
         Ok(crate::Client {
             addr: self.connect()?,
             encrypt_sk: self.encrypt_sk()?,
@@ -192,7 +203,7 @@ impl<'a> Config<'a> {
         })
     }
 
-    pub fn into_server(self) -> Result<crate::Server, Error> {
+    pub fn into_server(self) -> Result<crate::Server, crate::Error> {
         Ok(crate::Server {
             addr: self.listen()?,
             max_clients: self.max_clients(),
