@@ -16,6 +16,24 @@
     clippy::unwrap_used
 )]
 
+fn emit_rerun_if_git_changed() {
+    // this dance is required to actually trigger a rebuild on every commit
+    // .git/HEAD only changes when you switch branches or go to a detached head
+    // so we read the ref it points to and emit a rerun-if-changed for that as
+    // well
+    let head = std::path::Path::new(".git/HEAD");
+    if !head.exists() {
+        return;
+    }
+    println!("cargo::rerun-if-changed=.git/HEAD");
+    let Ok(contents) = std::fs::read_to_string(head) else { return };
+    let Some(ref_) = contents.strip_prefix("ref: ") else { return };
+    let ref_file = std::path::Path::new(".git").join(ref_.trim());
+    if ref_file.exists() {
+        println!("cargo::rerun-if-changed={}", ref_file.display());
+    }
+}
+
 fn set_git_hash() {
     use std::process::Command;
     if let Ok(hash) = std::env::var("KLIP_BUILD_GIT_HASH") {
@@ -48,6 +66,7 @@ fn main() {
     const MANIFEST: &str = "pkg/windows/Manifest.xml";
     println!("cargo::rerun-if-changed={MANIFEST}");
     println!("cargo::rerun-if-env-changed=KLIP_BUILD_GIT_HASH");
+    emit_rerun_if_git_changed();
     set_git_hash();
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-env-changed=CARGO_BUILD_TARGET");
