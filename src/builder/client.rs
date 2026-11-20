@@ -47,8 +47,9 @@ impl Client {
     }
 }
 
-impl<EncryptSk, SignPk, SignSk> Client<(), EncryptSk, SignPk, SignSk>
+impl<Psk, EncryptSk, SignPk, SignSk> Client<Psk, EncryptSk, SignPk, SignSk>
 where
+    Psk: State,
     EncryptSk: State,
     SignPk: State,
     SignSk: State,
@@ -68,14 +69,7 @@ where
             max_stream_duration: self.max_stream_duration,
         }
     }
-}
 
-impl<Psk, SignPk, SignSk> Client<Psk, (), SignPk, SignSk>
-where
-    Psk: State,
-    SignPk: State,
-    SignSk: State,
-{
     /// Specify the ChaCha20-Poly1305 secret key. This is required.
     pub const fn encrypt_sk(self, encrypt_sk: [u8; 32]) -> Client<Psk, [u8; 32], SignPk, SignSk> {
         Client {
@@ -91,14 +85,7 @@ where
             max_stream_duration: self.max_stream_duration,
         }
     }
-}
 
-impl<Psk, EncryptSk, SignSk> Client<Psk, EncryptSk, (), SignSk>
-where
-    Psk: State,
-    EncryptSk: State,
-    SignSk: State,
-{
     /// Specify the Ed25519 public key as a 32-byte array. This is required.
     pub const fn sign_pk(self, sign_pk: [u8; 32]) -> Client<Psk, EncryptSk, [u8; 32], SignSk> {
         Client {
@@ -114,14 +101,7 @@ where
             max_stream_duration: self.max_stream_duration,
         }
     }
-}
 
-impl<Psk, EncryptSk, SignPk> Client<Psk, EncryptSk, SignPk, ()>
-where
-    Psk: State,
-    EncryptSk: State,
-    SignPk: State,
-{
     /// Specify the Ed25519 secret key as a 32-byte array. This is required.
     pub const fn sign_sk(self, sign_sk: [u8; 32]) -> Client<Psk, EncryptSk, SignPk, [u8; 32]> {
         Client {
@@ -137,15 +117,7 @@ where
             max_stream_duration: self.max_stream_duration,
         }
     }
-}
 
-impl<Psk, EncryptSk, SignPk, SignSk> Client<Psk, EncryptSk, SignPk, SignSk>
-where
-    Psk: State,
-    EncryptSk: State,
-    SignPk: State,
-    SignSk: State,
-{
     /// Specify he address of the server to connect to. The default is
     /// `127.0.0.1:8075`.
     pub const fn addr(mut self, addr: SocketAddr) -> Self {

@@ -39,7 +39,7 @@ impl Server {
     }
 }
 
-impl<SignPk: State> Server<(), SignPk> {
+impl<Psk: State, SignPk: State> Server<Psk, SignPk> {
     /// Specify the 256-bit pre-shared key. This is required.
     pub const fn psk(self, psk: [u8; 32]) -> Server<[u8; 32], SignPk> {
         Server {
@@ -56,9 +56,7 @@ impl<SignPk: State> Server<(), SignPk> {
             max_waiting_pullers: self.max_waiting_pullers,
         }
     }
-}
 
-impl<Psk: State> Server<Psk, ()> {
     /// Specify the Ed25519 public key as a 32-byte array. This is required.
     pub const fn sign_pk(self, sign_pk: [u8; 32]) -> Server<Psk, [u8; 32]> {
         Server {
@@ -75,8 +73,7 @@ impl<Psk: State> Server<Psk, ()> {
             max_waiting_pullers: self.max_waiting_pullers,
         }
     }
-}
-impl<Psk: State, SignPk: State> Server<Psk, SignPk> {
+
     /// Specify the address to listen on. The default is `0.0.0.0:8075`.
     pub const fn addr(mut self, addr: SocketAddr) -> Self {
         self.addr = addr;
