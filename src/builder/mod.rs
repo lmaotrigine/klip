@@ -1,10 +1,19 @@
 mod __support {
-    mod inner {
-        pub trait Sealed {
-            fn dbg(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    pub trait State: Copy {
+        // technically this would be more readable in a separate trait, but
+        // since all of it would be private anyway, just do this here.
+        // basically, this hides sensitive info unless {:#?} is used, in which
+        // case it is displayed as hex.
+        fn dbg(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result;
+    }
+
+    impl State for () {
+        fn dbg(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            core::fmt::Debug::fmt(&"<not set>", f)
         }
     }
-    impl inner::Sealed for [u8; 32] {
+
+    impl State for [u8; 32] {
         fn dbg(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             if f.alternate() {
                 let mut buf = [0; 64];
@@ -16,7 +25,9 @@ mod __support {
         }
     }
 
-    impl inner::Sealed for [u8; 8] {
+    // this is not a state, but we do want it to have the dbg method
+    // ugly? probably. but no one's looking at this code... right?
+    impl State for [u8; 8] {
         fn dbg(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             if f.alternate() {
                 let mut buf = [0; 16];
@@ -28,14 +39,6 @@ mod __support {
         }
     }
 
-    impl inner::Sealed for () {
-        fn dbg(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            core::fmt::Debug::fmt(&"<not set>", f)
-        }
-    }
-
-    pub trait State: inner::Sealed + Copy {}
-    impl<T: inner::Sealed + Copy> State for T {}
     pub struct Debug<T: State>(pub T);
     impl<T: State> core::fmt::Debug for Debug<T> {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
