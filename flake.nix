@@ -38,9 +38,10 @@
             inherit system overlays;
           };
           rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-          devToolchain = rustToolchain.override {
+          # use nightly for rustdoc
+          devToolchain = pkgs.pkgsBuildHost.rust-bin.selectLatestNightlyWith (t: t.default.override {
             extensions = [ "clippy" "rustfmt" "rust-src" ];
-          };
+          });
           craneLib = (crane.mkLib pkgs).overrideToolchain (_: rustToolchain);
           src = pkgs.lib.fileset.toSource {
             root = ./.;
@@ -82,6 +83,9 @@
                 mainProgram = "klip";
               };
             });
+          # https://github.com/NixOS/nixpkgs/pull/563191
+          ifLinux = pkgs.lib.optional pkgs.stdenv.hostPlatform.isLinux;
+          cargoDeb = ifLinux pkgs.cargo-deb;
         in
         {
           packages = {
@@ -96,9 +100,8 @@
               pkgs.fd
               pkgs.cargo-zigbuild
               pkgs.cargo-outdated
-              pkgs.cargo-deb
               pkgs.shellcheck
-            ];
+            ] ++ cargoDeb;
           };
         }
       ) // (

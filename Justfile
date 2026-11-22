@@ -75,7 +75,7 @@ ws:
 # run shellcheck on all shell scripts
 [group('lint')]
 shellcheck:
-  shellcheck ci/* scripts/* pkg/debian/*
+  fd '^[^.]+(\.sh)?$' ci scripts pkg/debian -tf -x shellcheck
   fd -e sh -tf -x shellcheck
 
 # perform all linting tasks
