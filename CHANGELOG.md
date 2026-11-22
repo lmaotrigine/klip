@@ -1,7 +1,5 @@
-TBD
-===
-Unreleased changes. Release notes have not yet been written.
-
+0.4.0
+=====
 > [!WARNING]
 > This release includes a protocol version bump. It will not be able to
 > interface with older versions of klip.
@@ -9,6 +7,7 @@ Unreleased changes. Release notes have not yet been written.
 ## Bug fixes:
 
 * Fix Ctrl-C not being handled while operating on stdin/stdout.
+* Fix broken dev shell on nix-darwin.
 
 ## Feature enhancements:
 
@@ -17,6 +16,11 @@ Unreleased changes. Release notes have not yet been written.
 * Add `--timeout` and `--data-timeout` flags to more commands so that clients
   can also override the defaults.
 * Expose a library to interface with the klip protocol.
+
+## Miscellaneous
+
+* Delay-load `userenv.dll` in Windows MSVC builds, so most runs no longer load
+  it (and the DLLs it pulls in) at startup.
 
 ## Deprecated:
 
