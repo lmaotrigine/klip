@@ -6,32 +6,32 @@ Unreleased changes. Release notes have not yet been written.
 > This release includes a protocol version bump. It will not be able to
 > interface with older versions of klip.
 
-Bug fixes:
+## Bug fixes:
 
 * Fix Ctrl-C not being handled while operating on stdin/stdout.
 
-Feature enhancements:
+## Feature enhancements:
 
 * Add support for streaming
   [#7](https://github.com/lmaotrigine/klip/pull/7)
 * Add `--timeout` and `--data-timeout` flags to more commands so that clients
   can also override the defaults.
-
-Miscellaneous:
-
-* BREAKING: remove encrypt_sk_id configuration option. It is always derived
-  from encrypt_sk.
 * Expose a library to interface with the klip protocol.
+
+## Deprecated:
+
+* Remove encrypt_sk_id configuration option. It is always derived
+  from encrypt_sk.
 
 0.3.0
 =====
-Bug fixes:
+## Bug fixes:
 
 * Fix potential panic in clients when the server terminates the connection in
   the middle of a paste or move operation.
 * Fix server becoming unresponsive during long-running move operations.
 
-Feature enhancements:
+## Feature enhancements:
 
 * Exclude --help and --version from tab completion if a subcommand has been
   entered.
@@ -40,7 +40,7 @@ Feature enhancements:
 * Provide visual feedback when typing passwords.
 * Support SIGINFO on illumos.
 
-Miscellaneous:
+## Miscellaneous:
 
 * Return an error when the `connect` or `listen` fields are invalid in the
   config file instead of silently falling back to the default.
@@ -54,7 +54,7 @@ Platform support:
 * Since the release process is now automated through GitHub Actions, many more
   platforms are now included in the release binaries for klip.
 
-Bug fixes:
+## Bug fixes:
 
 * Fix move operations deleting clipboard content despite I/O failure
   [#1](https://github.com/lmaotrigine/klip/pull/1)
@@ -62,7 +62,7 @@ Bug fixes:
   [#2](https://github.com/lmaotrigine/klip/pull/2)
 * Fix build failure when git commit hash cannot be determined.
 
-Miscellaneous:
+## Miscellaneous:
 
 * Add workflows for CI and release automation.
 * Remove enforcement of `lld` for linking.
