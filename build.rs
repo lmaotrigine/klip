@@ -82,6 +82,13 @@ fn main() {
     let Some(manifest) = manifest.to_str() else { return };
     println!("cargo::rustc-link-arg-bin=klip=/MANIFEST:EMBED");
     println!("cargo::rustc-link-arg-bin=klip=/MANIFESTINPUT:{manifest}");
+    // delay-load userenv.dll so that it, and the rpcrt4.dll and ucrtbase.dll it
+    // pulls in, aren't loaded at startup. `std::env::home_dir` only calls into
+    // it when `USERPROFILE` isn't set, which is quite uncommon. This is kept
+    // here rather than in .cargo/config.toml so that it applies when doing
+    // `cargo install` or overriding `RUSTFLAGS`
+    println!("cargo::rustc-link-arg-bin=klip=/DELAYLOAD:userenv.dll");
+    println!("cargo::rustc-link-arg-bin=klip=delayimp.lib");
     // turn linker warnings into errors. this helps debugging on older
     // compilers, and also we do want to bail if embedding the manifest fails
     println!("cargo::rustc-link-arg-bin=klip=/WX");
