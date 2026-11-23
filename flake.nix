@@ -72,6 +72,7 @@
                 installShellCompletion \
                   --bash completions/klip.bash \
                   --fish completions/klip.fish \
+                  --powershell completions/_klip.ps1 \
                   --zsh completions/_klip
                 installManPage doc/klip.1
               '';
