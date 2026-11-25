@@ -120,7 +120,7 @@ pub enum Mode<'a> {
 
 impl Mode<'_> {
     async fn run(self, config: Config<'_>) -> Result<(), Error> {
-        let mut client = config.into_client()?;
+        let client = config.into_client()?;
         match self {
             Self::Copy => {
                 client.copy(tokio::io::stdin()).await?;

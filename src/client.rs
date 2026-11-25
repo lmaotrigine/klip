@@ -100,7 +100,7 @@ impl Client {
     /// This method will panic in the unlikely event that the system clock is
     /// broken and reports the current time as being earlier than the UNIX
     /// epoch.
-    pub async fn copy<R: Reader>(&mut self, mut reader: R) -> Result<(), Error> {
+    pub async fn copy<R: Reader>(&self, mut reader: R) -> Result<(), Error> {
         let mut stream = self.connect().await?;
         let mut h1_buf = [0; 32];
         let h1 = self.handshake(&mut stream, &mut h1_buf).await?;
@@ -165,7 +165,7 @@ impl Client {
     /// This method fails if there was an error communicating with the server,
     /// if the server rejected the connection, or if there was an error writing
     /// to the writer.
-    pub async fn paste<W: Writer>(&mut self, mut writer: W, is_move: bool) -> Result<(), Error> {
+    pub async fn paste<W: Writer>(&self, mut writer: W, is_move: bool) -> Result<(), Error> {
         let mut stream = self.connect().await?;
         let opcode = if is_move { b'M' } else { b'G' };
         let mut h1_buf = [0; 32];
@@ -271,7 +271,7 @@ impl Client {
     /// This method will panic in the unlikely event that the system clock is
     /// broken and reports the current time as being earlier than the UNIX
     /// epoch.
-    pub async fn push_stream<R: Reader>(&mut self, mut reader: R, cid: &str) -> Result<(), Error> {
+    pub async fn push_stream<R: Reader>(&self, mut reader: R, cid: &str) -> Result<(), Error> {
         let mut stream = self.connect().await?;
         let opcode = b'P';
         let mut h1_buf = [0; 32];
@@ -365,7 +365,7 @@ impl Client {
     /// if the server rejected the connection, or if there was an error writing
     /// to the writer. The server will reject the connection if there is already
     /// an active push stream, or if there are too many waiting pullers.
-    pub async fn pull_stream<W: Writer>(&mut self, mut writer: W, cid: &str) -> Result<(), Error> {
+    pub async fn pull_stream<W: Writer>(&self, mut writer: W, cid: &str) -> Result<(), Error> {
         let mut stream = self.connect().await?;
         let opcode = b'L';
         let mut h1_buf = [0; 32];
